@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect,HttpResponse, Http404
 from django.shortcuts import render_to_response
 from django.core.context_processors import csrf
 from django.conf import settings
-import json,gridfs,base64
+import json, gridfs, base64
 from bson import json_util
 from bson import ObjectId
 # Uncomment the next two lines to enable the admin:

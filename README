@@ -1,0 +1,7 @@
+Для запуска тестового сервера необходимо просто зайти в папку  src/sop
+и запустить команду 
+./manage.py runserver --settings=settings_dev
+
+если при git push на manage.py не стоит флаг +x сделать
+
+chmod +x ./manage.py

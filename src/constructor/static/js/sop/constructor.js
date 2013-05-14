@@ -6,9 +6,9 @@
         var test_block_content = "Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, quia voluptas sit, aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos, qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui dolorem ipsum, quia dolor sit, amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt, ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus, qui blanditiis praesentium voluptatum deleniti atque corrupti, quos dolores et quas molestias excepturi sint, obcaecati cupiditate non provident, similique sunt in culpa, qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.";
         var Site = {
                     _Apps:['generic', 'theshop'] ,
-                    layout:{cols:12, 
+                    layout:{cols:16, 
                             fixed: true, 
-                            padding:10, 
+                            padding: {hor:5, ver:20}, 
                             width:960,
                             base_height:50},    
                     colors:{type:'mono', base:120, brightness:100, lights:50, saturation:100, shadows:50},  
@@ -107,8 +107,10 @@
               return {left:x, top:y, width:w, height:h}  ;
             },
             move_block: function(from, to){
-                this.blocks[to] = this.blocks[from]
-                delete this.blocks[from];
+                if(from !== to){
+                    this.blocks[to] = this.blocks[from]
+                    delete this.blocks[from];
+                }
                 // console.log(this.blocks);
             },
             add_block:function(type, to){
@@ -894,6 +896,35 @@
                 this.init_grid(C)
                 
             },
+            _stepping_left: function(left){
+                // console.log(
+                var sm = 10000000,
+                    ls = {};
+                for(var i =0; i< this.layout.cols; i++){
+                    var ll   = this._calc_left(i+1);
+                    var d    = Math.abs(left - ll);
+                    if (d < sm){
+                        sm = d;
+                    }  
+                    ls[d] = {val:ll, block:i }
+                }
+                //console.log("LEFT", left, ls[sm] );
+                return ls[sm];
+            },
+            _stepping_top: function(w){
+                var ws = {},
+                    sm= 1000000; 
+                for (var i =0; i < 200; i++){
+                    
+                    var ww = this._calc_top(i)
+                    var d = Math.abs(w-ww)
+                    if (d< sm){
+                        sm = d;
+                    }
+                    ws[d] = {val:ww,block:i}
+                }
+                return ws[sm]    
+            },
             _stepping_height: function(w){
                 var ws = {},
                     sm= 1000000; 
@@ -927,7 +958,7 @@
                 
             },
             _block_width: function(){
-                block_width = (this.layout.width / this.layout.cols) - (2 * this.layout.padding)
+                block_width = (this.layout.width / this.layout.cols) - (2 * this.layout.padding.hor)
                 return block_width
                 
             },
@@ -939,6 +970,19 @@
                 return block_height;
                 
             },
+            _calc_top: function(t){
+                var h = (this._calc_height(t))
+                if (h == 0){ var P =0} else {var P = 2}
+                // console.log(cbw)
+                return ( h + P*this.layout.padding.ver  ) ;// + this._main_offset.top;
+                // return (cbh * t); //+ (this.layout.padding *2 * (w-1))
+            },
+            
+            _calc_left: function(l){
+                var w = (this._calc_width (l-1) )
+                if (w == 0){var P =0}else{var P=2}
+                return (this.layout.padding.hor + w + P*this.layout.padding.hor  ) + this._main_offset.left;
+            },
             _calc_height: function(h){
                 if (this._c_bh){
                     cbh = this._c_bh
@@ -948,11 +992,12 @@
                     cbh = this._c_bh
                 }
                 // console.log(cbw)
-                return (cbh * h); //+ (this.layout.padding *2 * (w-1)) 
+                return (cbh * h) + (this.layout.padding.ver *2 * (h-1)); 
                 
                 
             },
             _calc_width: function(w){
+                if (w <= 0) return 0;
                 if (this._c_bw){
                     cbw = this._c_bw
                 } 
@@ -960,7 +1005,8 @@
                     this._c_bw = this._block_width()
                     cbw = this._c_bw
                 }
-                return (cbw * w) + (this.layout.padding *2 * (w-1)) 
+                
+                return (cbw * w) + (this.layout.padding.hor *2 * (w-1)) 
                 
                 
             },
@@ -975,104 +1021,76 @@
                 }
                 $('body').css('background-color', hsvToRgb( this.Site.background.param))
                 
-                var cont = $("<div>")
+                this.layout_cont = $("<div>")
                             .css('width', this.layout.width + e)
                             .css('margin-left','auto')
                             .css('margin-right','auto').appendTo(to),
-                    c_off = cont.offset();
-                var skipping_indexes = {}                    
-                for (var r = 0; r < 15; r++){
-                    var i = 0;
-                    while ( i < 12) {
+                    c_off = this.layout_cont.offset();
+                this._main_offset = c_off;
+
+                        this._busy_regions = [];
+                        this._moved_block_ = [] ;
+                        $.each(this.blocks, function(koords, block){
+                            var x = Number(koords.split(':')[0]);
+                            var y = Number(koords.split(':')[1]);
+                            var xx = self._calc_left(x+1);
+                            var yy = self._calc_top(y);
+                            
+                            // console.log('We got', xx, yy);
                         
-                        if (skipping_indexes[r]){
-                            if(skipping_indexes[r].indexOf(i) != -1){
-                                //console.log("QUIT", r,i, skipping_indexes);
-                                i += 1;
-                            continue;
-                            }
-                        }
-                        var Pos = (this.layout.padding * 2 * i ) + block_width * i + this.layout.padding;
-                            fP = Pos + c_off.left
-                            bw = block_width, //- ( 2* border);
-                            bl_id = i + ":" + r,
-                            block = this.blocks[bl_id];
-                         // console.log(r, c_off,Pos, this.layout.padding*(i+1), block_width * i,i)
-                        if(block){
-                            //console.log("Wh")
-                            for(var _h =r; _h < r+block.height; _h++){
-                                if(skipping_indexes[_h]){
-                                    a = skipping_indexes[_h]}else{a=[]}
-                                //console.log("H",_h); 
-                                for(var _w = i; _w < i+block.width; _w++){
-                                    //console.log("W",_w)
-                                    a.push(_w)
+                            var gp = { jq : $("<div>")
+                                                .appendTo(self.layout_cont)
+                                                .css('position','absolute')
+                                                .css('left', xx ).css('top',  yy)
+                                                .css('border', '1px solid black')
+                                                .css('overflow','hidden'),
+                                                
+                                                // .css('height', this.layout.base_height),
+                                                // .css('margin-left', this.layout.padding)
+                                                // .css('margin-right', this.layout.padding)
+                                       pos: {row:y, ix:x},
                                 }
-                                skipping_indexes[_h] = a;
-                            } 
-                            
-                        }
-                        
-                        
-                        
-                        
-                        var gp = { jq : $("<div>")
-                                            .appendTo(cont)
-                                            .css('position','absolute')
-                                            .css('left', fP + e).css('top', (base_height) * r)
-                                            .css('margin-left', this.layout.padding)
-                                            .css('margin-right', this.layout.padding)
-                                            .css('overflow','hidden')
-                                            .css('height', this.layout.base_height),
-                                   pos: {row:r, ix:i},
-                        }
-                        
-                        if (block){
-                            var W = this._calc_width(block.width),
-                                H = this._calc_height(block.height);
-                            gp.jq.width(W);
-                            gp.jq.height(H);
-                            if(this._dragging_block){
-                                console.log(this._dragging_block)
-                            }else{
-                                this.inited_blocks.push(this.init_block(block, gp, bl_id))
-                            }
-                            i += block.width;
-                            
-                        }else{
-                            $("<div >")
-                            .appendTo(gp.jq)
-                            .prop('pos',bl_id)
-                            .css('width', (bw - 2) + e)
-                            .css('height', gp.jq.height() - 2 + e)
-                            .css('border',"1px dotted black")
-                            .droppable({
-                                hoverClass: "drop-hover",
-                                accept:'.draggable-module',
-                                drop: function(event, ui){
-                                    var to = $(this).prop('pos'), 
-                                        from = ui.draggable.prop('pos'),
-                                        type = ui.draggable.prop('type');
-                                    if (from == undefined){
-                                        self.add_block.apply(self, [type, to]);
-                                    }else{
-                                        self.move_block.apply(self, [from, to] );
-                                        
-                                    }
-                                    console.log('redraw')
-                                    self.redraw.apply(self,[]);
+                            self.inited_blocks.push(self.init_block(block, gp, koords))
+                            for (w = x; w< x + block.width; w++){
+                                for (h = y; h < y+block.height; h++){
+                                    self._busy_regions.push(w +":"+ h ) 
                                     
                                 }
-                            });
-                            gp.jq.width(this._calc_width(1))
-                            i += 1; 
-                        }
-                    };
-                    
-                    $('<div>')
-                    .addClass('clear')
-                    .appendTo(cont);
-                    
+                            }
+
+                        })
+                        this.redraw_empty_blocks();
+                        
+                       
+                
+            },
+            redraw_empty_blocks: function(){
+                $('.empty_blocks').remove();
+                for (cols = 0; cols < this.layout.cols; cols++){
+                    for(row = 0; row < 15; row++){
+                        var c = cols + ":" + row;
+                        is_busy = this._busy_regions.indexOf(c) !== -1
+                        is_moved = this._moved_block_.indexOf(c) !== -1
+                        
+                        
+                        if(!is_busy || is_moved){
+                            xx = this._calc_left(cols+1) // + c_off.left;
+                            yy = this._calc_top(row);
+                            
+                            $('<div>')
+                            .addClass('empty-block')
+                            .appendTo(this.layout_cont)
+                            .css('position', 'absolute')
+                            
+                            .css('left',xx)
+                            .css('top',yy)
+                            .css('border', '1px solid black')
+                            .css('width', this._calc_width(1) )
+                            .css('height', this._calc_height(1) )
+                            .css('left',xx)
+                            
+                        } 
+                    }
                 }
                 
             },
@@ -1096,19 +1114,46 @@
                 
                 // to.prop('pos',my_pos);
                 var w = $("<div>").width(W).css('height',H).appendTo(to.jq).prop("pos", my_pos).addClass("draggable-module")
-                .draggable({
+                var draga;
+                to.jq.draggable({
                     scroll:false,
                     start:function(event,ui){
-                        self._dragging_block = ui.helper.prop('pos');
+                        regs = [];
+                        for (w = to.pos.ix; w < to.pos.ix     + bl.width; w++){
+                            for (h = to.pos.row; h < to.pos.row +bl.height; h++){
+                                regs.push(w +":"+ h ) 
+                                    
+                            }
+                        }
+                        self._moved_block_ = regs ; 
+                        self.redraw_empty_blocks();
+                    },
+                    drag: function(event, ui){
+                        // console.log(ui)
+                        // var C = ui.helper;
+                        var ll = self._stepping_left(ui.position.left)
+                        var tt = self._stepping_top(ui.position.top)
+                        draga = {left:ll.block, top:tt.block };
+                        
+                        ui.position = {top:tt.val, left: ll.val};
+                        
+                        
+                    },
+                    stop:function(){
+                        var oldpos = to.pos.ix +':' +  to.pos.row  ;
+                        var new_pos = draga.left + ':' + draga.top;
+                        self._moved_block = false;
+                        self.move_block(oldpos, new_pos);
                         self.redraw();
+                        
                     },
                     handle:".drag-handle",cursorAt: { top: -1, left: 60 },
-                    helper: function( event ) {
-                        var C = $('#controls')
-                        var c = $( "<div class='ui-widget-header'>I'm a custom helper</div>" ).prop("pos", my_pos).appendTo(C);
-                        return c;
+                    //helper: function( event ) {
+                    //    var C = $('#controls')
+                    //    var c = $( "<div class='ui-widget-header'>I'm a custom helper</div>" ).prop("pos", my_pos).appendTo(C);
+                    //    return c;
                         
-                        }
+                    //    }
                 })
                 var Widget = newWidget(w, wdata, this, my_pos);
                 Widget.draw();
@@ -1191,13 +1236,13 @@
                         if(self.resize_frame){
                             self.resize_frame.remove()
                             self.resize_frame = false;
-                            console.log(to)
+                            // console.log(to)
                             var myw = to.jq.prop("cur_width");
                             var myh = to.jq.prop("cur_height");
                             var pos = to.pos.ix +':' +  to.pos.row  ;
                             
                             
-                            console.log(myw, myh,pos, self.blocks)
+                            console.log("here it is", myw, myh, pos, self.blocks)
                             
                             self.blocks[pos].width = myw;
                             self.blocks[pos].height= myh;
@@ -1240,7 +1285,7 @@
                 
                 
 
-                console.log(to.jq);             
+                // console.log(to.jq);             
                 to.jq.mouseenter(function(e){
                     //console.log('MENTER');
                     Widget.jq().css('opacity','0.3')

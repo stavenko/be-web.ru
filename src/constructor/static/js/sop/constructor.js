@@ -18,7 +18,7 @@
                     
                                   blocks:{'0:0': {width:3, height:3, widget:{name:'generic.text', data:test_block_content } },
                                           '8:0': {width:4,height:2, widget:{name:'generic.text', data:test_block_content } },
-                                          '3:0': {width:5,height:5, widget:{name:'generic.image', data:{url:"/static/images/IMAGE.JPG"} } },
+                                          '3:0': {width:5,height:5, widget:{name:'generic.image', data:{} } },
                                          }
                               },
                               "about":{layout:'same',
@@ -98,7 +98,13 @@
                     b = q;
             }
          
-            return "rgb(" + Math.round(r * 255) +',' +Math.round(g * 255)+','+ Math.round(b * 255) + ')';
+            var rgb = Math.round(b*255) | (Math.round(g*255) << 8) | (Math.round(r*255) << 16);
+            // return rgb.toString(16);
+            rgbc =  "#" + (0x1000000 | rgb).toString(16).substring(1);
+            // console.log(r,g,b,rgb, rgbc)
+            return rgbc
+
+            // return "rgb(" + Math.round(r * 255) +',' +Math.round(g * 255)+','+ Math.round(b * 255) + ')';
         }
         var pg = {
             // blocks : [],
@@ -1117,6 +1123,8 @@
                 var draga;
                 to.jq.draggable({
                     scroll:false,
+                    zIndex:100,
+                    cancel: '.resize-marker',
                     start:function(event,ui){
                         regs = [];
                         for (w = to.pos.ix; w < to.pos.ix     + bl.width; w++){
@@ -1125,6 +1133,10 @@
                                     
                             }
                         }
+                        for ( i in self.inited_blocks){
+                            self.inited_blocks[i].unbind('mouseenter');
+                        }
+                        to.jq.unbind('mouseleave'); // , 'mouseenter')
                         self._moved_block_ = regs ; 
                         self.redraw_empty_blocks();
                     },
@@ -1147,13 +1159,7 @@
                         self.redraw();
                         
                     },
-                    handle:".drag-handle",cursorAt: { top: -1, left: 60 },
-                    //helper: function( event ) {
-                    //    var C = $('#controls')
-                    //    var c = $( "<div class='ui-widget-header'>I'm a custom helper</div>" ).prop("pos", my_pos).appendTo(C);
-                    //    return c;
-                        
-                    //    }
+
                 })
                 var Widget = newWidget(w, wdata, this, my_pos);
                 Widget.draw();
@@ -1161,13 +1167,13 @@
                 
                 
                 
-                var dg = $("<div>").addClass('drag-handle').appendTo(w).css('background-color','orange').css('cursor','move')
-                .css('position','absolute').width(to.jq.width()).height('20px').position({of: to.jq, my:"left top", at:"left top", collision:'none' })
-                .disableSelection().text("module drag").hide()
+                // var dg = $("<div>").addClass('drag-handle').appendTo(w).css('background-color','orange').css('cursor','move')
+                // .css('position','absolute').width(to.jq.width()).height('20px').position({of: to.jq, my:"left top", at:"left top", collision:'none' })
+                // .disableSelection().text("module drag").hide()
                 
-                var prop_button = $('<div>').addClass('porperties-button').appendTo(to.jq).css('position', 'absolute')
-                    .position({of: to.jq, my:'right top', at:'right-14 top', collision:'none none'}).addClass("ui-icon ui-icon-note").width(20).height(20).hide()
-                    .click(function(){
+                //var prop_button = $('<div>').addClass('porperties-button').appendTo(to.jq).css('position', 'absolute')
+                //    .position({of: to.jq, my:'right top', at:'right-14 top', collision:'none none'}).addClass("ui-icon ui-icon-note").width(20).height(20).hide()
+                to.jq.dblclick(function(){
                         //console.log("CLICK UNBIND")
                         
                         for (blix in self.inited_blocks){
@@ -1175,10 +1181,11 @@
                             bl.unbind("mouseenter")
                             bl.mouseleave();
                             bl.unbind("mouseleave")
-                            // console.log("nothin");
                             
                         }
+                        to.jq.draggable('destroy');
                         Widget.settings();
+                        
                         $("<div>").css('background-color','orange').appendTo(to.jq).css('position','absolute')
                         .position({of:to.jq, 
                                       my:"left top", 
@@ -1205,7 +1212,11 @@
                 
                 
                 var resize_marker = $("<div>").appendTo(to.jq).prop('pos', my_pos).css('position','absolute')
-                .position({of:to.jq, my:"right bottom", at:"right-14 bottom-14"}).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width('20px').height('20px').hide()
+                .position({of:to.jq, my:"right bottom", at:"right-14 bottom-14"})
+                .css('background-color','black')
+                .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width('20px').height('20px').hide()
+                .addClass('resize-marker')
+                .mouseenter(function(){ console.log('enter') })
                 .mousedown(function(evt){
                     self.resize_frame = $("<div>")
                                             .css("position", 'absolute')
@@ -1230,7 +1241,7 @@
                     to.jq.parent().unbind('mousemove')
                     
                     to.jq.parent().mouseup(function(){
-                        console.log(to.pos);
+                        //console.log(to.pos);
     
                         // console.log("we finished")
                         if(self.resize_frame){
@@ -1242,7 +1253,7 @@
                             var pos = to.pos.ix +':' +  to.pos.row  ;
                             
                             
-                            console.log("here it is", myw, myh, pos, self.blocks)
+                            //console.log("here it is", myw, myh, pos, self.blocks)
                             
                             self.blocks[pos].width = myw;
                             self.blocks[pos].height= myh;
@@ -1288,19 +1299,20 @@
                 // console.log(to.jq);             
                 to.jq.mouseenter(function(e){
                     //console.log('MENTER');
-                    Widget.jq().css('opacity','0.3')
-                    dg.show()
+                    //Widget.jq().css('opacity','0.3')
+                    //dg.show()
                     resize_marker.show()
-                    prop_button.show()
+                    resize_marker.zIndex(1000);
+                    // prop_button.show()
                     
                     
                 }).mouseleave(function(){
                     //console.log('MLEAVE');
 
-                    dg.hide()
+                    //dg.hide()
                     resize_marker.hide()
-                    Widget.jq().css('opacity','1')
-                    prop_button.hide()
+                    // Widget.jq().css('opacity','1')
+                    //prop_button.hide()
 
                 })
                 return to.jq

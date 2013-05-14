@@ -45,22 +45,71 @@
                                                             this.constr.setWidgetData(this.pos,this._jq.html()) 
                                                             
                                                         }
+                                                    },
+                                                    _change_text: function(command,val){
+                                                        r = document.execCommand(command, false, val)
+                                                        console.log(command, val, r)
+                                                        
+                                                        
                                                     },                                                                                
                                                     settings: function(){
+                                                        var self =this;
                                                         if(this.constr){
-                                                            var eid = "my-" + this._rand_id();
-                                                            var tbid = "tb" + this._rand_id();
-                                                            this._jq.prop('id', eid)
+                                                            //var eid = "my-" + this._rand_id();
+                                                            //var tbid = "tb" + this._rand_id();
+                                                            this._jq.prop('contentEditable', 'true') //.prop('id', eid)
                                                             
                                                             this.cp = $("<div>").appendTo(this.my_cont.parent().parent() ).css('position','absolute')
                                                                         .position({of: this.my_cont, my:"left top", at: "right top", collision:'flip'})
                                                                         .css('padding',"10")
                                                                         .css("border","2px solid black").css('background-color',"orange")
-                                                                        .prop("id", tbid).draggable({scroll:false});
+                                                                        // .prop("id", tbid)
+                                                                        .draggable({scroll:false});
+                                                            $('<button>').html('<b>B</b>').appendTo(this.cp).click(function(){self._change_text("bold") })
+                                                            $('<button>').html('<i>i</i>').appendTo(this.cp).click(function(){self._change_text("italic") })
+                                                            $('<button>').html('<u>U</u>').appendTo(this.cp).click(function(){self._change_text("underline") })
+                                                            $('<button>').html('<s>S</s>').appendTo(this.cp).click(function(){self._change_text("StrikeThrough") })
+                                                            $('<button>').text('color').appendTo(this.cp).click(function(){
+                                                                var cl = $('<div>')
+                                                                .css('position','absolute')
+                                                                .css('background-color','white')
+                                                                .css('border', '1px solid black')
+                                                                .appendTo($('#controls')).position({of:$(this), my:'left top', at:'right bottom'})
+                                                                self.constr._make_pallette();
+                                                                $.each(self.constr.Site.colors.pallette , function(l, vars){
+                                                                                                                                    
+                                                                    // var vars = self.constr.Site.colors.pallette[k];
+                                                                    // console.log("PAL", k, vars);
+                                                                    
+                                                                    var b, main
+                                                                    $.each ( vars, function(i, col_){
+                                                                        var col = hsvToRgb(col_);
+                                                                        if(i == 0){
+                                                                            b = $('<div>').css('float','left').width(100).height(100).appendTo(cl)
+                                                                            main = $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(100).height(50)
+                                                                            .click(function(evt){  console.log(col); self._change_text('forecolor',  col); evt.preventDefault(), evt.stopPropagation()})
+                                                                        }else{
+                                                                            // console.log(i)
+                                                                            if(i == 3){
+                                                                                main.appendTo(b);
+                                                                            }
+                                                                            
+                                                                            $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(50).height(25).appendTo(b)
+                                                                            .click(function(evt){  console.log(col);  self._change_text('forecolor', col); evt.preventDefault(), evt.stopPropagation() })
+                                                                        }
+                                                                        
+                                                                    }) 
+                                                
+                                                                })
+                                                                $('<button>').text('close').appendTo(cl).click(function(){cl.remove();})
+                                                                
                                                             
-                                                            this.area = new nicEditor( );
-                                                            this.area.setPanel(tbid);
-                                                            this.area.addInstance(eid);
+                                                            })
+                                                            
+                                                            
+                                                            //this.area = new nicEditor( );
+                                                            //this.area.setPanel(tbid);
+                                                            //this.area.addInstance(eid);
                                                             
                                                             
                                                             
@@ -114,9 +163,9 @@
                                                                         .height(this.my_cont.height()) ;
                                                             */
                                                         }else{
-                                                            this._jq = $("<button>").text("add")
+                                                            this._jq = $("<img>").prop('src', '/static/images/images.jpg')
                                                             .appendTo(this.my_cont)
-                                                            .css('margin',50)
+                                                            .css('margin',10)
                                                             
                                                             .click(function(){
                                                                     // console.log("i'm fucking pushing you")

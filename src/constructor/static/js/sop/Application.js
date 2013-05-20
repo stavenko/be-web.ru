@@ -17,19 +17,43 @@ var init_db = function(csrf_token){
             var xhr = new XMLHttpRequest()
             var fd = new FormData();
             for (i in obj.images){
-                console.log( obj.images[i].length )
+                //console.log( obj.images[i].length )
             }
             function loadend(){
-                complete()
+                
+                complete(this)
             }
             fd.append('x-data', JSON.stringify(data))
             fd.append(cs_name, cs_val)
             xhr.open("POST", "/data/", true)
             xhr.upload.progress = progress
-            xhr.upload.onloadend = loadend
+            xhr.onloadend = loadend
+            
             xhr.send(fd)
 
 
+        },
+        save_object_sync:function(type, obj, progress, complete){
+            var data = {'object':obj,
+                'type' : type,
+            };
+            // data[cs_name] = cs_val;
+            var xhr = new XMLHttpRequest()
+            var fd = new FormData();
+            for (i in obj.images){
+                // console.log( obj.images[i].length )
+            }
+            function loadend(){
+                
+                complete(this)
+            }
+            fd.append('x-data', JSON.stringify(data))
+            fd.append(cs_name, cs_val)
+            xhr.open("POST", "/data/", false)
+            xhr.upload.progress = progress
+            xhr.onloadend = loadend
+            
+            xhr.send(fd)
         },
         get_objects: function(type, query, paging, view, sort){
             var d = {type:type}

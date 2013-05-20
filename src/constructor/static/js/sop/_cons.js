@@ -1,28 +1,21 @@
 
     
-({    
+{    
     Constructor : function (){
         //base_height = 5; // em
         var test_block_content = "Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, quia voluptas sit, aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos, qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui dolorem ipsum, quia dolor sit, amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt, ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus, qui blanditiis praesentium voluptatum deleniti atque corrupti, quos dolores et quas molestias excepturi sint, obcaecati cupiditate non provident, similique sunt in culpa, qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.";
-        var Site = false; 
-        default_site = {
+        var Site = {
                     _Apps:['generic', 'theshop'] ,
                     layout:{cols:12, 
                             fixed: true, 
                             padding: {hor:10, ver:3}, 
                             width:960,
-                            drawen_lines:30,
                             base_height:50},    
                     colors:{type:'mono', base:120, brightness:100, lights:50, saturation:100, shadows:50},  
-                    backgrounds:{},
-                    //background:{type:'color', param: {h:0, s:0, b:100}}  ,
-                    // backgrounds:{},
-                    //bodyback:{},
-                    //contentback:{},
-                                              
+                    background:{type:'color', param: {h:0, s:0, b:100}}  ,                          
                     pages : {"": {layout:"same",
-                                  title:"Main page of my project",
-                                  
+                                   title:"Main page of my project",
+                    
                                   blocks:{'0:0': {width:3, height:3, widget:{name:'generic.text', data:test_block_content } },
                                           '8:0': {width:4,height:2, widget:{name:'generic.text', data:test_block_content } },
                                           '3:0': {width:5,height:5, widget:{name:'generic.image', data:{} } },
@@ -37,8 +30,7 @@
                           },
                     }
                 }
-                
-        function hsvToRgb(o, as_array)  {
+        function hsvToRgb(o)  {
             var h, s, v;
             var r, g, b;
             var i;
@@ -106,16 +98,11 @@
                     b = q;
             }
          
-            if(as_array){
-                return [Math.round(r*255) , Math.round(g*255) , Math.round(b*255) ]
-            }else{
-                
-                var rgb = Math.round(b*255) | (Math.round(g*255) << 8) | (Math.round(r*255) << 16);
-                // return rgb.toString(16);
-                rgbc =  "#" + (0x1000000 | rgb).toString(16).substring(1);
-                // // // console.log(r,g,b,rgb, rgbc)
-                return rgbc
-            }
+            var rgb = Math.round(b*255) | (Math.round(g*255) << 8) | (Math.round(r*255) << 16);
+            // return rgb.toString(16);
+            rgbc =  "#" + (0x1000000 | rgb).toString(16).substring(1);
+            // console.log(r,g,b,rgb, rgbc)
+            return rgbc
 
             // return "rgb(" + Math.round(r * 255) +',' +Math.round(g * 255)+','+ Math.round(b * 255) + ')';
         }
@@ -130,14 +117,13 @@
                     this.blocks[to] = this.blocks[from]
                     delete this.blocks[from];
                 }
-                this._save_site();
+                // console.log(this.blocks);
             },
             add_block:function(type, to){
                 this.blocks[to] = {width:1,height:1, 
                                     widget:{name:type, data: ''  } 
                                 };
-            this._save_site();
-
+                console.log(this.blocks);
             },
             getApp: function(name){
                 var scr = $.ajax({
@@ -151,30 +137,11 @@
             return App;
             },
             load_site:function(){
-                
                 if (this.Site){
                     return
                 }else{
                     // AJAX HERE
-                    S = DB.get_objects(this._site_type, {site_id: this.site_id} )
-                    // // // console.log(S)
-                    
-                    if (S.total_amount != 0 ) {
-                        this.Site = S.objects[0];
-                        
-                    }else{
-                        // // // console.log("LLLL");
-                        this.Site = default_site;
-                    }
-                    var apps = this.Site._Apps;
-                    var apps_ = {};
-                    for (ax in apps){
-                        var app_name =  apps[ax];
-                        var app = this.getApp(app_name)
-                        apps_[app_name] = app
-                    }
-                    this.Site['Applications'] = apps_;
-                    delete this.Site.version
+                    this.Site = Site;
                 }
                 
                 
@@ -182,15 +149,22 @@
             getPageData: function( page_name ){
                 // ajax magic:
                 this.load_site();  
-                // this.Site = Site;
-                // // // console.log(this.Site);
-                return this.Site.pages[page_name]
+                var apps = Site._Apps;
+                var apps_ = {};
+                for (ax in apps){
+                    var app_name =  apps[ax];
+                    var app = this.getApp(app_name)
+                    apps_[app_name] = app
+                    
+                }
+                Site['Applications'] = apps_;
+                this.Site = Site;
+                return Site.pages[page_name]
             },
             
             
             setWidgetData: function(pos, data){
-                //// // console.log(this.Site.pages,this.Site.pages[this.current_page], pos)
-                //console.log('Set Wid Data', this, this.current_page,pos);
+                //console.log(this.Site.pages,this.Site.pages[this.current_page], pos)
                 this.Site.pages[this.current_page].blocks[pos].widget.data = data;
                 
             },
@@ -210,7 +184,7 @@
                         this.page_vars[par[0]] = val
                         
                     }
-                    // // // console.log(this.page_vars)
+                    // console.log(this.page_vars)
                 }
                 
                 
@@ -231,35 +205,13 @@
             
                 
             },
-            _save_site: function(){
-                // s_str = this.Site
-                this.Site['site_id'] = this.site_id;
-                self = this;
-                DB.save_object_sync(this._site_type, this.Site, function(){ console.log("okey")}, 
-                function(xhr){
-                    O = eval("[" + xhr.responseText +"]")[0]
-                    self.Site['_id'] = O._id
-                    // console.log(self.Site, id);
-                    // console.log('save_complete')
-                    })
-                
-                
-            },
-            init: function(do_construction, site_id){
-                this.site_id = site_id;
-                this._site_type = "generic_site"
-                this.is_constructor = do_construction
+            init: function(){
                 this.page_cont = $('#id-top-cont');
                 //var cur_page = window.location.hash
                 //var current_page = cur_page.slice(1);
-                // this._init_page()
-                
-                if(this.is_constructor){
-                    this.init_cp_marker()
-                    
-                }
+                // this._init_page() 
+                this.init_cp_marker()
                 this.redraw()
-                // // // console.log(JSON.stringify(this.Site)) 
                 
             },
             redraw_cp: function(active_tab){
@@ -295,13 +247,13 @@
                     self._make_pallette();
                     for (k in self.Site.colors.pallette){
                         var vars = self.Site.colors.pallette[k];
-                        // // // console.log("PAL", k, vars);
+                        // console.log("PAL", k, vars);
                         for (i in vars){
                             if(i == 0){
                                 var b = $('<div>').css('float','left').width(100).height(1350).appendTo(C)
                                 var main = $('<div>').css('background-color',hsvToRgb(vars[i])).css('float','left').width(100).height(50)
                             }else{
-                                // // // // console.log(i)
+                                console.log(i)
                                 if(i == 3){
                                     main.appendTo(b);
                                 }
@@ -315,7 +267,7 @@
                             vars[6]={h:0, s:0, b:100}
                             for (var i =0; i < 7; i++){
                                 for (var j =0; j < 7; j++){
-                                    //// // // console.log;
+                                    //console.log;
                                     if (!((j==i) || (i==5 &&j==6) || (i==6&&j==5)   ) ){
                                         $("<div>").text('Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventor')
                                         .css('overflow','hidden').css('float','left').width(100).height(50).css('font-size','10pt')
@@ -360,7 +312,7 @@
                 
                 var context = C[0].getContext('2d');
                 for(var h = 0; h< 360; h++){
-                    // // // console.log(rgbc)
+                    // console.log(rgbc)
                     context.beginPath()
                     context.moveTo(h*0.85,0)
                     context.lineWidth = 1;
@@ -374,7 +326,7 @@
 
                 var orig;
                 var point = function(evt){
-                    //// // console.log(evt.clientX),
+                    //console.log(evt.clientX),
                     orig = evt.clientX
                     self._pallete_drawer(c)  
                 }
@@ -388,7 +340,7 @@
                         var off = C.offset()
                         self._set_base_hue(evt.clientX - off.left)
                         self._pallete_drawer.apply(self,[c])  
-                        // // // console.log(evt.clientX - off.left)
+                        console.log(evt.clientX - off.left)
                     }
                 }
                 
@@ -406,7 +358,7 @@
                     
                 
                 var s,a,A;
-                // // // // console.log(i,h,s,a,A, this.Site.colors)
+                // console.log(i,h,s,a,A, this.Site.colors)
                 switch(i) {
                     
                     case 'mono':
@@ -451,8 +403,8 @@
                     
                     if (color){
                         for (i in sat_koef){
-                            // // // console.log("K", Number(i)+1)
-                            // // // console.log(saturation*( (sat_koef[i]/100)),sat_koef[i], saturation)
+                            // console.log("K", Number(i)+1)
+                            // console.log(saturation*( (sat_koef[i]/100)),sat_koef[i], saturation)
                             ds = saturation * sat_koef[i]
                             db = brightness * br_koef[i]
                             
@@ -467,7 +419,7 @@
                             }
                                 sat = saturation - dsat;
                                 bri = brightness - dbri;
-                                // // // console.log(sat, bri)
+                                console.log(sat, bri)
                                    
                             vars[Number(i)+1] = {h:color,  s:sat, b:bri} 
                         } 
@@ -492,69 +444,31 @@
                 this.Site.colors['type'] = type;
             },
         
+            
             showBackgroundScheme:function(){
                 var to = this._app_admin_contents;
-                    to.find('*').remove()
-                    atabs = $('<div>').appendTo(to)
-                    ul = $("<ul>").appendTo(atabs);
-                    $("<li>").append($("<a>").prop('href', "#pic-pattern" ).text("Паттерн от картинки") ).appendTo(ul)
-                    $("<li>").append($("<a>").prop('href', "#products" ).text("Создание паттерна ") ).appendTo(ul)
-                    
-                    $("<li>").append($("<a>").prop('href', "#orders" ).text('orders') ).appendTo(ul)
-                    
-                    pic_patt = $("<div>").prop('id',"pic-pattern").appendTo(atabs)
-                    this._show_picture_based_background_list(pic_patt)
-                    
-                    my_patt = $("<div>").prop('id',"pic-pattern").appendTo(atabs)
-                    this._show_pattern_editor(my_patt)
-                    
-                    // prod_cont.text("okey")
-                     
-                    
-                    orders_cont = $("<div>").prop('id',"orders").appendTo(atabs)
-                    orders_cont.text("O okey")
-                    
-                    atabs.tabs();
+                to.find('*').remove()
                 this._app_admin_cont.show()
-               },
-                    
-            _show_pattern_editor: function(to){
-                $.each(this.Site.patterns, function(name, pattern){
-                    
-                    $("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.brightness, slide:function(event, ui){ self.Site.colors.brightness = ui.value;self._pallete_drawer.apply(self,[c])  }} ).appendTo(to)
-                })
-              
-            },
                 
-            _show_picture_based_background_list:function(to){
-                
-               // First - picture template based
+               // First - picture based
                $('<input>').prop('type','file').change(function(){
                    var fr = new FileReader()
                    fr.onloadend = function(){
                        "strict";
                         var result = this.result;
                         var C = $('<canvas>').appendTo(to)
-                        var S = $('<canvas>')// .appendTo()
+                        var S = $('<canvas>').appendTo(to)
                         sctx = S[0].getContext('2d')
                         
                         var img = new Image()
                         img.onload = function(){
-                            // // // console.log (img.width, img.height);
+                            console.log (img.width, img.height);
                             C[0].width = img.width;
                             C[0].height = img.height;
                             C.css('border', '1px solid black')
                             var ctx = C[0].getContext('2d')
                             
-                            var R = {left:0,top:0, width:img.width, height:img.height}
-                            var preview = $("<button>").appendTo(to).text("Применить как фон").click(function(){
-                                ready_image = S[0].toDataURL("image/png")
-                                $('body')
-                                .css('background-image','url("' + ready_image +' ")')
-                                .css('background-repeat','repeat')
-                                
-                                
-                            })
+                            var R = {left:100,top:100, width:20, height:10}
                              
                             function redraw(st){
                                 ctx.clearRect(0,0,img.width,img.height)
@@ -563,9 +477,9 @@
                                 S[0].height = R.height;
                                  
                                 sctx.drawImage(img,-R.left,-R.top)
-                                //var img_data = sctx.getImageData(0,0, R.width, R.height)
-                                //// // // console.log(img_data);
-                                /*
+                                var img_data = sctx.getImageData(0,0, R.width, R.height)
+                                //console.log(img_data);
+                                
                                 for (x =0 ; x< img_data.width; x++){
                                     for (y = 0; y < img_data.height; y++){
                                         var ix = (x + y*img_data.width)*4;
@@ -584,7 +498,11 @@
                                     }
                                 }
                                 sctx.putImageData(img_data,0,0)
-                                */
+                                ready_image = S[0].toDataURL("image/png")
+                                $('body')
+                                .css('background-image','url("' + ready_image +' ")')
+                                .css('background-repeat','repeat') 
+                                
                                 
                                 ctx.strokeStyle = 'rgba(128,128,0, 1)';
                                 ctx.fillStyle =  'rgba(0,0,0, 0.7)';
@@ -678,7 +596,7 @@
                                 
                                 if(cx > R.left && cy >R.top){
                                     if(Math.abs(R.left - cx) < R.width && Math.abs(R.top - cy) < R.height){
-                                        // // // console.log('qqq')
+                                        console.log('qqq')
                                         whole = true
                                     } else{
                                         whole = false
@@ -705,7 +623,7 @@
                                     
                                     if(Math.abs(cx - start.left) > 5 || Math.abs(cy - start.top) >5){
                                             if (gpoint){
-                                                // // console.log("AAAA",gpoint)
+                                                console.log("AAAA",gpoint)
                                                 switch(gpoint.type){
                                                     case 'tl':
                                                         R.top += diff.top; R.left += diff.left;
@@ -814,7 +732,7 @@
                                     for(l in lines){
                                         var line = lines[l];
                                         if (is_closeL(line,evt)){
-                                            //// // console.log(line)
+                                            //console.log(line)
                                             line['point'] = false
                                             gline = line
                                             redraw(line)
@@ -824,7 +742,7 @@
                                         }
                                         
                                     }
-                                    //// // console.log('not found')
+                                    //console.log('not found')
                                     redraw(false);
                                 }
                             })
@@ -841,290 +759,6 @@
                 
                 
                 
-                
-                
-                
-            },
-            redraw_background: function(){
-                var self = this
-                $.each(this.Site.backgrounds, function(name, imgo){
-                    // // console.log(name,imgo)
-                    
-                    if (name == 'body'){
-                        C = $('body')
-                    }else if (name == 'content'){
-                        C = self.layout_cont;
-                    }
-                    
-                        
-                        C.css('background-image', 'url("' +imgo.data +'")' ) 
-                        // // console.log("TYPE of BG", imgo.type)
-                        
-                        if(imgo.type == 'image'){
-                            
-                            C.css('background-repeat','no-repeat')
-                            .css('background-position', [imgo.position.left + 'px' , imgo.position.top +'px' ].join(' ') )
-                        }  else if (imgo.type == 'pattern'){
-                            //C.css('background-repeat','x,y')
-                            
-                            
-                        }
-                        
-                        
-                    
-                })
-            },
-            backgroundChooser:function(type) {
-                // var to = this._app_admin_contents;
-                var self = this;
-                // to.find('*').remove()
-                
-                // this._app_admin_cont.show()
-                var cp_ = $('<div>').css('position','absolute').appendTo($('#controls'))
-                .position({of: $('body'), my:'left top', at: 'left+200 top_50'})
-                .css('padding', '20px').css('background-color', 'orange')
-                .draggable({scroll:false})
-                
-                
-                $('<button>').text("X").click(function(){
-                    cp_.remove();
-                }).appendTo(cp_);
-                
-                var cp = $('<div>').appendTo(cp_)
-                $('<span>').text('plain images:').appendTo(cp)
-                
-                $("<input>").prop('type','file').change(function(evt){
-                    fr = new FileReader()
-                    fr.onload = function(){
-                        self.Site.backgrounds[type] = {data:this.result,type:'image', position:{left:0, top:0}}
-                        self.redraw_background();
-                    }  
-                    fr.readAsDataURL(this.files[0]);
-                    
-                    
-                    
-                }).appendTo(cp);
-                var is_move, old_p
-                $('<button>').text('move-scale').click(function(evt){
-                        var  but = this;
-                        // // console.log(evt);
-                        var md =function(evt){
-                           is_move = true
-                           old_p = {top: evt.clientY,
-                                    left : evt.clientX} 
-                           evt.preventDefault();
-                           evt.stopPropagation();
-                            
-                        }  
-                        var mu = function(evt){
-                            is_move = false
-                        }
-                       var scroll = function(evt){
-                           // // console.log("wheel", evt)
-                           if(evt.type == 'mousewheel'){
-                               
-                           }
-                           evt.preventDefault();
-                           evt.stopPropagation();
-                           }
-                        var mm =function(evt){
-                           if(is_move){
-                                var left = evt.clientX;    
-                                var top = evt.clientY;
-                                var p = {left:left, top:top}
-                                var diff = {left: p.left - old_p.left, top: p.top - old_p.top}
-                                // // console.log('MOE', old_p, p, diff)
-                                self.Site.backgrounds[type].position.top += diff.top;
-                                self.Site.backgrounds[type].position.left += diff.left;
-                                old_p = p
-                                self.redraw_background();
-                            }
-                       }
-                       var kp = function(evt){
-                           if(evt.keyCode == 27 ){ //ESC
-                               kpu();
-                           }
-                        }           
-                       var kpu = function(){
-                               $(but).text('move-scale')
-                               $(document).unbind('mousedown', md)
-                               $(document).unbind('mouseup', mu)
-                               $(document).unbind('mousemove', mm)
-                               $(document).unbind('keypress', kp)
-                               $(document).unbind('MozMousePixelScroll', scroll)
-                               $(document).unbind('DOMMouseScroll', scroll)
-                               $(document).unbind('mousewheel', scroll);
-                           
-                       }
-                        $(document).bind('mousedown', md)
-                        $(document).bind('mouseup', mu)
-                       $(document).bind('mousewheel DOMMouseScroll  MozMousePixelScroll', scroll)
-                       $(document).bind('mousemove', mm)
-                       $(document).bind('keypress', kp)
-                       $(this).text("Press esc when DONE").click(function(){kpu()})
-                       
-                       
-                       
-                }).appendTo(cp)
-
-                
-                var cp = $('<div>').appendTo(cp_)
-                
-                $('<span>').text('patterns').appendTo(cp)
-                $('<input>').prop('type', 'file').change(function(){
-                    fr = new FileReader()
-                    fr.onload = function(){
-                        self.Site.backgrounds[type] = {data:this.result,type:'pattern', position:{left:0, top:0}}
-                        self.redraw_background();
-                    }  
-                    fr.readAsDataURL(this.files[0]);
-                }).appendTo(cp);
-              
-                var cp = $('<div>').appendTo(cp_)
-                var C = $('<canvas>').appendTo(cp)[0];
-                var S = $('<canvas>').appendTo(cp)[0]
-                var ctx = C.getContext('2d')
-                //ctx.globalCompositeOperation = "xor";
-                var sctx = S.getContext('2d')
-                var base = 64;  
-                var WA = 0, HA = 0, A = 0, iWA = true, iHA = true;
-                var Z = 0.08;
-                var opacity;
-                self._make_pallette()
-                var BG = this.Site.colors.pallette[0][3]
-                var FG = this.Site.colors.pallette[0][0]
-                // // console.log(BG,FG)
-                
-                
-                var image, buffData
-                
-                function redraw_ctx(){
-                    C.width = base * 2
-                    C.height = base * 2
-                    
-                    iw = image.width * Z;
-                    ih = image.height * Z;
-
-                    function dr_im(x,y,bx,by){
-                        
-                        
-                        ctx.save()
-                        ctx.translate(x -iw/2, y-ih/2)
-                        ctx.scale(Z,Z)
-                        ctx.rotate(A* (3.14/180) )
-                        ctx.globalAlpha = opacity / 100;
-                        ctx.drawImage(image, 0, 0)
-                        //ctx.putImageData(buffData, 0,0)
-                        ctx.restore()
-                    }
-                    
-                    ctx.fillStyle =  hsvToRgb(BG)  // "rgba( 255,255, 255, 255)";
-                    ctx.rect(0,0, C.width, C.height)
-                    ctx.fill()
-                    WA = base * (WA/100)
-                    HA = base * (HA/100)
-                    
-                    // FIRST TILE
-                    
-                    ctx.save()
-                    ctx.beginPath()
-                    ctx.rect(0, 0, base, base)
-                    ctx.clip();
-                    if (iWA){  dr_im(WA,0);        dr_im(base-WA,base )}
-                    if (iHA){  dr_im(0,base - HA); dr_im(base,HA)     }
-                    dr_im(base/2, base/2)
-                    ctx.closePath();
-                    ctx.restore()
-                    
-                    // SECOND - go down
-                    // mirror from first and y + base
-                    
-                    ctx.save()
-                    ctx.beginPath()
-                    ctx.rect(0, base, base, base)
-                    ctx.clip(); 
-                    if (iWA){  dr_im(base - WA,base);        dr_im(WA,base+base)}
-                    if (iHA){  dr_im(base,base - HA + base); dr_im(0, HA+base)     }
-                    dr_im(base/2, base/2 + base)
-                    ctx.restore()
-
-
-                    // THIRD - go up then right
-                    // mirror from first and y + base
-                    ctx.save()
-                    ctx.beginPath()
-                    ctx.rect(base, 0, base, base)
-                    ctx.clip(); 
-                    if (iWA){  dr_im(base - WA+base,0);        dr_im(WA+base,base)}
-                    if (iHA){  dr_im(base+base,base - HA ); dr_im(base, HA)     }
-                    dr_im(base/2 + base, base/2 )
-                    ctx.restore()
-                    
-                    // FOURTH - go up then right
-                    // mirror from first and y + base
-                    ctx.save()
-                    ctx.beginPath()
-                    ctx.rect(base, base, base, base)
-                    ctx.clip(); 
-                    if (iWA){  dr_im(WA+base,base);        dr_im(base-WA+base,base+base)}
-                    if (iHA){  dr_im(base,base - HA+base); dr_im(base+base,HA+base)     }
-                    dr_im(base/2+base, base/2+base)
-                    ctx.restore()
-
-                        
-                    
-                    img = C.toDataURL()
-                    self.Site.backgrounds[type] = {data: img, type:'pattern' }
-                    self.redraw_background();
-                }
-                $('<span>').text('custom patterns').appendTo(cp)
-                $('<input>').prop('type', 'file').change(function(){
-                    fr = new FileReader()
-                    fr.onload = function(){
-                        //self.Site.backgrounds[type] = {data:this.result,type:'pattern', position:{left:0, top:0}}
-                        // self.redraw_background();
-                        
-                        img = new Image()
-                        img.onload = function(){
-                            
-                            // image = this
-                            S.width = img.width
-                            S.height = img.height
-                            sctx.drawImage(img,0,0)
-                            buffData = sctx.getImageData(0,0, img   .width, img.height)
-                            FGA = hsvToRgb(FG, true)
-                            for(x =0; x<buffData.width; x++){
-                                for(y=0; y <buffData.height; y++){
-                                    ix = (x+ ( y* buffData.width ))*4
-                                    buffData.data[ix] = FGA[0]; //red
-                                    buffData.data[ix+1] = FGA[1]; //green
-                                    buffData.data[ix+2] = FGA[2]; //blue
-                                }
-                            }
-                            sctx.putImageData(buffData, 0,0)
-                            var du = S.toDataURL();
-                            _I = new Image()
-                            _I.onload = function(){
-                                image = _I
-                                redraw_ctx();
-                            }
-                            _I.src = du;
-                        }
-                        img.src = this.result
-                        
-                        
-                    }  
-                    fr.readAsDataURL(this.files[0]);
-                }).appendTo(cp);
-                $('<button>').click(function(e){ iWA = ! iWA;redraw_ctx()}).appendTo(cp).text("-")
-                $('<button>').click(function(e){ iHA = ! iHA;redraw_ctx()}).appendTo(cp).text("|")
-                
-                $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ WA = ui.value ;redraw_ctx()}} ).appendTo(cp)
-                $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ HA = ui.value;redraw_ctx() }} ).appendTo(cp)
-                $("<div>").width(250).slider({min:0, max:360,value:0, slide:function(event, ui){ A = ui.value ;redraw_ctx()}} ).appendTo(cp)
-                $("<div>").width(250).slider({min:1, max:100,value:1, slide:function(event, ui){ Z = (ui.value)/100 ;redraw_ctx()}} ).appendTo(cp)
-                $("<div>").width(250).slider({min:16, max:512,value:1, slide:function(event, ui){ base = ui.value ;redraw_ctx()}} ).appendTo(cp)
-                $("<div>").width(250).slider({min:0, max:100,value:100, slide:function(event, ui){ opacity = ui.value ;redraw_ctx()}} ).appendTo(cp)
                 
                 
                 
@@ -1156,32 +790,31 @@
                 // .appendTo(C)
                 
                 // General Settings tab 0
-                $("<h3>").text("Основные").appendTo(this.cp_acc)
+                $("<h3>").text("–Ю—Б–љ–Њ–≤–љ—Л–µ").appendTo(this.cp_acc)
                 var d = $("<div>").appendTo(this.cp_acc)
                 var ul = $("<ul>").appendTo(d)
-                $("<li>").append($("<a>").prop('href','#').text("Управление фоном").click(function(){ self.backgroundChooser() }) ).appendTo(ul) 
-                $("<li>").append($("<a>").prop('href','#').text("Цветовая схема").click(function(){ self.showColorScheme() }) ).appendTo(ul) 
-                $("<li>").append($("<a>").prop('href','#').text("Создание фонов").click(function(){ self.showBackgroundScheme() }) ).appendTo(ul) 
+                $("<li>").append($("<a>").prop('href','#').text("Задний фон").click(function(){ self.showBackgroundScheme() }) ).appendTo(ul) 
+                $("<li>").append($("<a>").prop('href','#').text("Выбор цветов").click(function(){ self.showColorScheme() }) ).appendTo(ul) 
                 $("<li>").append($("<a>").prop('href','#').text("Управление геометрией").click(function(){ self.showLayoutScheme() }) ).appendTo(ul) 
-                $("<li>").append($("<a>").prop('href','#').text("Управление доменами").click(function(){ self.showDomainScheme() }) ).appendTo(ul) 
-                //$("<li>").append($("<a>").prop('href','#').text("Шапка").click(function(){ self.showHeaderScheme() }) ).appendTo(ul) 
+                $("<li>").append($("<a>").prop('href','#').text("Доменные имена").click(function(){ self.showDomainScheme() }) ).appendTo(ul) 
+                //$("<li>").append($("<a>").prop('href','#').text("–®–∞–њ–Ї–∞").click(function(){ self.showHeaderScheme() }) ).appendTo(ul) 
                 // $("<li>").append($("<a>").prop('href','#').text("").click(function(){ self.showFooterScheme() }) ).appendTo(ul) 
                 
                 // Page settings 1
-                $("<h3>").text("Страница").appendTo(this.cp_acc)
+                $("<h3>").text("–°—В—А–∞–љ–Є—Ж–∞").appendTo(this.cp_acc)
                 var d = $("<div>").appendTo(this.cp_acc)
                 var ul = $("<ul>").appendTo(d)
-                $("<li>").append($("<a>").prop('href','#').text("Общие").click(function(){ self.showPageSettings() }) ).appendTo(ul) 
-                $("<li>").append($("<a>").prop('href','#').text("Геометрия").click(function(){ self.showPageLayout() }) ).appendTo(ul) 
-                $("<li>").append($("<a>").prop('href','#').text("Фон страницы").click(function(){ self.showPageBackgroundChooser() }) ).appendTo(ul)
+                $("<li>").append($("<a>").prop('href','#').text("–Ю–±—Й–Є–µ").click(function(){ self.showPageSettings() }) ).appendTo(ul) 
+                $("<li>").append($("<a>").prop('href','#').text("–У–µ–Њ–Љ–µ—В—А–Є—П").click(function(){ self.showPageLayout() }) ).appendTo(ul) 
+                $("<li>").append($("<a>").prop('href','#').text("–У–µ–Њ–Љ–µ—В—А–Є—П").click(function(){ self.showPageLayout() }) ).appendTo(ul)
                 // Page selection 2
-                $("<h3>").text("Мои страницы").appendTo(this.cp_acc)
+                $("<h3>").text("–Ь–Њ–Є —Б—В—А–∞–љ–Є—Ж—Л").appendTo(this.cp_acc)
                 var d = $("<div>").appendTo(this.cp_acc)
                 var ul = $("<ul>").appendTo(d)
-                $("<li>").append($("<a>").prop('href','#').text("Добавить").click(function(){ self.addPage() }) ).appendTo(ul)
+                $("<li>").append($("<a>").prop('href','#').text("–Ф–Њ–±–∞–≤–Є—В—М").click(function(){ self.addPage() }) ).appendTo(ul)
                 $.each(this.Site.pages, function(i,p){
                     $("<li>").append($("<a>").prop('href','#' + i).text(p.title).click(function(e){
-                        //// // console.log(i)
+                        //console.log(i)
                         window.location.hash = i;
                         self._init_page();
                         e.preventDefault();
@@ -1189,7 +822,7 @@
                 })
                  
                 // Applications 3
-                $("<h3>").text("Приложения").appendTo(this.cp_acc)
+                $("<h3>").text("–Я—А–Є–ї–Њ–∂–µ–љ–Є—П").appendTo(this.cp_acc)
                 var d = $("<div>").appendTo(this.cp_acc)
                 var ul = $("<ul>").appendTo(d)
                 $.each(this.Site.Applications, function(name, app){
@@ -1197,40 +830,40 @@
                         $("<li>").append($("<a>").prop('href','#').text(app.title).click(function(){ app.admin_page(self._app_admin_contents); self._app_admin_cont.show() }) ).appendTo(ul) 
                         
                     }
-                    //// // console.log(name, app)
+                    //console.log(name, app)
                 })
                 
-                //$("<li>").append($("<a>").prop('href','#').text("Геометрия").click(function(){ self.showPageLayout() }) ).appendTo(ul) 
-                //$("<li>").append($("<a>").prop('href','#').text("Геометрия").click(function(){ self.showPageLayout() }) ).appendTo(ul)
+                //$("<li>").append($("<a>").prop('href','#').text("–У–µ–Њ–Љ–µ—В—А–Є—П").click(function(){ self.showPageLayout() }) ).appendTo(ul) 
+                //$("<li>").append($("<a>").prop('href','#').text("–У–µ–Њ–Љ–µ—В—А–Є—П").click(function(){ self.showPageLayout() }) ).appendTo(ul)
                 
                  
-                // Виджеты 4
-                $("<h3>").text("Виджеты").appendTo(this.cp_acc)
+                // –Т–Є–і–∂–µ—В—Л 4
+                $("<h3>").text("–Т–Є–і–∂–µ—В—Л").appendTo(this.cp_acc)
                 var d = $("<div>").appendTo(this.cp_acc)
                 var ul = $("<ul>").appendTo(d)
                 $.each(this.Site.Applications, function(app_name, app){
                     if(app.widgets){
-                        // // console.log(app.title);
+                        console.log(app.title);
                         var li = $("<li>").text(app.title).appendTo(ul); 
                         var ul_ = $("<ul>").appendTo(li);
                         $.each(app.widgets, function(name, w){
-                            // // console.log(name, w);
+                            console.log(name, w);
                             $("<li>").addClass("draggable-module")
                             .text(w.title).appendTo(ul_)
                             .prop('type', app_name + '.' + name) 
                             .draggable({helper: function( event ) {
-                                    return $( "<div class='ui-widget-header'>I'm a custom helper</div>" );
-                                    } 
-                                })
+                                                                                return $( "<div class='ui-widget-header'>I'm a custom helper</div>" );
+                                                                                } 
+                                                                            })
                         })
                         
                     }
-                    //// // console.log(name, app)
+                    //console.log(name, app)
                 })
                 
-                //$("<li>").append($("<a>").prop('href','').text("Общие").click(function(){ self.showPageSettings() }) ).appendTo(ul) 
-                //$("<li>").append($("<a>").prop('href','').text("Геометрия").click(function(){ self.showPageLayout() }) ).appendTo(ul) 
-                //$("<li>").append($("<a>").prop('href','').text("Геометрия").click(function(){ self.showPageLayout() }) ).appendTo(ul)
+                //$("<li>").append($("<a>").prop('href','').text("–Ю–±—Й–Є–µ").click(function(){ self.showPageSettings() }) ).appendTo(ul) 
+                //$("<li>").append($("<a>").prop('href','').text("–У–µ–Њ–Љ–µ—В—А–Є—П").click(function(){ self.showPageLayout() }) ).appendTo(ul) 
+                //$("<li>").append($("<a>").prop('href','').text("–У–µ–Њ–Љ–µ—В—А–Є—П").click(function(){ self.showPageLayout() }) ).appendTo(ul)
                  
                 if (active_tab){
                     this.cp_acc.accordion({active: active_tab, heightStyle:'fill'});
@@ -1259,7 +892,7 @@
             },
             clear : function(){
                 this.page_cont.find('*').remove();
-                //// // console.log('cleared')
+                //console.log('cleared')
                 
             },
             
@@ -1270,7 +903,7 @@
                 
             },
             _stepping_left: function(left){
-                // // // console.log(
+                // console.log(
                 var sm = 10000000,
                     ls = {};
                 for(var i =0; i< this.layout.cols; i++){
@@ -1281,7 +914,7 @@
                     }  
                     ls[d] = {val:ll, block:i }
                 }
-                //// // console.log("LEFT", left, ls[sm] );
+                //console.log("LEFT", left, ls[sm] );
                 return ls[sm];
             },
             _stepping_top: function(w){
@@ -1346,7 +979,7 @@
             _calc_top: function(t){
                 var h = (this._calc_height(t))
                 if (h == 0){ var P =0} else {var P = 2}
-                // // // console.log(cbw)
+                // console.log(cbw)
                 return ( h + P*this.layout.padding.ver  ) ;// + this._main_offset.top;
                 // return (cbh * t); //+ (this.layout.padding *2 * (w-1))
             },
@@ -1364,7 +997,7 @@
                     this._c_bh = this._block_height()
                     cbh = this._c_bh
                 }
-                // // // console.log(cbw)
+                // console.log(cbw)
                 return (cbh * h) + (this.layout.padding.ver *2 * (h-1)); 
                 
                 
@@ -1392,43 +1025,13 @@
                 }else{
                     var e = '%' 
                 }
+                $('body').css('background-color', hsvToRgb( this.Site.background.param))
                 
-                $('body').css('margin', 0)
-                
-                total_height = this.Site.layout.drawen_lines * (this.Site.layout.base_height + 2*(this.Site.layout.padding.ver))
                 this.layout_cont = $("<div>")
                             .css('width', this.layout.width + e)
                             .css('margin-left','auto')
-                            .css('top',0)
-                            .css('height', total_height)
                             .css('margin-right','auto').appendTo(to),
                     c_off = this.layout_cont.offset();
-                to.css('top',0);
-                    
-                this.redraw_background();
-                if(this.is_constructor){
-                    $('<div>').css('background-color','orange').text('change background')
-                    .css('position','fixed')
-                    .css('top', 0).css('left','50px')
-                    
-                    .appendTo($('#controls'))
-                    .click(function(){
-                        self.backgroundChooser('body')
-                        // // // console.log("change global BG")
-                    })
-                    
-                    $('<div>').css('background-color','orange').text('content background')
-                    .css('position','fixed')
-                    .css('top', 0).css('left','200px')
-                    
-                    .appendTo($('#controls'))
-                    .click(function(){
-                        self.backgroundChooser('content')
-                        //// // console.log("change content BG")
-                    })
-                    
-                }
-               
                 this._main_offset = c_off;
 
                         this._busy_regions = [];
@@ -1439,7 +1042,7 @@
                             var xx = self._calc_left(x+1);
                             var yy = self._calc_top(y);
                             
-                            // // // console.log('We got', xx, yy);
+                            // console.log('We got', xx, yy);
                         
                             var gp = { jq : $("<div>")
                                                 .appendTo(self.layout_cont)
@@ -1454,21 +1057,15 @@
                                        pos: {row:y, ix:x},
                                 }
                             self.inited_blocks.push(self.init_block(block, gp, koords))
-                            if(self.is_constructor){
-                                for (w = x; w< x + block.width; w++){
-                                    for (h = y; h < y+block.height; h++){
-                                        self._busy_regions.push(w +":"+ h ) 
-                                        
-                                    }
+                            for (w = x; w< x + block.width; w++){
+                                for (h = y; h < y+block.height; h++){
+                                    self._busy_regions.push(w +":"+ h ) 
+                                    
                                 }
-                                
                             }
 
                         })
-                        
-                        if(this.is_constructor) {
-                            this.redraw_empty_blocks();
-                        }
+                        this.redraw_empty_blocks();
                         
                        
                 
@@ -1476,7 +1073,7 @@
             redraw_empty_blocks: function(){
                 $('.empty_blocks').remove();
                 for (cols = 0; cols < this.layout.cols; cols++){
-                    for(row = 0; row < this.Site.layout.drawen_lines; row++){
+                    for(row = 0; row < 15; row++){
                         var c = cols + ":" + row;
                         is_busy = this._busy_regions.indexOf(c) !== -1
                         is_moved = this._moved_block_.indexOf(c) !== -1
@@ -1524,54 +1121,49 @@
                 // to.prop('pos',my_pos);
                 var w = $("<div>").width(W).css('height',H).appendTo(to.jq).prop("pos", my_pos).addClass("draggable-module")
                 var draga;
-                if(this.is_constructor){
-                    
-                    to.jq.draggable({
-                        scroll:false,
-                        zIndex:100,
-                        cancel: '.resize-marker',
-                        start:function(event,ui){
-                            regs = [];
-                            for (w = to.pos.ix; w < to.pos.ix     + bl.width; w++){
-                                for (h = to.pos.row; h < to.pos.row +bl.height; h++){
-                                    regs.push(w +":"+ h ) 
-                                        
-                                }
+                to.jq.draggable({
+                    scroll:false,
+                    zIndex:100,
+                    cancel: '.resize-marker',
+                    start:function(event,ui){
+                        regs = [];
+                        for (w = to.pos.ix; w < to.pos.ix     + bl.width; w++){
+                            for (h = to.pos.row; h < to.pos.row +bl.height; h++){
+                                regs.push(w +":"+ h ) 
+                                    
                             }
-                            for ( i in self.inited_blocks){
-                                self.inited_blocks[i].unbind('mouseenter');
-                            }
-                            to.jq.unbind('mouseleave'); // , 'mouseenter')
-                            self._moved_block_ = regs ; 
-                            self.redraw_empty_blocks();
-                        },
-                        drag: function(event, ui){
-                            // // // console.log(ui)
-                            // var C = ui.helper;
-                            var ll = self._stepping_left(ui.position.left)
-                            var tt = self._stepping_top(ui.position.top)
-                            draga = {left:ll.block, top:tt.block };
-                            
-                            ui.position = {top:tt.val, left: ll.val};
-                            
-                            
-                        },
-                        stop:function(){
-                            var oldpos = to.pos.ix +':' +  to.pos.row  ;
-                            var new_pos = draga.left + ':' + draga.top;
-                            self._moved_block = false;
-                            self.move_block(oldpos, new_pos);
-                            self.redraw();
-                            
-                        },
-    
-                    })
-                }
-                // console.log (self.Site);
+                        }
+                        for ( i in self.inited_blocks){
+                            self.inited_blocks[i].unbind('mouseenter');
+                        }
+                        to.jq.unbind('mouseleave'); // , 'mouseenter')
+                        self._moved_block_ = regs ; 
+                        self.redraw_empty_blocks();
+                    },
+                    drag: function(event, ui){
+                        // console.log(ui)
+                        // var C = ui.helper;
+                        var ll = self._stepping_left(ui.position.left)
+                        var tt = self._stepping_top(ui.position.top)
+                        draga = {left:ll.block, top:tt.block };
+                        
+                        ui.position = {top:tt.val, left: ll.val};
+                        
+                        
+                    },
+                    stop:function(){
+                        var oldpos = to.pos.ix +':' +  to.pos.row  ;
+                        var new_pos = draga.left + ':' + draga.top;
+                        self._moved_block = false;
+                        self.move_block(oldpos, new_pos);
+                        self.redraw();
+                        
+                    },
+
+                })
                 var Widget = newWidget(w, wdata, this, my_pos);
-                //console.log ("new Widget", Widget);
                 Widget.draw();
-                // // // console.log('ok');
+                // console.log('ok');
                 
                 
                 
@@ -1581,151 +1173,148 @@
                 
                 //var prop_button = $('<div>').addClass('porperties-button').appendTo(to.jq).css('position', 'absolute')
                 //    .position({of: to.jq, my:'right top', at:'right-14 top', collision:'none none'}).addClass("ui-icon ui-icon-note").width(20).height(20).hide()
-                if (this.is_constructor){
+                to.jq.dblclick(function(){
+                        //console.log("CLICK UNBIND")
+                        
+                        for (blix in self.inited_blocks){
+                            var bl = self.inited_blocks[blix];
+                            bl.unbind("mouseenter")
+                            bl.mouseleave();
+                            bl.unbind("mouseleave")
+                            
+                        }
+                        to.jq.draggable('destroy');
+                        Widget.settings();
+                        
+                        $("<div>").css('background-color','orange').appendTo(to.jq).css('position','absolute')
+                        .position({of:to.jq, 
+                                      my:"left top", 
+                                      at:"right top",
+                                      collision:"none"})
+                            .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20);
+                            
+                        $("<div>").css('background-color','green').appendTo( to.jq.parent() ).css('position','absolute')
+                        .position({of:to.jq, my:"left top", at:"left-20 top", collision:'none none' })
+                        .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function(){
+                            Widget.save()
+                            self.redraw.apply(self,[])
+                        });
+                        
+                        $("<div>").css('background-color','red').appendTo( to.jq.parent() ).css('position','absolute')
+                        .position({of:to.jq, my:"left top", at:"left-20 top+30", collision:'none none' })
+                        .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function(){
+                            
+                            self.redraw.apply(self,[])
+                        });
+
+                    })
                     
-                        to.jq.dblclick(function(){
-                                //// // console.log("CLICK UNBIND")
-                                
-                                for (blix in self.inited_blocks){
-                                    var bl = self.inited_blocks[blix];
-                                    bl.unbind("mouseenter")
-                                    bl.mouseleave();
-                                    bl.unbind("mouseleave")
-                                    
-                                }
-                                to.jq.draggable('destroy');
-                                Widget.settings();
-                                
-                                $("<div>").css('background-color','orange').appendTo(to.jq).css('position','absolute')
-                                .position({of:to.jq, 
-                                              my:"left top", 
-                                              at:"right top",
-                                              collision:"none"})
-                                    .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20);
-                                    
-                                $("<div>").css('background-color','green').appendTo( to.jq.parent() ).css('position','absolute')
-                                .position({of:to.jq, my:"left top", at:"left-20 top", collision:'none none' })
-                                .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function(){
-                                    Widget.save()
-                                    self._save_site();
-                                    self.redraw.apply(self,[])
-                                });
-                                
-                                $("<div>").css('background-color','red').appendTo( to.jq.parent() ).css('position','absolute')
-                                .position({of:to.jq, my:"left top", at:"left-20 top+30", collision:'none none' })
-                                .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function(){
-                                    
-                                    self.redraw.apply(self,[])
-                                });
-        
-                            })
+                
+                
+                var resize_marker = $("<div>").appendTo(to.jq).prop('pos', my_pos).css('position','absolute')
+                .position({of:to.jq, my:"right bottom", at:"right-14 bottom-14"})
+                .css('background-color','black')
+                .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width('20px').height('20px').hide()
+                .addClass('resize-marker')
+                .mouseenter(function(){ console.log('enter') })
+                .mousedown(function(evt){
+                    self.resize_frame = $("<div>")
+                                            .css("position", 'absolute')
+                                            .css('border', "1px solid black")
+                                            // .addClass('resize-frame')
+                                            .appendTo(to.jq.parent())
+                                            .width(W)
+                                            .height(H)
+                                            .prop('orig_w', W)
+                                            .prop('orig_h', H)
+                                            .prop('begin_x', evt.clientX)
+                                            .prop('begin_y', evt.clientY)
+                                            .position({of:to.jq, my:'left top', at:'left top'});
+                    
+                    to.jq                   
+                    .prop('cur_width', bl.width)
+                    .prop('cur_height',bl.height)
+                    //evt.stopPropagation();
+                    //evt.preventDefault();
+                    to.jq.parent().unbind('mouseup')
+                    //to.jq.parent().unbind('mousedown')
+                    to.jq.parent().unbind('mousemove')
+                    
+                    to.jq.parent().mouseup(function(){
+                        //console.log(to.pos);
+    
+                        // console.log("we finished")
+                        if(self.resize_frame){
+                            self.resize_frame.remove()
+                            self.resize_frame = false;
+                            // console.log(to)
+                            var myw = to.jq.prop("cur_width");
+                            var myh = to.jq.prop("cur_height");
+                            var pos = to.pos.ix +':' +  to.pos.row  ;
                             
-                        
-                        
-                        var resize_marker = $("<div>").appendTo(to.jq).prop('pos', my_pos).css('position','absolute')
-                        .position({of:to.jq, my:"right bottom", at:"right-14 bottom-14"})
-                        .css('background-color','black')
-                        .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width('20px').height('20px').hide()
-                        .addClass('resize-marker')
-                        .mouseenter(function(){ console.log('enter') })
-                        .mousedown(function(evt){
-                            self.resize_frame = $("<div>")
-                                                    .css("position", 'absolute')
-                                                    .css('border', "1px solid black")
-                                                    // .addClass('resize-frame')
-                                                    .appendTo(to.jq.parent())
-                                                    .width(W)
-                                                    .height(H)
-                                                    .prop('orig_w', W)
-                                                    .prop('orig_h', H)
-                                                    .prop('begin_x', evt.clientX)
-                                                    .prop('begin_y', evt.clientY)
-                                                    .position({of:to.jq, my:'left top', at:'left top'});
                             
-                            to.jq                   
-                            .prop('cur_width', bl.width)
-                            .prop('cur_height',bl.height)
+                            //console.log("here it is", myw, myh, pos, self.blocks)
+                            
+                            self.blocks[pos].width = myw;
+                            self.blocks[pos].height= myh;
+                            self.redraw.apply(self, [])
+                            // console.log(myw , myh )
                             //evt.stopPropagation();
                             //evt.preventDefault();
-                            to.jq.parent().unbind('mouseup')
-                            //to.jq.parent().unbind('mousedown')
-                            to.jq.parent().unbind('mousemove')
+                        }
+                        
+                    })
+                    to.jq.parent().mousemove(function(evt){
+                        //console.log('mousemove');
+                        var fr = self.resize_frame;
+                        //console.log("here is", fr);
+                        if (fr){
+                            //`console.log("we got fr");
+                            if (fr.size()){
+                                var W  = fr.prop('orig_w'),
+                                    H  = fr.prop('orig_h'),
+                                    mx = fr.prop('begin_x'),
+                                    my = fr.prop('begin_y'),
+                                    nh = evt.clientY - my + H,
+                                    nw = evt.clientX - mx + W,
+                                    width_step = self._stepping_width(nw),
+                                    height_step = self._stepping_height(nh);
+                                // console.log(nw, nh, width_step)
+                                fr.width(width_step.val)
+                                fr.height(height_step.val)
+                                to.jq.prop("cur_width", width_step.block)
+                                to.jq.prop("cur_height", height_step.block)
+                                //evt.stopPropagation();
+                                //evt.preventDefault();
+                               }
                             
-                            to.jq.parent().mouseup(function(){
-                                //// // console.log(to.pos);
-            
-                                // // // console.log("we finished")
-                                if(self.resize_frame){
-                                    self.resize_frame.remove()
-                                    self.resize_frame = false;
-                                    // // // console.log(to)
-                                    var myw = to.jq.prop("cur_width");
-                                    var myh = to.jq.prop("cur_height");
-                                    var pos = to.pos.ix +':' +  to.pos.row  ;
-                                    
-                                    
-                                    //// // console.log("here it is", myw, myh, pos, self.blocks)
-                                    
-                                    self.blocks[pos].width = myw;
-                                    self.blocks[pos].height= myh;
-                                    self.redraw.apply(self, [])
-                                    // // // console.log(myw , myh )
-                                    //evt.stopPropagation();
-                                    //evt.preventDefault();
-                                }
-                                
-                            })
-                            to.jq.parent().mousemove(function(evt){
-                                //// // console.log('mousemove');
-                                var fr = self.resize_frame;
-                                //// // console.log("here is", fr);
-                                if (fr){
-                                    //`// // console.log("we got fr");
-                                    if (fr.size()){
-                                        var W  = fr.prop('orig_w'),
-                                            H  = fr.prop('orig_h'),
-                                            mx = fr.prop('begin_x'),
-                                            my = fr.prop('begin_y'),
-                                            nh = evt.clientY - my + H,
-                                            nw = evt.clientX - mx + W,
-                                            width_step = self._stepping_width(nw),
-                                            height_step = self._stepping_height(nh);
-                                        // // // console.log(nw, nh, width_step)
-                                        fr.width(width_step.val)
-                                        fr.height(height_step.val)
-                                        to.jq.prop("cur_width", width_step.block)
-                                        to.jq.prop("cur_height", height_step.block)
+                            
+                        }
+                            
+                    })
+                })
+                
+                
 
-                                       }
-                                    
-                                    
-                                }
-                                    
-                            })
-                        })
-                        
-                        
-        
-                        // // // console.log(to.jq);             
-                        to.jq.mouseenter(function(e){
-                            //// // console.log('MENTER');
-                            //Widget.jq().css('opacity','0.3')
-                            //dg.show()
-                            resize_marker.show()
-                            resize_marker.zIndex(1000);
-                            // prop_button.show()
-                            
-                            
-                        }).mouseleave(function(){
-                            //// // console.log('MLEAVE');
-        
-                            //dg.hide()
-                            resize_marker.hide()
-                            // Widget.jq().css('opacity','1')
-                            //prop_button.hide()
-        
-                        })
-                }
+                // console.log(to.jq);             
+                to.jq.mouseenter(function(e){
+                    //console.log('MENTER');
+                    //Widget.jq().css('opacity','0.3')
+                    //dg.show()
+                    resize_marker.show()
+                    resize_marker.zIndex(1000);
+                    // prop_button.show()
+                    
+                    
+                }).mouseleave(function(){
+                    //console.log('MLEAVE');
+
+                    //dg.hide()
+                    resize_marker.hide()
+                    // Widget.jq().css('opacity','1')
+                    //prop_button.hide()
+
+                })
                 return to.jq
                 }
                 
@@ -1734,5 +1323,5 @@
         },
        getter:function(){return this.Constructor()}
         
-})
+}
             

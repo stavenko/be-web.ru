@@ -29,6 +29,7 @@
 		var STATIC = "{{ STATIC_URL }}";
 		var DB = init_db("{% csrf_token %}")
 		var site_id = "{{site.id}}"
+		
 				//var GET    = {{get}};
 		
 		$(function (){
@@ -39,7 +40,7 @@
 			var C = eval("[" + scr + "]")[0];
 			
 			Constructor = C.getter()
-			Constructor.init(true, site_id);
+			Constructor.init(false, site_id );
 		})
 		
 		

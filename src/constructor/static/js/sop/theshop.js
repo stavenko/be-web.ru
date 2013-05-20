@@ -70,7 +70,7 @@
             },
             _add_product_form : function(to){
               to.find('*').remove()
-              console.log('init')
+              //console.log('init')
               if(this._product_draft == undefined || !this._product_draft){
                     this._product_draft = {}
                     this._product_draft.images = []
@@ -167,10 +167,10 @@
               
               
               var progress_f = function(){
-                  console.log('progress', this)
+                  //console.log('progress', this)
               }
               var complete_f = function(){
-                  console.log('complete', this)
+                  // console.log('complete', this)
                   self._product_draft = false;
               }
 

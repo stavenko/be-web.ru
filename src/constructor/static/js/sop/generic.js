@@ -16,7 +16,7 @@
                     $("<div>").text("This is " + this.title + " admin page").appendTo(to) 
                 },
                 widgets: {"text" : {title:"Текстовое поле", init: function(my_cont, data, constructor_inst,pos){
-                                            console.log(pos) 
+                                            //console.log(pos) 
                                             var o = {
                                                     my_cont:my_cont,
                                                     constr :constructor_inst,
@@ -41,14 +41,14 @@
                                                     },    
                                                     save :function(){
                                                         if (this.constr){
-                                                            console.log(this);
+                                                            
                                                             this.constr.setWidgetData(this.pos,this._jq.html()) 
                                                             
                                                         }
                                                     },
                                                     _change_text: function(command,val){
                                                         r = document.execCommand(command, false, val)
-                                                        console.log(command, val, r)
+                                                        //console.log(command, val, r)
                                                         
                                                         
                                                     },                                                                                
@@ -87,7 +87,9 @@
                                                                         if(i == 0){
                                                                             b = $('<div>').css('float','left').width(100).height(100).appendTo(cl)
                                                                             main = $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(100).height(50)
-                                                                            .click(function(evt){  console.log(col); self._change_text('forecolor',  col); evt.preventDefault(), evt.stopPropagation()})
+                                                                            .click(function(evt){  
+                                                                                // console.log(col); 
+                                                                                self._change_text('forecolor',  col); evt.preventDefault(), evt.stopPropagation()})
                                                                         }else{
                                                                             // console.log(i)
                                                                             if(i == 3){
@@ -95,7 +97,8 @@
                                                                             }
                                                                             
                                                                             $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(50).height(25).appendTo(b)
-                                                                            .click(function(evt){  console.log(col);  self._change_text('forecolor', col); evt.preventDefault(), evt.stopPropagation() })
+                                                                            .click(function(evt){  // console.log(col);  
+                                                                                self._change_text('forecolor', col); evt.preventDefault(), evt.stopPropagation() })
                                                                         }
                                                                         
                                                                     }) 
@@ -125,49 +128,30 @@
                                     
                                    },
                           "image": {title:"Картинка", init:function(my_cont, data, constructor_inst,pos){
-                              var p = new paper.PaperScope();
-                              paper = p;
-                               for (i in paper.tools){
-                                   tool = paper.tools[i];
-                                   tool.remove()
-                               }
-                               paper.tools = [];
-                              for (i in paper.projects){
-                                   tool = paper.projects[i];
-                                   tool.remove()
-                               }
-                               paper.projects = [];
+                              // console.log(data)
                                var o = {
                                                     my_cont:my_cont,
                                                     constr :constructor_inst,
                                                     data : data,
                                                     pos: pos,
                                                     _jq : false,
-                                                    settings_draw :false, 
-                                                    paper_script : "// Create a new path once, when the script is executed: "
-                                                        +"var myPath = new Path();"
-                                                        +"console.log('exe');"
-                                                        +"myPath.strokeColor = 'black';"
-                                                        
-                                                        +"function onMouseDown(event) {"
-                                                        +"    myPath.add(event.point);"
-                                                    +"}",
+                                                    settings_draw :false,
+                                                   
+
+
                                                     draw: function(){
+                                                        // console.log("Exactly after initing", this)
                                                         var data = this.data;
                                                         var self = this
+                                                        //console.log(data);
                                                         if (data.image){
                                                             this._dr()
-                                                            /*
-                                                            this._jq = $("<img>").prop('src', data.image).appendTo(this.my_cont)
-                                                                        .width(this.my_cont.width())
-                                                                        .height(this.my_cont.height()) ;
-                                                            */
                                                         }else{
                                                             this._jq = $("<img>").prop('src', '/static/images/images.jpg')
                                                             .appendTo(this.my_cont)
                                                             .css('margin',10)
-                                                            
-                                                            .click(function(){
+                                                            if(this.constr.is_constructor){
+                                                                this._jq.click(function(){
                                                                     // console.log("i'm fucking pushing you")
                                                                     var input = $("<input>").attr('type','file').change(function(){
                                                                         var fr = new FileReader()
@@ -175,7 +159,7 @@
                                                                         fr.onloadend = function(){
                                                                             var result = this.result;
                                                                             $(_this).parent().remove();
-                                                                            self.constr.setWidgetData(self.pos, {image:result, position:{x:0,y:0}, zoom:1})
+                                                                            self.constr.setWidgetData(self.pos, {image:result, position:{left:0,top:0}, zoom:1})
                                                                             self.constr.redraw();
                                                                         }
                                                                         fr.readAsDataURL(this.files[0]);
@@ -186,81 +170,151 @@
                                                                     .css('padding',"10").css('background-color', "orange")
                                                                     .position({of:self.my_cont, my:"left top", at:"left bottom", collision:"none none"})
                                                                 })
+                                                            }
                                                             
                                                         }
                                                         
                                                     },
                                                     _dr : function(){
+                                                        var self = this;
                                                         if (this._jq){
                                                              this._jq.remove()
                                                         }
                                                         this._jq = $("<canvas>").appendTo(this.my_cont)
-                                                        .width(this.my_cont.width())
-                                                        .height(this.my_cont.height())
+                                                        this.c = this._jq[0];
                                                         
-                                                        var c = this._jq[0];
-                                                        console.log("reinit");
-                                                        paper.install(window)
-                                                        paper.setup(c);
+                                                        this.c.width = this.my_cont.width()
+                                                        this.c.height = this.my_cont.height()
                                                         
-
                                                         
-                                                        var rast = new paper.Raster({source:this.data.image,position:paper.view.center })
-                                                        //console.log(this.data.position, this.data.zoom)
-                                                        // rast.scale(this.data.zoom)
-                                                        // rast.translate(new Point(this.data.position.x, this.data.position.y) )
-                                                        //console.log(this.settings_draw);
-                                                        if (this.settings_draw){
-                                                            this.settings_draw(c, rast)
+                                                        // console.log("reinit");
+                                                        
+                                                        // paper.install(window)
+                                                        // paper.setup(c);
+                                                        this.img = new Image();
+                                                        this.img.src = this.data.image;
+                                                        this.ctx = this.c.getContext('2d')
+                                                        //console.log('Core of a draw', this)
+                                                        this.img.onload=function(){
+                                                            //console.log("this whould be image widget", self);
+                                                            self.redraw_ctx()
                                                         }
-                                                        paper.view.draw()
+                                                    },
+                                                    redraw_ctx: function(){
+                                                        var self = this;
+                                                        
+                                                            self.ctx.clearRect(0,0,self.my_cont.width(),self.my_cont.height())
+                                                            self.ctx.save()
+                                                            self.ctx.scale(self.data.zoom, self.data.zoom)
+                                                            self.ctx.translate(self.data.position.left, self.data.position.top)
+                                                            self.ctx.drawImage(self.img ,0,0)
+                                                            self.ctx.restore();
+                                                        
+                                                       
                                                     },
                                                     
                                                     save :function(){
                                                         var canvas = this._jq[0];
-                                                        var image = canvas.toDataURL("image/png");
+                                                        //var image = canvas.toDataURL("image/png");
                                                         
-                                                        var data = {image: image}
-                                                        console.log("SAVE", data)
+                                                        var data = this.data
+                                                        // console.log("SAVE", data)
                                                        
-                                                        this.constr.setWidgetData(self.pos, data)
+                                                        this.constr.setWidgetData(this.pos, data )
                                                         this.constr.redraw();
                                                         
                                                         
                                                         
                                                     },                                                                    
                                                     settings: function(){
-                                                        self = this
-                                                        if (self._cp){
-                                                            self._cp.remove()
-                                                        }
-                                                        function sd(canv, rast){
-                                                            tool = new Tool()
+                                                        this.my_cont.unbind('mousemove')
+                                                        this.my_cont.unbind('mouseup')
+                                                        this.my_cont.unbind('mousedown')
+                                                        
+                                                        var off = this._jq.offset()
+                                                        var self = this;
+                                                        var start_pos, 
+                                                            is_drag, 
+                                                            old_pos;
+                                                        //console.log('okey');
+                                                        function zoom(zf, px, py){
+                                                            var z = self.data.zoom;
+                                                            var x = self.data.position.left;
+                                                            var y = self.data.position.top;
                                                             
                                                             
-                                                            //self.current_pos = self.data.position;
-                                                            //self.current_zoom = self.data.zoom;
+                                                            if (z < 0.2) zf /=10;
+                                                            if (z > 1.5) zf *= 5;
                                                             
-                                                            tool.onMouseDrag = function(event){
-                                                                //console.log("onMouseDrag")
-                                                                var dp = event.downPoint;
-                                                                var p  = event.point;
-                                                                var diff = {x:p.x - dp.x, y: p.y-dp.y}
-                                                                if (event.modifiers.shift){
-                                                                    percent = event.delta.y / 100.
-                                                                    rast.scale(1 + percent, event.downPoint);
-                                                                    //self.current_zoom += percent;
-                                                                }else{
-                                                                    rast.translate(event.delta);
-                                                                    // self.current_pos.x += event.delta.x ;
-                                                                    // self.current_pos.y += event.delta.y ;
-                                                                }
+                                                            
+                                                            var nz = z + zf;
+                                                            if (nz > 0.02 && nz <10){ 
+                                                                    var K = (z*z + z*zf)
+                                                                    
+                                                                    /// console.log(px,py, z, zf, px* zf/K, py*zf/K) 
+                                                                    var nx = x - ( (px*zf) / K );
+                                                                    var ny = y - ( (py*zf) / K);
+                                                                    
+                                                                    
+                                                                   
+                                                                    
+                                                                    self.data.position.left = nx;
+                                                                    self.data.position.top = ny;
+                                                                    self.data.zoom = nz;
+                                                                    self.redraw_ctx();
                                                             }
-                                                                  
-                                                                                                                   
+                                                            
+                                                            
+                                                            
                                                         }
-                                                        this.settings_draw = sd
-                                                        this._dr()
+                                              
+                                                       this.my_cont.bind('mousewheel DOMMouseScroll MozMousePixelScroll',function(evt, dt){
+                                                           evt.stopImmediatePropagation();
+                                                           evt.preventDefault();
+                                                           if(evt.type == 'DOMMouseScroll' || evt.type == 'MozMousePixelScroll'){
+                                                               
+                                                           }else{
+                                                               var a = dt / Math.abs(dt)
+                                                               zoom(0.1 *a, evt.clientX - off.left, evt.clientY - off.top)
+                                                               // console.log(evt,dt);
+                                                               
+                                                           }
+                                                           
+                                                           return true
+                                                       })
+                                                        this.my_cont.mousemove(function(evt){
+                                                            if (is_drag){
+                                                                var cur_pos = {x: evt.clientX - off.left,
+                                                                               y: evt.clientY - off.top}
+                                                                var diff = {x: cur_pos.x - old_pos.x,
+                                                                            y: cur_pos.y - old_pos.y}
+                                                                            
+                                                                            
+                                                                self.data.position.left += (diff.x / self.data.zoom);
+                                                                self.data.position.top += (diff.y / self.data.zoom);
+                                                                
+                                                                //self.data.position.left /= self.data.zoom;
+                                                                //self.data.position.top /= self.data.zoom ;                                                                         
+                                                                         
+                                                                old_pos = cur_pos;
+                                                                self.redraw_ctx();
+                                                                /// console.log(evt);
+                                                            }
+                                                            
+                                                            
+                                                        })
+                                                        this.my_cont.mouseup(function(evt){
+                                                            is_drag = false;
+                                                        })
+                                                        this.my_cont.mousedown(function(evt){
+                                                            old_pos = {x: evt.clientX - off.left,
+                                                                         y: evt.clientY - off.top}
+                                                            //console.log(start_pos)
+                                                            is_drag = true;
+                                                            
+                                                        })
+                                                        
+                                                
                                                         
                                                     },
                                                     jq: function(){ return this._jq } 

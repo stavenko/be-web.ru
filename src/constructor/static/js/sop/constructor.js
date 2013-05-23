@@ -144,6 +144,7 @@
                                   url: STATIC + "js/sop/" + name + ".js",
                                   async:false
                             }).responseText;
+							
             var C = eval("[" + scr + "]")[0];
             
             App = C.getter()
@@ -563,28 +564,7 @@
                                 S[0].height = R.height;
                                  
                                 sctx.drawImage(img,-R.left,-R.top)
-                                //var img_data = sctx.getImageData(0,0, R.width, R.height)
-                                //// // // console.log(img_data);
-                                /*
-                                for (x =0 ; x< img_data.width; x++){
-                                    for (y = 0; y < img_data.height; y++){
-                                        var ix = (x + y*img_data.width)*4;
-                                        var r = img_data.data[ix],
-                                            g = img_data.data[ix+1],
-                                            b = img_data.data[ix+2],
-                                            a = img_data.data[ix+3];
-                                        if(r < 240 && b < 240 && g < 240){
-                                            img_data.data[ix] = 30
-                                            img_data.data[ix+1] = 30
-                                            img_data.data[ix+2] = 30
-                                            img_data.data[ix+3] = 0
-                                            
-                                        }
-                                        
-                                    }
-                                }
-                                sctx.putImageData(img_data,0,0)
-                                */
+                             
                                 
                                 ctx.strokeStyle = 'rgba(128,128,0, 1)';
                                 ctx.fillStyle =  'rgba(0,0,0, 0.7)';
@@ -846,29 +826,32 @@
                 
             },
             redraw_background: function(){
-                var self = this
+                var self = this;
                 $.each(this.Site.backgrounds, function(name, imgo){
                     // // console.log(name,imgo)
                     
                     if (name == 'body'){
-                        C = $('body')
+                        var C = $('body')
+						c = C[0];
+						c.background = imgo.data;
+						
                     }else if (name == 'content'){
-                        C = self.layout_cont;
+                        var C = self.layout_cont;
+						console.log(name, C, imgo.type)
+						
+	                    C.css('background-image', 'url("' +imgo.data +'")' ) 
+					
                     }
+                        
                     
+                    if(imgo.type == 'image'){
+                        C.css('background-repeat','no-repeat')
+                        .css('background-position', [imgo.position.left + 'px' , imgo.position.top +'px' ].join(' ') )
+                    }  else if (imgo.type == 'pattern'){
+						C.css('background-repeat','repeat')
+						.css('background-position','0px 0px')
                         
-                        C.css('background-image', 'url("' +imgo.data +'")' ) 
-                        // // console.log("TYPE of BG", imgo.type)
-                        
-                        if(imgo.type == 'image'){
-                            
-                            C.css('background-repeat','no-repeat')
-                            .css('background-position', [imgo.position.left + 'px' , imgo.position.top +'px' ].join(' ') )
-                        }  else if (imgo.type == 'pattern'){
-                            //C.css('background-repeat','x,y')
-                            
-                            
-                        }
+                    }
                         
                         
                     
@@ -988,7 +971,7 @@
                 var sctx = S.getContext('2d')
                 var base = 64;  
                 var WA = 0, HA = 0, A = 0, iWA = true, iHA = true;
-                var Z = 0.08;
+                var Z = 1 // 0.08;
                 var opacity;
                 self._make_pallette()
                 var BG = this.Site.colors.pallette[0][3]
@@ -1009,11 +992,18 @@
                         
                         
                         ctx.save()
-                        ctx.translate(x -iw/2, y-ih/2)
+                        ctx.translate(x, y)
                         ctx.scale(Z,Z)
-                        ctx.rotate(A* (3.14/180) )
+						rad = A* (3.14/180) 
+                        ctx.rotate(rad)
+						//R = iw / 1.4142135623730951 
+						//dx = Math.cos(rad + (Math.PI/4)) * R
+						//dy = Math.sin(rad + (Math.PI/4)) * R 
+						//console.log(dx,dy)
+						//ctx.translate(-dx,-dy)
+						console.log(iw, ih)
                         ctx.globalAlpha = opacity / 100;
-                        ctx.drawImage(image, 0, 0)
+                        ctx.drawImage(image, -(iw/2), -(ih/2), iw, ih)
                         //ctx.putImageData(buffData, 0,0)
                         ctx.restore()
                     }
@@ -1073,7 +1063,7 @@
 
                         
                     
-                    img = C.toDataURL()
+                    var img = C.toDataURL()
                     self.Site.backgrounds[type] = {data: img, type:'pattern' }
                     self.redraw_background();
                 }
@@ -1082,7 +1072,7 @@
                     fr = new FileReader()
                     fr.onload = function(){
                         //self.Site.backgrounds[type] = {data:this.result,type:'pattern', position:{left:0, top:0}}
-                        // self.redraw_background();
+                        // self.ÍÍground();
                         
                         img = new Image()
                         img.onload = function(){
@@ -1119,7 +1109,7 @@
                 $('<button>').click(function(e){ iWA = ! iWA;redraw_ctx()}).appendTo(cp).text("-")
                 $('<button>').click(function(e){ iHA = ! iHA;redraw_ctx()}).appendTo(cp).text("|")
                 
-                $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ WA = ui.value ;redraw_ctx()}} ).appendTo(cp)
+                $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ WA = ui.value ;redraw_ctx() }} ).appendTo(cp)
                 $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ HA = ui.value;redraw_ctx() }} ).appendTo(cp)
                 $("<div>").width(250).slider({min:0, max:360,value:0, slide:function(event, ui){ A = ui.value ;redraw_ctx()}} ).appendTo(cp)
                 $("<div>").width(250).slider({min:1, max:100,value:1, slide:function(event, ui){ Z = (ui.value)/100 ;redraw_ctx()}} ).appendTo(cp)

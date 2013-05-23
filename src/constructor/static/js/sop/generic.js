@@ -109,14 +109,6 @@
                                                             
                                                             })
                                                             
-                                                            
-                                                            //this.area = new nicEditor( );
-                                                            //this.area.setPanel(tbid);
-                                                            //this.area.addInstance(eid);
-                                                            
-                                                            
-                                                            
-                                                            
                                                         }
                                                     },
                                                     jq: function(){ return this._jq } 
@@ -324,9 +316,7 @@
                                            }
                                        }
                           }
-                     };
-                          
-                // o.prototype = Application;
+                     };   
                 return o
              
         },

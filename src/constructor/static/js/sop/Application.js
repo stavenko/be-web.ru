@@ -1,7 +1,7 @@
 var init_db = function(csrf_token){
-    var cs_name = $(csrf_token).find('input').prop('name');
-    var cs_val  = $(csrf_token).find('input').val()
-    
+    var cs_name = $(csrf_token).prop('name');
+    var cs_val  = $(csrf_token).val()
+    console.log(cs_name, cs_val, $(csrf_token) )
     // Available base types:
     // 
     // 1. basic
@@ -13,7 +13,7 @@ var init_db = function(csrf_token){
             var data = {'object':obj,
                             'type' : type,
                         };
-            // data[cs_name] = cs_val;
+            //data[cs_name] = cs_val;
             var xhr = new XMLHttpRequest()
             var fd = new FormData();
             for (i in obj.images){
@@ -64,6 +64,7 @@ var init_db = function(csrf_token){
             if (paging){o['p'] = paging}
             d['o'] = JSON.stringify(o)
 
+			//console.log("Ha")
             var data = [];
             $.ajax({url:'/data/',
                     data: d,

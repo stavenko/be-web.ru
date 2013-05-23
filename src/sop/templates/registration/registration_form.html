@@ -1,0 +1,12 @@
+{% extends "main_page.html" %}
+{% block content %}
+<h1>Регистрация</h1>
+<form method="post" action="">
+<ul class="register">
+
+	{{ form.as_ul }}
+{% csrf_token %}
+</ul>
+<input type="submit" value="Зарегистрироваться" / class="clearfix">
+</form>
+{% endblock %}

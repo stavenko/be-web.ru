@@ -1,0 +1,13 @@
+{% extends "main_page.html" %}
+
+{% block content %}
+<form method='post'>
+	<ul>
+{{ form.as_ul }}
+<li> <input type='submit' value='Login'> </li>
+</ul>
+{% csrf_token %}
+
+</form>
+
+{% endblock %}

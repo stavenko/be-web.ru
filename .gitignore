@@ -1,0 +1,12 @@
+
+src/sop/settings_dev.py
+
+ubuntu@instrumera.ru
+
+src/sop/pdns
+
+src/sop/sop_db
+
+dist/be-web-0.0.1.tar.gz
+
+*.pyc

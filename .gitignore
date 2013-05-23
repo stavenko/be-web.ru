@@ -10,3 +10,13 @@ src/sop/sop_db
 dist/be-web-0.0.1.tar.gz
 
 *.pyc
+
+src/sop/settings.pyc
+
+src/sop/settings_dev.pyc
+
+src/sop/settings_dev.pyc
+
+src/sop/urls.pyc
+
+*.pyc

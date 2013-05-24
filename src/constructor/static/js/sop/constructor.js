@@ -23,17 +23,17 @@
                     pages : {"": {layout:"same",
                                   title:"Main page of my project",
                                   
-                                  blocks:{'0:0': {width:3, height:3, widget:{name:'generic.text', data:test_block_content } },
-                                          '8:0': {width:4,height:2, widget:{name:'generic.text', data:test_block_content } },
-                                          '3:0': {width:5,height:5, widget:{name:'generic.image', data:{} } },
-                                         }
+                                  blocks: [{x:0,y:0, width:3, height:3, widget:{name:'generic.text', data:test_block_content }} ,
+                                           {x:3,y:0, width:4, height:2, widget:{name:'generic.text', data:test_block_content } } ,
+                                           {x:7,y:0, width:5, height:5, widget:{name:'generic.image', data:{} } } ],
+                                         
                               },
                               "about":{layout:'same',
                                         title:"Page about project",
-                                        blocks:{'0:0': {width:12, height:3, widget:{name:'generic.text', data:test_block_content } },
-                                                '0:3': {width:12,height:2, widget:{name:'generic.text', data:test_block_content } },
-                                                '0:5': {width:5,height:5, widget:{name:'generic.text', data: test_block_content } },
-                                        }
+	                                    blocks: [{x:0,y:0, width:3, height:3, widget:{name:'generic.text', data:test_block_content }} ,
+	                                             {x:3,y:0, width:4, height:2, widget:{name:'generic.text', data:test_block_content } } ,
+	                                             {x:7,y:0, width:5, height:5, widget:{name:'generic.image', data:{} } } ],
+                                        
                           },
                     }
                 }
@@ -125,12 +125,14 @@
             rect: function(x,y,w,h){
               return {left:x, top:y, width:w, height:h}  ;
             },
-            move_block: function(from, to){
-                if(from !== to){
-                    this.blocks[to] = this.blocks[from]
-                    delete this.blocks[from];
-                }
-                this._save_site();
+            move_block: function( ix, x, y){
+				var bl = this.blocks.splice(ix,1)[0]
+				bl.x = x; bl.y = y;
+				this.blocks.push(bl)
+				this._save_site();
+					
+             
+				
             },
             add_block:function(type, to){
                 this.blocks[to] = {width:1,height:1, 
@@ -192,6 +194,7 @@
             setWidgetData: function(pos, data){
                 //// // console.log(this.Site.pages,this.Site.pages[this.current_page], pos)
                 //console.log('Set Wid Data', this, this.current_page,pos);
+				console.log(pos)
                 this.Site.pages[this.current_page].blocks[pos].widget.data = data;
                 
             },
@@ -1423,36 +1426,35 @@
 
                         this._busy_regions = [];
                         this._moved_block_ = [] ;
-                        $.each(this.blocks, function(koords, block){
-                            var x = Number(koords.split(':')[0]);
-                            var y = Number(koords.split(':')[1]);
+                        $.each(this.blocks, function(ix, block){
+                            var x = block.x; //Number(koords.split(':')[0]);
+                            var y = block.y; // Number(koords.split(':')[1]);
                             var xx = self._calc_left(x+1);
                             var yy = self._calc_top(y);
                             
-                            // // // console.log('We got', xx, yy);
-                        
+                            // console.log(block_list);
                             var gp = { jq : $("<div>")
                                                 .appendTo(self.layout_cont)
                                                 .css('position','absolute')
                                                 .css('left', xx ).css('top',  yy)
                                                 .css('border', '1px solid black')
                                                 .css('overflow','hidden'),
-                                                
-                                                // .css('height', this.layout.base_height),
-                                                // .css('margin-left', this.layout.padding)
-                                                // .css('margin-right', this.layout.padding)
-                                       pos: {row:y, ix:x},
+                                    
+                                       pos: ix,
                                 }
-                            self.inited_blocks.push(self.init_block(block, gp, koords))
-                            if(self.is_constructor){
-                                for (w = x; w< x + block.width; w++){
-                                    for (h = y; h < y+block.height; h++){
-                                        self._busy_regions.push(w +":"+ h ) 
-                                        
-                                    }
-                                }
+	                            self.inited_blocks.push(self.init_block(block, gp))
+	                            if(self.is_constructor){
+	                                for (w = x; w< x + block.width; w++){
+	                                    for (h = y; h < y+block.height; h++){
+	                                        self._busy_regions.push(w +":"+ h ) 
                                 
-                            }
+	                                    }
+	                                }
+                        
+	                            }
+							
+							
+                            
 
                         })
                         
@@ -1494,7 +1496,8 @@
                 
             },
             
-            init_block: function(bl, to, my_pos){
+            init_block: function(bl, to){
+				console.log (bl)
                 var r = bl.top,
                     l = bl.left,
                     w = bl.width,
@@ -1512,7 +1515,7 @@
                     
                 
                 // to.prop('pos',my_pos);
-                var w = $("<div>").width(W).css('height',H).appendTo(to.jq).prop("pos", my_pos).addClass("draggable-module")
+                var w = $("<div>").width(W).css('height',H).appendTo(to.jq).addClass("draggable-module")
                 var draga;
                 if(this.is_constructor){
                     
@@ -1522,8 +1525,8 @@
                         cancel: '.resize-marker',
                         start:function(event,ui){
                             regs = [];
-                            for (w = to.pos.ix; w < to.pos.ix     + bl.width; w++){
-                                for (h = to.pos.row; h < to.pos.row +bl.height; h++){
+                            for (w = bl.x; w < bl.x     + bl.width; w++){
+                                for (h = bl.y; h < bl.y +bl.height; h++){
                                     regs.push(w +":"+ h ) 
                                         
                                 }
@@ -1547,30 +1550,20 @@
                             
                         },
                         stop:function(){
-                            var oldpos = to.pos.ix +':' +  to.pos.row  ;
+                            //var oldpos = to.pos.col +':' +  to.pos.row  ;
                             var new_pos = draga.left + ':' + draga.top;
                             self._moved_block = false;
-                            self.move_block(oldpos, new_pos);
+							console.log(draga);
+                            self.move_block(to.pos, draga.left, draga.top);
                             self.redraw();
                             
                         },
     
                     })
                 }
-                // console.log (self.Site);
-                var Widget = newWidget(w, wdata, this, my_pos);
-                //console.log ("new Widget", Widget);
+                var Widget = newWidget(w, wdata, this, to.pos);
                 Widget.draw();
-                // // // console.log('ok');
-                
-                
-                
-                // var dg = $("<div>").addClass('drag-handle').appendTo(w).css('background-color','orange').css('cursor','move')
-                // .css('position','absolute').width(to.jq.width()).height('20px').position({of: to.jq, my:"left top", at:"left top", collision:'none' })
-                // .disableSelection().text("module drag").hide()
-                
-                //var prop_button = $('<div>').addClass('porperties-button').appendTo(to.jq).css('position', 'absolute')
-                //    .position({of: to.jq, my:'right top', at:'right-14 top', collision:'none none'}).addClass("ui-icon ui-icon-note").width(20).height(20).hide()
+               
                 if (this.is_constructor){
                     
                         to.jq.dblclick(function(){
@@ -1611,14 +1604,21 @@
                             })
                             
                         
-                        
-                        var resize_marker = $("<div>").appendTo(to.jq).prop('pos', my_pos).css('position','absolute')
+						function init_resizer(){
+							
+						}
+                        var mouseWidth = W, mouseHeight = H,
+						start_x, start_y;
+						
+                        var resize_marker = $("<div>").appendTo(to.jq).css('position','absolute')
                         .position({of:to.jq, my:"right bottom", at:"right-14 bottom-14"})
                         .css('background-color','black')
                         .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width('20px').height('20px').hide()
                         .addClass('resize-marker')
-                        .mouseenter(function(){ console.log('enter') })
+                        .mouseenter(function(){  })
                         .mousedown(function(evt){
+							start_x = evt.clientX;
+							start_y = evt.clientY;
                             self.resize_frame = $("<div>")
                                                     .css("position", 'absolute')
                                                     .css('border', "1px solid black")
@@ -1626,93 +1626,57 @@
                                                     .appendTo(to.jq.parent())
                                                     .width(W)
                                                     .height(H)
-                                                    .prop('orig_w', W)
-                                                    .prop('orig_h', H)
-                                                    .prop('begin_x', evt.clientX)
-                                                    .prop('begin_y', evt.clientY)
+                                                    //.prop('orig_w', W)
+                                                    //.prop('orig_h', H)
+                                                    //.prop('begin_x', evt.clientX)
+                                                    //.prop('begin_y', evt.clientY)
                                                     .position({of:to.jq, my:'left top', at:'left top'});
+															
                             
                             to.jq                   
                             .prop('cur_width', bl.width)
                             .prop('cur_height',bl.height)
-                            //evt.stopPropagation();
-                            //evt.preventDefault();
                             to.jq.parent().unbind('mouseup')
-                            //to.jq.parent().unbind('mousedown')
                             to.jq.parent().unbind('mousemove')
-                            
                             to.jq.parent().mouseup(function(){
-                                //// // console.log(to.pos);
-            
-                                // // // console.log("we finished")
                                 if(self.resize_frame){
                                     self.resize_frame.remove()
                                     self.resize_frame = false;
-                                    // // // console.log(to)
-                                    var myw = to.jq.prop("cur_width");
-                                    var myh = to.jq.prop("cur_height");
-                                    var pos = to.pos.ix +':' +  to.pos.row  ;
-                                    
-                                    
-                                    //// // console.log("here it is", myw, myh, pos, self.blocks)
-                                    
-                                    self.blocks[pos].width = myw;
-                                    self.blocks[pos].height= myh;
+                                    //var myw = to.jq.prop("cur_width");
+                                    //var myh = to.jq.prop("cur_height");
+                                    self.blocks[to.pos].width = mouseWidth;
+                                    self.blocks[to.pos].height= mouseHeight;
                                     self.redraw.apply(self, [])
-                                    // // // console.log(myw , myh )
-                                    //evt.stopPropagation();
-                                    //evt.preventDefault();
                                 }
                                 
                             })
                             to.jq.parent().mousemove(function(evt){
-                                //// // console.log('mousemove');
                                 var fr = self.resize_frame;
-                                //// // console.log("here is", fr);
                                 if (fr){
-                                    //`// // console.log("we got fr");
                                     if (fr.size()){
-                                        var W  = fr.prop('orig_w'),
-                                            H  = fr.prop('orig_h'),
-                                            mx = fr.prop('begin_x'),
-                                            my = fr.prop('begin_y'),
-                                            nh = evt.clientY - my + H,
-                                            nw = evt.clientX - mx + W,
+                                        var //W  = fr.prop('orig_w'),
+                                            //H  = fr.prop('orig_h'),
+                                            //mx = fr.prop('begin_x'),
+                                            //my = fr.prop('begin_y'),
+                                            nh = evt.clientY - start_y + H,
+                                            nw = evt.clientX - start_x + W,
                                             width_step = self._stepping_width(nw),
                                             height_step = self._stepping_height(nh);
-                                        // // // console.log(nw, nh, width_step)
-                                        fr.width(width_step.val)
-                                        fr.height(height_step.val)
-                                        to.jq.prop("cur_width", width_step.block)
-                                        to.jq.prop("cur_height", height_step.block)
-
+	                                        fr.width(width_step.val)
+	                                        fr.height(height_step.val)
+	                                        mouseWidth =  width_step.block;
+	                                        mouseHeight = height_step.block;
                                        }
-                                    
-                                    
                                 }
-                                    
                             })
                         })
-                        
-                        
-        
-                        // // // console.log(to.jq);             
                         to.jq.mouseenter(function(e){
-                            //// // console.log('MENTER');
-                            //Widget.jq().css('opacity','0.3')
-                            //dg.show()
                             resize_marker.show()
                             resize_marker.zIndex(1000);
-                            // prop_button.show()
                             
                             
                         }).mouseleave(function(){
-                            //// // console.log('MLEAVE');
-        
-                            //dg.hide()
                             resize_marker.hide()
-                            // Widget.jq().css('opacity','1')
-                            //prop_button.hide()
         
                         })
                 }

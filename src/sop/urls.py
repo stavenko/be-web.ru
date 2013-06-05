@@ -49,14 +49,23 @@ Site = json.loads(Site_json)
         
     else:
 """    
+
+accounts = "accounts"
+sites    = 'sites'
 redirect = HttpResponseRedirect  
 def _my_base(req, *k, **kw):
 
     #print req.user
     if req.user.is_authenticated():
         user_id = req.user.id
-        rec = req.storage.findOne('general_sites', {'django_user_id':user_id})
-        c = {'sites':rec['hostname']}
+        
+        rec = req.storage.findOne(accounts, {'django_user_id':user_id})
+        # print user_id, rec
+        if rec:
+            c = {'sites':rec['hostname']}
+        else:
+            c = {'sites': False}
+        c.update(csrf(req))
         return render_to_response("my_hosts.html", c)
         
     else:
@@ -68,18 +77,25 @@ def _my_base(req, *k, **kw):
 
 
 def site_view(site, req, *k, **kw):
+
+    
     site['id'] = site['_id']
     c = RequestContext(req)
     c['site'] = site
    
 
     return render_to_response("constructor/displayer_page.html", c)
+    
 def site_edit(site,req, *k, **kw):
     c = RequestContext(req)
-    site['id'] = site['_id']
-    c['site'] = site
+    is_debug = settings.DEBUG
+    if req.user.id == site['django_user_id'] or is_debug:
+        site['id'] = site['_id']
+        c['site'] = site
    
-    return render_to_response("constructor/constructor_page.html", c)
+        return render_to_response("constructor/constructor_page.html", c)
+    else:
+        return HttpResponseRedirect('/')
 
 
 
@@ -95,7 +111,8 @@ def base(req, *k, **kw):
     if bh == settings.MY_BASE_HOST:
         return _my_base(req,*k,**kw)
     else:
-        site = req.storage.findOne("general_sites", {"hostname": host})
+        #print host
+        site = req.storage.findOne(accounts, {"hostname": bh})
         # raise IndexError("S")
         if site:
             if kw.get('is_admin', False):
@@ -116,6 +133,27 @@ def get_app_data(req,app_name):
      return HttpResponse("{}", mimetype="text/plain")
  
 MAX_NON_BLOB = 65536
+
+def data_updaters(type_, cursor):
+        
+    for item in cursor:
+        if type_ == sites:
+            for p in item['pages']:
+                if type(item['pages'][p]['blocks']) != list:
+                    
+                    new_blocks = []
+                    for pos, bl in item['pages'][p]['blocks'].iteritems():
+                        x, y =pos.split(':')
+                        bl['x'] = x
+                        bl['y'] = y
+                        
+                        new_blocks.append(bl)
+                    item['pages'][p]['blocks'] = new_blocks
+        print item
+        yield item
+                
+                    
+    # return cursor 
 def data_connector(req):
     if req.META['REQUEST_METHOD'] == 'POST':
         # data = req.POST.get('object')
@@ -179,7 +217,10 @@ def data_connector(req):
         type = req.GET.get('type')
         r    = json.loads(req.GET.get('o','{}'))
         
-        objs = req.storage.find(type)
+        if 'q' in r:
+            objs = req.storage.find(type, r['q'])
+        else:
+            objs = req.storage.find(type)
         total_amount = objs.count()
         
         
@@ -194,6 +235,8 @@ def data_connector(req):
         fin  = beg + per_page
         lst = list( objs[ beg:fin ] )
         
+        lst = list(data_updaters(type, lst))
+        
         send = {'total_pages': total_pages,
                 'total_amount':total_amount,
                 'objects' : lst}
@@ -201,6 +244,7 @@ def data_connector(req):
         
         #raise ValueError('STOP')
         return HttpResponse(json.dumps(send, default = json_util.default))
+
 
 
 def blob_extruder(req, blob_id):
@@ -256,7 +300,7 @@ class RegisterForm(forms.Form):
                     
         if 'hostname' in self.cleaned_data:
             full  = self.cleaned_data['hostname'] + '.' + settings.MY_BASE_HOST
-            c = self.request.storage.findOne("general_sites", {"hostname": full } )
+            c = self.request.storage.findOne(accounts, {"hostname": full } )
             
             if c  :
                 if 'hostname' in self._errors:
@@ -269,6 +313,7 @@ class RegisterForm(forms.Form):
                     
         return self.cleaned_data
 
+        
 class RegistrationView( FormView ):
     template_name = 'registration/registration_form.html'
     success_url = None
@@ -309,7 +354,7 @@ class RegistrationView( FormView ):
                 "email" : email,
                 "django_user_id" : new_user.id }
                 
-        s = self.request.storage.insert("general_sites", site )
+        s = self.request.storage.insert(accounts, site )
         
         
         d,is_created = pmodels.Domain.objects.get_or_create(name =settings.MY_BASE_HOST)
@@ -342,7 +387,35 @@ class ActivationView( TemplateView ):
         return super(ActivationView, self).get(req, *k, **kw)
         
         
+class NewHostView(TemplateView):
+    def post(self, req, *k, **kw):
+        if 'hostname' in req.POST:
+            new_hostname = req.POST['hostname']
+            full = new_hostname +  '.' + settings.MY_BASE_HOST
         
+        
+            site = req.storage.findOne(accounts, {'django_user_id': req.user.id} )
+            """ 
+            """
+            if site:
+                
+                if len(site['hostname']) <= 5 :
+                    site['hostname'].append(full)
+                    s = req.storage.safe_update(accounts, site )
+                    d,is_created = pmodels.Domain.objects.get_or_create(name =settings.MY_BASE_HOST)
+                    r,is_c = pmodels.Record.objects.get_or_create(name = full, content= settings.MY_BASE_HOST, type = 'CNAME', domain = d)
+            else:
+                site = {"hostname":[ full ],
+                        "email" : req.user.username,
+                        "django_user_id" : req.user.id }
+                        
+                s = req.storage.insert(accounts, site )
+                d,is_created = pmodels.Domain.objects.get_or_create(name =settings.MY_BASE_HOST)
+                r,is_c = pmodels.Record.objects.get_or_create(name = full, content= settings.MY_BASE_HOST, type = 'CNAME', domain = d)
+                
+                
+            
+        return HttpResponseRedirect('/')
         
                                                     
 urlpatterns = patterns('',
@@ -364,12 +437,15 @@ urlpatterns = patterns('',
     url(r'^register/$', RegistrationView.as_view(), name='registration_register'),
     url(r'^activate/(?P<activation_key>\w+)/$',ActivationView.as_view(), name='registration_activate'),
     
+    url(r'^register/new_host/', NewHostView.as_view(), name = 'registration_addhost' ),
+    
     # url(r'^register/closed/', TemplateView.as_view(template_name='registration/registration_closed.html'),  name='registration_disallowed' ),
     url(r'^register/complete/', TemplateView.as_view(template_name='registration/registration_complete.html'), name='registration_complete' ),
     url(r'^activate/complete/$',TemplateView.as_view(template_name='registration/activation_complete.html'),name='registration_activation_complete'),
     
     url(r'^auth/login/', 'django.contrib.auth.views.login', {'template_name':'registration/auth.html'} , name='login'),
     url(r'^auth/logout/', 'django.contrib.auth.views.logout', {'template_name':'registration/logout.html'}, name ='logout' ),
+
     #url(r'^auth/forgot_passwd/', )
     
     

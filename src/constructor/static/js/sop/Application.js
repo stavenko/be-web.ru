@@ -33,6 +33,7 @@ var init_db = function(csrf_token){
 
 
         },
+		
         save_object_sync:function(type, obj, progress, complete){
             var data = {'object':obj,
                 'type' : type,
@@ -55,6 +56,10 @@ var init_db = function(csrf_token){
             
             xhr.send(fd)
         },
+		get_blob_url:function(blob){
+			return "/blob/"+ blob._id['$oid'] + '/' 
+			
+		},
         get_objects: function(type, query, paging, view, sort){
             var d = {type:type}
             var o = {}

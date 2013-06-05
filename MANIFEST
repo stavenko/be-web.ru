@@ -17,6 +17,7 @@ src/constructor/static/images/ui-bg_flat_75_ffffff_40x100.png
 src/constructor/static/images/ui-bg_glass_65_ffffff_1x400.png
 src/constructor/static/images/ui-bg_glass_75_dadada_1x400.png
 src/constructor/static/images/ui-bg_glass_75_e6e6e6_1x400.png
+src/constructor/static/images/ui-bg_highlight-soft_75_cccccc_1x100.png
 src/constructor/static/images/ui-icons_222222_256x240.png
 src/constructor/static/images/ui-icons_454545_256x240.png
 src/constructor/static/images/ui-icons_888888_256x240.png
@@ -26,6 +27,8 @@ src/constructor/static/js/jquery-ui-1.10.0.custom.js
 src/constructor/static/js/jquery.mousewheel.min.js
 src/constructor/static/js/sop/Application.js
 src/constructor/static/js/sop/_cons.js
+src/constructor/static/js/sop/api.js
+src/constructor/static/js/sop/api_en.js
 src/constructor/static/js/sop/constructor.js
 src/constructor/static/js/sop/generic.js
 src/constructor/static/js/sop/theshop.js

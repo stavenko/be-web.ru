@@ -15,23 +15,34 @@
                     to.find('*').remove()
                     $("<div>").text("This is " + this.title + " admin page").appendTo(to) 
                 },
-                widgets: {"text" : {title:"Текстовое поле", init: function(my_cont, data, constructor_inst,pos){
+                widgets: {"text" : {title:"Текстовое поле", init: function(my_cont, constructor_inst, pos, cp){
                                             //console.log(pos) 
+											var data = data;
                                             var o = {
                                                     my_cont:my_cont,
                                                     constr :constructor_inst,
-                                                    data : data,
+                                                    // data : data,
+													cp : cp,
                                                     pos: pos,
                                                     _jq : false,
                                                     _data:function(){
                                                         if (this.data){
                                                             return this.data
+                                                        }else{
+															this.data = constructor_inst.getWidgetData(pos, "Sample text");
+                                                        	return this.data;
                                                         }
-                                                        return "Sample text"
+														
+                                                        
                                                     },
-                                                    draw: function(){   this._jq = $("<div>")
+                                                    draw: function(){   
+														if (typeof this.constr.Site.fonts == 'undefined' ){
+															font = 'Times New Roman'
+														} else{ font = this.constr.Site.fonts.content}
+														this._jq = $("<div>")
                                                                                   .addClass('text-data')
                                                                                    .html(this._data()).appendTo(this.my_cont) 
+																				   .css('font-family', font )
                                                     },
                                                     _rand_id: function(){
                                                         var text = "";
@@ -46,70 +57,43 @@
                                                             
                                                         }
                                                     },
+													cancel: function(){
+														// this.cp.remove()
+														// this.color_chooser.remove();
+													},
                                                     _change_text: function(command,val){
                                                         r = document.execCommand(command, false, val)
                                                         //console.log(command, val, r)
                                                         
                                                         
                                                     },                                                                                
-                                                    settings: function(){
+                                                    settings: function(controls){
                                                         var self =this;
                                                         if(this.constr){
                                                             //var eid = "my-" + this._rand_id();
                                                             //var tbid = "tb" + this._rand_id();
                                                             this._jq.prop('contentEditable', 'true') //.prop('id', eid)
                                                             
-                                                            this.cp = $("<div>").appendTo(this.my_cont.parent().parent() ).css('position','absolute')
-                                                                        .position({of: this.my_cont, my:"left top", at: "right top", collision:'flip'})
-                                                                        .css('padding',"10")
-                                                                        .css("border","2px solid black").css('background-color',"orange")
                                                                         // .prop("id", tbid)
-                                                                        .draggable({scroll:false});
-                                                            $('<button>').html('<b>B</b>').appendTo(this.cp).click(function(){self._change_text("bold") })
-                                                            $('<button>').html('<i>i</i>').appendTo(this.cp).click(function(){self._change_text("italic") })
-                                                            $('<button>').html('<u>U</u>').appendTo(this.cp).click(function(){self._change_text("underline") })
-                                                            $('<button>').html('<s>S</s>').appendTo(this.cp).click(function(){self._change_text("StrikeThrough") })
-                                                            $('<button>').text('color').appendTo(this.cp).click(function(){
-                                                                var cl = $('<div>')
-                                                                .css('position','absolute')
-                                                                .css('background-color','white')
-                                                                .css('border', '1px solid black')
-                                                                .appendTo($('#controls')).position({of:$(this), my:'left top', at:'right bottom'})
-                                                                self.constr._make_pallette();
-                                                                $.each(self.constr.Site.colors.pallette , function(l, vars){
-                                                                                                                                    
-                                                                    // var vars = self.constr.Site.colors.pallette[k];
-                                                                    // console.log("PAL", k, vars);
-                                                                    
-                                                                    var b, main
-                                                                    $.each ( vars, function(i, col_){
-                                                                        var col = hsvToRgb(col_);
-                                                                        if(i == 0){
-                                                                            b = $('<div>').css('float','left').width(100).height(100).appendTo(cl)
-                                                                            main = $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(100).height(50)
-                                                                            .click(function(evt){  
-                                                                                // console.log(col); 
-                                                                                self._change_text('forecolor',  col); evt.preventDefault(), evt.stopPropagation()})
-                                                                        }else{
-                                                                            // console.log(i)
-                                                                            if(i == 3){
-                                                                                main.appendTo(b);
-                                                                            }
-                                                                            
-                                                                            $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(50).height(25).appendTo(b)
-                                                                            .click(function(evt){  // console.log(col);  
-                                                                                self._change_text('forecolor', col); evt.preventDefault(), evt.stopPropagation() })
-                                                                        }
-                                                                        
-                                                                    }) 
-                                                
-                                                                })
-                                                                $('<button>').text('close').appendTo(cl).click(function(){cl.remove();})
+                                                            
+														    var cp = $("<div>").appendTo(controls )
+															
+															console.log(controls)
+                                                            $('<button>').html('<b>B</b>').appendTo(cp).click(function(){self._change_text("bold") })
+                                                            $('<button>').html('<i>i</i>').appendTo(cp).click(function(){self._change_text("italic") })
+                                                            $('<button>').html('<u>U</u>').appendTo(cp).click(function(){self._change_text("underline") })
+                                                            $('<button>').html('<s>S</s>').appendTo(cp).click(function(){self._change_text("StrikeThrough") })
+                                                            $('<button>').text('color').appendTo(cp).click(function(){
+								                                cb = function(col) {self._change_text('forecolor', col)}; 
+																self.color_chooser = self.constr.draw_color_chooser(cb);
+																self.color_chooser.appendTo($('#controls')).position({of:$(this), my:'left top', at:'right bottom'})
+																
                                                                 
                                                             
                                                             })
                                                             
                                                         }
+														controls.show();
                                                     },
                                                     jq: function(){ return this._jq } 
                                                 };
@@ -119,12 +103,108 @@
                                         
                                     
                                    },
-                          "image": {title:"Картинка", init:function(my_cont, data, constructor_inst,pos){
+								   "header" : {title:"Заголовок", init: function(my_cont, constructor_inst, pos, cp){
+								                                               //console.log(pos) 
+								   											var data = data;
+								                                               var o = {
+								                                                       my_cont:my_cont,
+								                                                       constr :constructor_inst,
+								                                                       // data : data,
+								   													cp : cp,
+								                                                       pos: pos,
+								                                                       _jq : false,
+																					   
+								                                                       _data:function(){
+								                                                           if (this.data){
+								                                                               return this.data
+								                                                           }else{
+								   															this.data = constructor_inst.getWidgetData(pos, {text:"Sample Header", size:14} );
+																							this._size = this.data.size
+																							console.log (this.data, this._size)
+								                                                           	return this.data;
+								                                                           }
+														
+                                                        
+								                                                       },
+								                                                       draw: function(){  
+								   														if (typeof this.constr.Site.fonts == 'undefined' ){
+								   															font = 'Arial'
+								   														} else{ font = this.constr.Site.fonts.header}
+																						
+																						    this._jq = $("<div>")
+								                                                                                     .addClass('text-data')
+								                                                                                      .html(this._data().text).appendTo(this.my_cont)
+																													  .css('font-size', this._data().size + 'px')
+																													  .css('font-family', font )
+								                                                       },
+								                                                       
+								                                                       save :function(){
+								                                                           if (this.constr){
+																							   var text = this._jq.html()
+																							   var size = this._size;
+                                                            
+								                                                               this.constr.setWidgetData(this.pos, {text:text, size:  size }) 
+                                                            
+								                                                           }
+								                                                       },
+								   													cancel: function(){
+								   														// this.cp.remove()
+								   														// this.color_chooser.remove();
+								   													},
+					                                                       _change_text: function(command,val){
+					                                                           r = document.execCommand(command, false, val)
+					                                                           //console.log(command, val, r)
+                                            
+                                            
+					                                                       },                                                                                
+					                                                       settings: function(controls){
+					                                                           var self =this;
+					                                                           if(this.constr){
+					                                                               //var eid = "my-" + this._rand_id();
+					                                                               //var tbid = "tb" + this._rand_id();
+					                                                               this._jq.prop('contentEditable', 'true') //.prop('id', eid)
+                                                
+					                                                                           // .prop("id", tbid)
+                                                
+					   														    var cp = $("<div>").appendTo( controls )
+												
+					   															//console.log(controls)
+					                                                               //$('<button>').html('<b>B</b>').appendTo(cp).click(function(){self._change_text("bold") })
+					                                                               //$('<button>').html('<i>i</i>').appendTo(cp).click(function(){self._change_text("italic") })
+					                                                               //$('<button>').html('<u>U</u>').appendTo(cp).click(function(){self._change_text("underline") })
+					                                                               //$('<button>').html('<s>S</s>').appendTo(cp).click(function(){self._change_text("StrikeThrough") })
+																                   $("<div>").width(250).slider({min:100, max:300,value:this._size*10, slide:function(event, ui){ 
+																					   self._size = ui.value/10;
+																					   self._jq.css('font-size', self._size + 'px')
+																				   }} ).appendTo(cp)
+                
+					                                                               $('<button>').text('color').appendTo(cp).click(function(){
+					   								                                cb = function(col) {self._change_text('forecolor', col)}; 
+					   																self.color_chooser = self.constr.draw_color_chooser(cb);
+					   																self.color_chooser.appendTo($('#controls')).position({of:$(this), my:'left top', at:'right bottom'})
+													
+                                                    
+                                                
+					                                                               })
+                                                
+					                                                           }
+					   														controls.show();
+					                                                       },
+					                                                       jq: function(){ return this._jq } 
+					                                                   };
+					                                                return o; 
+                                    
+					                                              }
+                            
+                                    
+								                                      },								   
+                          "image": {title:"Картинка", init:function(my_cont,  constructor_inst, pos, cp){
                               // console.log(data)
                                var o = {
                                                     my_cont:my_cont,
                                                     constr :constructor_inst,
-                                                    data : data,
+                                                    // data : data,
+													cp:cp,
                                                     pos: pos,
                                                     _jq : false,
                                                     settings_draw :false,
@@ -133,10 +213,26 @@
 
                                                     draw: function(){
                                                         // console.log("Exactly after initing", this)
-                                                        var data = this.data;
+                                                        var data = this.constr.getWidgetData(pos, false)
+														if (data){
+															var l = data.position ? data.position.left : 0,
+																t = data.position ? data.position.top : 0;
+																z = data.zoom ? data.zoom  : 1;
+															this.data = {image:data.image, position:{left:l,
+																									 top: t}, zoom: z}
+															
+														}else{
+															this.data = {image:data.image, position:{left:0,
+																									 top:0}, zoom: 1}
+															
+														}
+														
                                                         var self = this
-                                                        //console.log(data);
-                                                        if (data.image){
+                                                        // console.log("MY DATA", this.data.position);
+                                                        if (this.data.image){
+															//if (this.data.image.blob){
+																
+																//}
                                                             this._dr()
                                                         }else{
                                                             this._jq = $("<img>").prop('src', '/static/images/images.jpg')
@@ -168,6 +264,7 @@
                                                         
                                                     },
                                                     _dr : function(){
+														// console.log ("POS", this.constr.Site.pages[''].blocks[2].widget.data.position)
                                                         var self = this;
                                                         if (this._jq){
                                                              this._jq.remove()
@@ -184,23 +281,26 @@
                                                         // paper.install(window)
                                                         // paper.setup(c);
                                                         this.img = new Image();
-                                                        this.img.src = this.data.image;
+														if (this.data.image.blob){
+															this.img.src = DB.get_blob_url(this.data.image)
+														}else{
+                                                        	this.img.src = this.data.image;
+														}
                                                         this.ctx = this.c.getContext('2d')
-                                                        //console.log('Core of a draw', this)
                                                         this.img.onload=function(){
-                                                            //console.log("this whould be image widget", self);
+                                                            //console.log("this whould be image widget", self.data.position);
                                                             self.redraw_ctx()
                                                         }
                                                     },
                                                     redraw_ctx: function(){
-                                                        var self = this;
                                                         
-                                                            self.ctx.clearRect(0,0,self.my_cont.width(),self.my_cont.height())
-                                                            self.ctx.save()
-                                                            self.ctx.scale(self.data.zoom, self.data.zoom)
-                                                            self.ctx.translate(self.data.position.left, self.data.position.top)
-                                                            self.ctx.drawImage(self.img ,0,0)
-                                                            self.ctx.restore();
+                                                        
+                                                            this.ctx.clearRect(0,0,this.my_cont.width(),this.my_cont.height())
+                                                            this.ctx.save()
+                                                            this.ctx.scale(this.data.zoom, this.data.zoom)
+                                                            this.ctx.translate(this.data.position.left, this.data.position.top)
+                                                            this.ctx.drawImage(this.img ,0,0)
+                                                            this.ctx.restore();
                                                         
                                                        
                                                     },
@@ -212,18 +312,25 @@
                                                         var data = this.data
                                                         // console.log("SAVE", data)
                                                        
+													    // console.log("Do we savinf data?");
                                                         this.constr.setWidgetData(this.pos, data )
-                                                        this.constr.redraw();
+														// this.constr.redraw();
                                                         
                                                         
                                                         
-                                                    },                                                                    
-                                                    settings: function(){
+                                                    },  
+													cancel: function(){
+														// this.constr.redraw();
+													},                                                                  
+                                                    settings: function(controls){
+
+																
+																
                                                         this.my_cont.unbind('mousemove')
                                                         this.my_cont.unbind('mouseup')
                                                         this.my_cont.unbind('mousedown')
                                                         
-                                                        var off = this._jq.offset()
+                                                        var off = this._jq.offset();
                                                         var self = this;
                                                         var start_pos, 
                                                             is_drag, 
@@ -243,12 +350,8 @@
                                                             if (nz > 0.02 && nz <10){ 
                                                                     var K = (z*z + z*zf)
                                                                     
-                                                                    /// console.log(px,py, z, zf, px* zf/K, py*zf/K) 
                                                                     var nx = x - ( (px*zf) / K );
                                                                     var ny = y - ( (py*zf) / K);
-                                                                    
-                                                                    
-                                                                   
                                                                     
                                                                     self.data.position.left = nx;
                                                                     self.data.position.top = ny;

@@ -1,9 +1,10 @@
 # Django settings for sop project.
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
+("Vasiliy Stavenko", 'stavenko@gmail.com')
     # ('Your Name', 'your_email@example.com'),
 )
 

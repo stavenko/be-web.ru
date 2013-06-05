@@ -9,16 +9,14 @@
                     _Apps:['generic', 'theshop'] ,
                     layout:{cols:12, 
                             fixed: true, 
-                            padding: {hor:10, ver:3}, 
+                            grid: {hor:10, ver:3}, 
+							padding: {left:10, top:10},
                             width:960,
                             drawen_lines:30,
                             base_height:50},    
                     colors:{type:'mono', base:120, brightness:100, lights:50, saturation:100, shadows:50},  
                     backgrounds:{},
-                    //background:{type:'color', param: {h:0, s:0, b:100}}  ,
-                    // backgrounds:{},
-                    //bodyback:{},
-                    //contentback:{},
+
                                               
                     pages : {"": {layout:"same",
                                   title:"Main page of my project",
@@ -37,7 +35,58 @@
                           },
                     }
                 }
-                
+		  function scaleImage(img, maxHeight, maxWidth){
+		            var width = img.width,
+		                height = img.height,
+		                scale = Math.max(maxWidth/width, maxHeight /height);    
+		            if (scale < 1) {
+		                    width = parseInt(width * scale, 10);
+		                    height = parseInt(height * scale, 10);
+		            };
+		            img.width = width;
+		            img.height = height;
+		            return img;
+            
+		}
+		function rgb2hsv () {
+		    var rr, gg, bb,
+		        r = arguments[0] / 255,
+		        g = arguments[1] / 255,
+		        b = arguments[2] / 255,
+		        h, s,
+		        v = Math.max(r, g, b),
+		        diff = v - Math.min(r, g, b),
+		        diffc = function(c){
+		            return (v - c) / 6 / diff + 1 / 2;
+		        };
+
+		    if (diff == 0) {
+		        h = s = 0;
+		    } else {
+		        s = diff / v;
+		        rr = diffc(r);
+		        gg = diffc(g);
+		        bb = diffc(b);
+
+		        if (r === v) {
+		            h = bb - gg;
+		        }else if (g === v) {
+		            h = (1 / 3) + rr - bb;
+		        }else if (b === v) {
+		            h = (2 / 3) + gg - rr;
+		        }
+		        if (h < 0) {
+		            h += 1;
+		        }else if (h > 1) {
+		            h -= 1;
+		        }
+		    }
+		    return {
+		        h: Math.round(h * 360),
+		        s: Math.round(s * 100),
+		        b: Math.round(v * 100)
+		    };
+		}                
         function hsvToRgb(o, as_array)  {
             var h, s, v;
             var r, g, b;
@@ -59,65 +108,65 @@
             if(s == 0) {
                 // Achromatic (grey)
                 r = g = b = v;
-                return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-            }
+                //return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+            }else{
+	            h /= 60; // sector 0 to 5
+	            i = Math.floor(h);
+	            f = h - i; // factorial part of h
+	            p = v * (1 - s);
+	            q = v * (1 - s * f);
+	            t = v * (1 - s * (1 - f));
          
-            h /= 60; // sector 0 to 5
-            i = Math.floor(h);
-            f = h - i; // factorial part of h
-            p = v * (1 - s);
-            q = v * (1 - s * f);
-            t = v * (1 - s * (1 - f));
+	            switch(i) {
+	                case 0:
+	                    r = v;
+	                    g = t;
+	                    b = p;
+	                    break;
          
-            switch(i) {
-                case 0:
-                    r = v;
-                    g = t;
-                    b = p;
-                    break;
+	                case 1:
+	                    r = q;
+	                    g = v;
+	                    b = p;
+	                    break;
          
-                case 1:
-                    r = q;
-                    g = v;
-                    b = p;
-                    break;
+	                case 2:
+	                    r = p;
+	                    g = v;
+	                    b = t;
+	                    break;
          
-                case 2:
-                    r = p;
-                    g = v;
-                    b = t;
-                    break;
+	                case 3:
+	                    r = p;
+	                    g = q;
+	                    b = v;
+	                    break;
          
-                case 3:
-                    r = p;
-                    g = q;
-                    b = v;
-                    break;
+	                case 4:
+	                    r = t;
+	                    g = p;
+	                    b = v;
+	                    break;
          
-                case 4:
-                    r = t;
-                    g = p;
-                    b = v;
-                    break;
-         
-                default: // case 5:
-                    r = v;
-                    g = p;
-                    b = q;
+	                default: // case 5:
+	                    r = v;
+	                    g = p;
+	                    b = q;
+	            }
+            	
             }
          
             if(as_array){
+				
                 return [Math.round(r*255) , Math.round(g*255) , Math.round(b*255) ]
             }else{
                 
                 var rgb = Math.round(b*255) | (Math.round(g*255) << 8) | (Math.round(r*255) << 16);
-                // return rgb.toString(16);
                 rgbc =  "#" + (0x1000000 | rgb).toString(16).substring(1);
-                // // // console.log(r,g,b,rgb, rgbc)
+				
                 return rgbc
             }
 
-            // return "rgb(" + Math.round(r * 255) +',' +Math.round(g * 255)+','+ Math.round(b * 255) + ')';
         }
         var pg = {
             // blocks : [],
@@ -134,13 +183,22 @@
              
 				
             },
-            add_block:function(type, to){
-                this.blocks[to] = {width:1,height:1, 
+            add_block:function(x,y, type){
+                this.blocks.push(  {width:1,height:1, 
+									x:x, y:y,
                                     widget:{name:type, data: ''  } 
-                                };
-            this._save_site();
+                                });
+            //this._save_site();
 
             },
+            get_block:function(p){
+				return this.blocks[p]
+
+            },
+			delete_block:function(ix){
+				this.blocks.splice(ix,1)
+				
+			},
             getApp: function(name){
                 var scr = $.ajax({
                                   url: STATIC + "js/sop/" + name + ".js",
@@ -164,6 +222,10 @@
                     
                     if (S.total_amount != 0 ) {
                         this.Site = S.objects[0];
+						if (typeof this.Site.layout.grid == 'undefined'){
+							this.Site.layout.grid = this.Site.layout.padding;
+							this.Site.layout.padding = {top:50, left:10}
+						}
                         
                     }else{
                         // // // console.log("LLLL");
@@ -190,12 +252,47 @@
                 return this.Site.pages[page_name]
             },
             
-            
+            getWidgetSettings: function(pos){
+            	w = this.Site.pages[this.current_page].blocks[pos].settings;
+				if (w){
+					
+					return w
+				}else{
+					return {background:{type:'none' },
+					 		font_size:12,
+							border_width:0,
+						 	border_radius:0,
+							border_color:'#fff',
+							padding_top:0,
+							padding_left_right:0
+						}
+				}
+
+            },
+            setWidgetSettings: function(pos, s){
+            	this.Site.pages[this.current_page].blocks[pos].settings = s;
+			},
             setWidgetData: function(pos, data){
                 //// // console.log(this.Site.pages,this.Site.pages[this.current_page], pos)
                 //console.log('Set Wid Data', this, this.current_page,pos);
-				console.log(pos)
+				//console.log(pos)
                 this.Site.pages[this.current_page].blocks[pos].widget.data = data;
+                
+            },
+            getWidgetData: function(pos, def){
+                //// // console.log(this.Site.pages,this.Site.pages[this.current_page], pos)
+                //console.log('Set Wid Data', this, this.current_page,pos);
+				//console.log(pos)
+				var self = this;
+				return (function(i){
+	                var d = self.Site.pages[self.current_page].blocks[pos].widget.data;
+					if (d){
+						return d
+					}
+					return def;
+					
+				})(pos)
+				
                 
             },
             _init_page: function(){
@@ -251,12 +348,14 @@
             },
             init: function(do_construction, site_id){
                 this.site_id = site_id;
-                this._site_type = "generic_site"
+                this._site_type = "sites"
                 this.is_constructor = do_construction
                 this.page_cont = $('#id-top-cont');
-                //var cur_page = window.location.hash
-                //var current_page = cur_page.slice(1);
-                // this._init_page()
+				var self = this;
+				$(window).resize(function(){
+					self.redraw();
+				})
+
                 
                 if(this.is_constructor){
                     this.init_cp_marker()
@@ -448,15 +547,23 @@
                 // shadows = [b:60, s75; b52, s100]
                 sat_koef = [0.89, 0.5, 0.5, 0.01];
                 br_koef  = [0.05, 0.05, 0.45 ,0.3];
+				
                 colors = [h,a,s,A];
+
+				var greys = new Array();
+				am = 5
+				for(c =0; c <= am; c++){
+					_c = {h:0,s:0, b: c * (100/am) }
+					greys.push(_c)
+				}
+				this.Site.colors.pallette[0]  = greys
+				
                 for( col in colors){
                     var color = colors[col];
                     var vars = [{h:color,s:saturation,b:brightness}];
                     
                     if (color){
                         for (i in sat_koef){
-                            // // // console.log("K", Number(i)+1)
-                            // // // console.log(saturation*( (sat_koef[i]/100)),sat_koef[i], saturation)
                             ds = saturation * sat_koef[i]
                             db = brightness * br_koef[i]
                             
@@ -471,30 +578,123 @@
                             }
                                 sat = saturation - dsat;
                                 bri = brightness - dbri;
-                                // // // console.log(sat, bri)
                                    
                             vars[Number(i)+1] = {h:color,  s:sat, b:bri} 
                         } 
-                        this.Site.colors.pallette[col] = vars
+                        this.Site.colors.pallette.push( vars)
                         
                     }else{
-                        
-                    this.Site.colors.pallette[col] = false;
+                    	this.Site.colors.pallette.push(false) ;
                     }
-                        
                 }
-               
-                
             },
-            
-           
-            
             _set_base_hue: function(hue){
                 this.Site.colors['base'] = hue;
             },
             _set_scheme_type: function(type){
                 this.Site.colors['type'] = type;
             },
+            showLayoutScheme:function(){
+					
+                var to = this._app_admin_contents;
+                    to.find('*').remove()
+					to.width(500)
+				var self = this
+					
+					lo = $.extend(true, {}, this.Site.layout);
+				var ul = $("<ul>").appendTo(to).width(500)
+					
+				$.each(lo, function(i, val){
+					var l = $("<li>").text(i).appendTo(ul)
+					
+					if(i == 'grid' ||  i == 'padding' ){
+						var inner =  $("<ul>").appendTo(l)
+						$.each(val, function(j, val){
+							
+							var l = $("<li>").text(j).appendTo(inner)
+							var sp = $('<input>').appendTo(l).spinner({spin:function(event, ui){
+								//console.log("do");
+								self.Site.layout[i][j] = ui.value
+								self.redraw();
+							} }  )
+							sp.spinner('value', val)
+							
+						})
+						
+					}else{
+						var sp = $('<input>').appendTo(l).spinner({spin:function(event, ui){
+								//console.log("do");
+								self.Site.layout[i]= ui.value
+								self.redraw();
+							} }  )
+						sp.spinner('value', val)
+					}
+				})
+				$('<button>').text('save').click(function(){
+					self._save_site()
+				}).appendTo(to)	
+				$('<button>').text('cancel').click(function(){
+					self.Site.layout = lo;
+					self.showLayoutScheme();
+					self.redraw()
+				}).appendTo(to)
+                this._app_admin_cont.show()
+               },
+			
+            showFontsScheme:function(){
+				var available_fonts_serif = ['Georgia', 'Palatino Linotype', 'Times New Roman'],
+					available_fonts_sans  = ["Arial", "Arial Black", "Comic Sans MS", "Impact", "Lucida Sans Unicode", "Tahoma", "Trebuchet MS", "Verdana"],
+					available_fonts_mono  = ["Courier New", "Lucida Console"],
+					self = this;
+					
+                var to = this._app_admin_contents;
+                    to.find('*').remove()
+					// head sans
+					D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
+					.text("Here's fonts scheme with Sans in headers, Serifs in texts").appendTo(to)
+					// console.log(hsvToRgb({h:0, s: 50, b:100 } ) )
+					$.each(available_fonts_sans, function(i, h){
+						$.each(available_fonts_serif, function(i, c){
+							D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
+							.mouseenter(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 10, b:100 } ) ) })
+							.mouseleave(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 0, b:100 } ) ) })
+							$("<h3></h3>").css('font-family', h).appendTo(D).text("Header with font " + h)
+							$("<p>").css('font-family', c).text(c).appendTo(D)
+							$("<p>").css('font-family', c).appendTo(D)
+							.text(test_block_content.split(' ').slice(0,39).join(' ') )
+							
+							D.appendTo(to).click(function(){
+								self.Site.fonts = {header: h, content: c}
+								self.redraw()
+								
+							})
+						} )
+					})
+					D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
+					.text("Here's fonts scheme with Serifs in headers, Sans in texts").appendTo(to)
+					
+					// head serif
+					$.each(available_fonts_serif, function(i, h){
+						$.each(available_fonts_sans, function(i, c){
+							D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
+							.mouseenter(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 10, b:100 } ) ) })
+							.mouseleave(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 0, b:100 } ) ) })
+							
+							$("<h3></h3>").css('font-family', h).appendTo(D).text("Header with font " + h)
+							$("<p>").css('font-family', c).text(c).appendTo(D)
+							$("<p>").css('font-family', c).appendTo(D)
+							
+							.text(test_block_content.split(' ').slice(0,39).join(' ') )
+							
+							D.appendTo(to).click(function(){
+								self.Site.fonts = {header: h, content: c}
+								self.redraw()
+							})
+						} )
+					})
+					
+                this._app_admin_cont.show()
+               },
         
             showBackgroundScheme:function(){
                 var to = this._app_admin_contents;
@@ -828,6 +1028,27 @@
                 
                 
             },
+			get_color:function(c){
+				this._make_pallette()
+				// console.log(this.Site.colors, c)
+				if (c.v == 'C') {// color from custom palette
+					return this.Site.colors.custom_pallette[c.ix]
+					
+				}else{
+					return this.Site.colors.pallette[c.v][c.ix]
+				}
+				
+				
+			},
+			addCustomColor: function(color){
+				if (this.Site.colors.custom_pallette){
+					ix = this.Site.colors.custom_pallette.push(color) - 1
+				}else{
+					this.Site.colors.custom_pallette = [color];
+					ix = 0
+				}
+				return ix
+			},
             redraw_background: function(){
                 var self = this;
                 $.each(this.Site.backgrounds, function(name, imgo){
@@ -840,16 +1061,37 @@
 						
                     }else if (name == 'content'){
                         var C = self.layout_cont;
-						console.log(name, C, imgo.type)
-						
 	                    C.css('background-image', 'url("' +imgo.data +'")' ) 
 					
                     }
-                        
-                    
-                    if(imgo.type == 'image'){
-                        C.css('background-repeat','no-repeat')
-                        .css('background-position', [imgo.position.left + 'px' , imgo.position.top +'px' ].join(' ') )
+                    if(imgo.type == 'images'){
+						if ( imgo.color ){
+							var c = self.get_color( imgo.color )
+							C.css('background-color', hsvToRgb( c) ) 
+						}
+						$('div.background').remove();
+						
+						$.each(imgo.images,function(i, bg){
+							var img = new Image()
+							img.onload = function(){
+								$('<div>').css('position','absolute')
+								.addClass('background')
+								.css('background-image', 'url("' + img.src +'")' )
+								.css('background-repeat','no-repeat')
+								.css('background-size', 'cover')
+								.zIndex(-10000).prop('id',i)
+								.css('top', bg.position.top)
+								.css('left', bg.position.left).appendTo($('body'))
+								.width(  img.width  * bg.zoom  ) 
+								.height( img.height * bg.zoom )
+							}
+							if(bg.data.blob){
+								img.src = DB.get_blob_url( bg.data )
+							}else{
+								img.src = bg.data
+							}
+							
+						})
                     }  else if (imgo.type == 'pattern'){
 						C.css('background-repeat','repeat')
 						.css('background-position','0px 0px')
@@ -861,102 +1103,307 @@
                 })
             },
             backgroundChooser:function(type) {
-                // var to = this._app_admin_contents;
+				
+				
+                //var to = this._app_admin_contents;
+                //    to.find('*').remove()
                 var self = this;
-                // to.find('*').remove()
-                
-                // this._app_admin_cont.show()
                 var cp_ = $('<div>').css('position','absolute').appendTo($('#controls'))
                 .position({of: $('body'), my:'left top', at: 'left+200 top_50'})
                 .css('padding', '20px').css('background-color', 'orange')
                 .draggable({scroll:false})
-                
-                
                 $('<button>').text("X").click(function(){
                     cp_.remove();
                 }).appendTo(cp_);
                 
-                var cp = $('<div>').appendTo(cp_)
-                $('<span>').text('plain images:').appendTo(cp)
+                    atabs = $('<div>').appendTo(cp_)
+                    ul = $("<ul>").appendTo(atabs);
+                    $("<li>").append($("<a>").prop('href', "#pic-patterns" ).text("Библиотека узоров") ).appendTo(ul)
+                    $("<li>").append($("<a>").prop('href', "#own-patterns" ).text("Создание узоров") ).appendTo(ul)
+                    $("<li>").append($("<a>").prop('href', "#image-bg" ).text('Ипользование изображений') ).appendTo(ul)
+                    
+                    pic_patt = $("<div>").prop('id',"pic-patterns").appendTo(atabs)
+                    
+                    my_patt = $("<div>").prop('id',"own-patterns").appendTo(atabs)
+                    
+                    image_bg = $("<div>").prop('id',"image-bg").appendTo(atabs)
+					
+                    atabs.tabs();
+					
+					
+				
+					var appendNewImage = function( bg, i, to ){
+						var img = new Image();
+						//var display = new Image();
+						var display_screen = $('<div>').addClass('background').prop('id',i);
+						
+						var li = $('<li>').appendTo(to)
+						img.onload = function(){
+							
+							var W = img.width
+							var H = img.height
+							var Z = self.Site.backgrounds[type].images[i].zoom ?  self.Site.backgrounds[type].images[i].zoom : 1
+							display_screen
+							.appendTo($('body'))
+							.css('top', self.Site.backgrounds[type].images[i].position.top)
+							.css('left', self.Site.backgrounds[type].images[i].position.left )
+							.css('background-image', 'url("' + img.src + '")' )
+							//.css('background-color', '#fff')
+							//.css('border', '0px solid white')
+							.css('position','absolute')
+							.css('background-size', '100% auto')
+							//.css('padding','1px')
+							.width(W * Z )
+							.height(H * Z)
+							.zIndex(-10000)
+							
+							var thumb = scaleImage(img, 64,64);
+							$(thumb).appendTo(li)
+							
+			                $('<button>').text('move-scale').click(function(evt){
+			                        var  but = this;
+			                        var md =function(evt){
+			                           is_move = true
+			                           old_p = {top: evt.clientY,
+			                                    left : evt.clientX} 
+			                           evt.preventDefault();
+			                           evt.stopPropagation();
+                        
+			                        } 
+                                    function zoom(zf, px, py, ox, oy , oz){
+                                        var z = oz
+                                        var x = ox
+                                        var y = oy
+										
+                                        //if (z < 0.2) zf /=10;
+                                        // if (z > 1.5) zf *= 5;
+                                        
+                                        
+                                        var nz = z + zf;
+                                        if (nz > 0.02 && nz <5){ 
+                                                var K = (z*z + z*zf)
+                                                
+                                                var nx = x - ( (px*zf) / K );
+                                                var ny = y - ( (py*zf) / K);
+											}
+										else{
+											nx = ox
+											ny = oy
+											nz = oz
+										}
+										return [nx,ny,nz]
+									}
+												 
+			                        var mu = function(evt){is_move = false}
+			                       	var scroll = function(evt, dt){
+			                           // console.log("wheel", dt)
+			                           if(evt.type == 'mousewheel'){
+										   
+										   z =  (self.Site.backgrounds[type].images[i].zoom ? self.Site.backgrounds[type].images[i].zoom : 1)
+										   zf = (dt/Math.abs(dt) ) * 0.01
+										   z += zf
+										   self.Site.backgrounds[type].images[i].zoom = z // res[2]
+										   //console.log(self.Site.backgrounds[type].images[i])
+										    display_screen.width(W * z).height( H * z )
+												
+										   
+                           
+			                           }
+			                           evt.preventDefault();
+			                           evt.stopPropagation();
+			                           }
+			                        var mm =function(evt){
+			                           if(is_move){
+			                                var left = evt.clientX;    
+			                                var top = evt.clientY;
+			                                var p = {left:left, top:top}
+			                                var diff = {left: p.left - old_p.left, top: p.top - old_p.top}
+											
+											self.Site.backgrounds[type].images[i].position.top  += diff.top;
+											self.Site.backgrounds[type].images[i].position.left += diff.left;
+											display_screen
+											.css('top',  self.Site.backgrounds[type].images[i].position.top )
+											.css('left', self.Site.backgrounds[type].images[i].position.left )
+											
+			                                old_p = p
+			                                // self.redraw_background();
+			                            }
+			                       	}
+			                       	var kp = function(evt){
+			                           if(evt.keyCode == 27 ){ //ESC
+			                               kpu();
+			                           }
+			                        }           
+			                       	var kpu = function(){
+			                               $(but).text('move-scale')
+			                               $(document).unbind('mousedown', md)
+			                               $(document).unbind('mouseup', mu)
+			                               $(document).unbind('mousemove', mm)
+			                               $(document).unbind('keypress', kp)
+			                               $(document).unbind('MozMousePixelScroll', scroll)
+			                               $(document).unbind('DOMMouseScroll', scroll)
+			                               $(document).unbind('mousewheel', scroll);
+                       
+			                       	}
+			                        $(document).bind('mousedown', md)
+			                        $(document).bind('mouseup', mu)
+			                       	$(document).bind('mousewheel DOMMouseScroll  MozMousePixelScroll', scroll)
+			                       	$(document).bind('mousemove', mm)
+			                       	$(document).bind('keypress', kp)
+			                       	$(this).text("Press esc when DONE").click(function(){kpu()})
+                   
+                   
+                   
+			                }).appendTo(li)
+							$('<button>').text('remove').click(function(){
+								self.Site.backgrounds[type].images.splice(i, 1);
+								$(this).parent().remove();
+								
+								$(display).remove();
+							}).appendTo(li)
+								
+						}
+						if(bg.data.blob){
+							src = DB.get_blob_url(bg.data)
+						}else{ src = bg.data}
+						img.src = src;
+						
+					
+						
+						
+					}
+				
+					var bg = self.Site.backgrounds[type]
+					var images_ul = $('<ul>').appendTo(image_bg);
+					//console.log("BG", bg)
+					if (bg.type == 'images'){
+						$('body').find('img').remove()
+						
+						$.each(bg.images, function(i, bg){
+							appendNewImage(bg, i, images_ul)
+							// img.id  = "id-background-image-" + i;
+							
+						})
+					}
+                
                 
                 $("<input>").prop('type','file').change(function(evt){
                     fr = new FileReader()
                     fr.onload = function(){
-                        self.Site.backgrounds[type] = {data:this.result,type:'image', position:{left:0, top:0}}
-                        self.redraw_background();
+						image= {data:this.result, position:{left:0, top:0}}
+						if (self.Site.backgrounds[type].type == 'images'){
+							var ix = self.Site.backgrounds[type].images.push(  image ) - 1
+							// console.log (ix)
+							
+						}else{
+							self.Site.backgrounds[type] = {type:'images', images:[ image ] }
+							var ix = 0;
+						}
+						appendNewImage(image, ix, ul);
+                       
                     }  
                     fr.readAsDataURL(this.files[0]);
+                                       
                     
-                    
-                    
-                }).appendTo(cp);
+                }).appendTo(image_bg);
+				
+				
+				
+				$("<div>").css('width', '100%').css('border', '1px solid black').appendTo(image_bg)
+				$("<h3>").text('Цвет фона').appendTo(image_bg)
+				if (self.Site.backgrounds[type].color){
+					
+					var col = self.get_color(self.Site.backgrounds[type].color);
+				}else{var col = {h:0, s:0, b:100 }}
+				//console.log("YES WE GOT COLOR",hsvToRgb(col) )
+				
+				var obj = $("<div>").width(40).height(30).css('border', '1px solid black').appendTo(image_bg)
+				.css('background-color', hsvToRgb(col)  ).click(function(evt ){
+					function make_background_color(col, opt){
+						self.Site.backgrounds[type].color = opt
+						self.redraw_background()
+						obj.css('background-color', col )
+					}
+				
+					var cc = self.draw_color_chooser(make_background_color)
+					cc.appendTo($('#controls')).position({of:obj, my:'left top', at:'left top' }).show();
+					
+				})
+				
+				
+				var pds = [];
+				var color;
+				
+				
+				$("<button>").text('выбрать фон из картинки').appendTo(image_bg).click(function(){
+					//console.log(pds,$('div.background'))
+					if (pds.length == 0 ){
+						console.log("Its empty")
+						$.each($('div.background'), function(i, obj){
+							var i_id = Number(obj.id )
+							var C = $('<canvas>'); // .appendTo(image_bg)
+							var ctx = C[0].getContext('2d')
+							var img = new Image()
+							img.onload = function(){
+								C[0].width = img.width
+								C[0].height = img.height
+								ctx.drawImage( img, 0, 0 )
+								var pd = ctx.getImageData(0,0, img.width, img.height)
+								pds.push(pd)
+							
+							}
+							if (self.Site.backgrounds[type].images[i_id].data.blob){
+								data = DB.get_blob_url(self.Site.backgrounds[type].images[i_id].data)
+							}else{data = self.Site.backgrounds[type].images[i_id].data}
+							img.src = data;
+						})
+						
+					}
+					function mm (evt){
+						var off = $(evt.target).offset()
+						var id = Number(this.id);
+						var pd = pds[id];
+						var z = self.Site.backgrounds[type].images[id].zoom
+						//ÍÍgroundconsole.log(evt.clientX, evt.clientY, off)
+					
+					
+						var x = Math.floor((evt.clientX-off.left + $(document).scrollLeft() ) / z);
+						var y = Math.floor((evt.clientY-off.top + $(document).scrollTop() )   / z);
+						var poff = ((y * pd.width) + x)*4;
+					
+						r = pd.data[poff]
+						g = pd.data[poff+1]
+						b = pd.data[poff+2]
+					
+						color = rgb2hsv(r,g,b)
+					
+						obj.css('background-color', 'rgb('+r +',' + g +',' + b  +')')
+					
+						// console.log(x,y, poff, off, r,g,b)
+					}
+					function click(evt){
+											ix = self.addCustomColor( color )
+											col = {v:'C', ix : ix}
+											self.Site.backgrounds[type].color = col
+											$('body').off('mousemove', 'div.background', mm)
+											$('body').off('click','div.background', click)
+											self.redraw_background();
+										}
+					
+					//console.log("BIND")
+					$('body').on('mousemove','div.background',mm)
+					$('body').on('click','div.background', click)
+				})
+				
                 var is_move, old_p
-                $('<button>').text('move-scale').click(function(evt){
-                        var  but = this;
-                        // // console.log(evt);
-                        var md =function(evt){
-                           is_move = true
-                           old_p = {top: evt.clientY,
-                                    left : evt.clientX} 
-                           evt.preventDefault();
-                           evt.stopPropagation();
-                            
-                        }  
-                        var mu = function(evt){
-                            is_move = false
-                        }
-                       var scroll = function(evt){
-                           // // console.log("wheel", evt)
-                           if(evt.type == 'mousewheel'){
-                               
-                           }
-                           evt.preventDefault();
-                           evt.stopPropagation();
-                           }
-                        var mm =function(evt){
-                           if(is_move){
-                                var left = evt.clientX;    
-                                var top = evt.clientY;
-                                var p = {left:left, top:top}
-                                var diff = {left: p.left - old_p.left, top: p.top - old_p.top}
-                                // // console.log('MOE', old_p, p, diff)
-                                self.Site.backgrounds[type].position.top += diff.top;
-                                self.Site.backgrounds[type].position.left += diff.left;
-                                old_p = p
-                                self.redraw_background();
-                            }
-                       }
-                       var kp = function(evt){
-                           if(evt.keyCode == 27 ){ //ESC
-                               kpu();
-                           }
-                        }           
-                       var kpu = function(){
-                               $(but).text('move-scale')
-                               $(document).unbind('mousedown', md)
-                               $(document).unbind('mouseup', mu)
-                               $(document).unbind('mousemove', mm)
-                               $(document).unbind('keypress', kp)
-                               $(document).unbind('MozMousePixelScroll', scroll)
-                               $(document).unbind('DOMMouseScroll', scroll)
-                               $(document).unbind('mousewheel', scroll);
-                           
-                       }
-                        $(document).bind('mousedown', md)
-                        $(document).bind('mouseup', mu)
-                       $(document).bind('mousewheel DOMMouseScroll  MozMousePixelScroll', scroll)
-                       $(document).bind('mousemove', mm)
-                       $(document).bind('keypress', kp)
-                       $(this).text("Press esc when DONE").click(function(){kpu()})
-                       
-                       
-                       
-                }).appendTo(cp)
+				
+                
+				
 
                 
-                var cp = $('<div>').appendTo(cp_)
+                //var cp = $('<div>').appendTo(cp_)
                 
-                $('<span>').text('patterns').appendTo(cp)
+                $('<span>').text('patterns').appendTo(pic_patt)
                 $('<input>').prop('type', 'file').change(function(){
                     fr = new FileReader()
                     fr.onload = function(){
@@ -964,13 +1411,21 @@
                         self.redraw_background();
                     }  
                     fr.readAsDataURL(this.files[0]);
-                }).appendTo(cp);
+                }).appendTo(pic_patt);
+				
               
-                var cp = $('<div>').appendTo(cp_)
-                var C = $('<canvas>').appendTo(cp)[0];
-                var S = $('<canvas>').appendTo(cp)[0]
+                var flright = $('<div>').appendTo(my_patt).css('float','right')
+										.width(300)
+										.height(300)
+										.css('border', '1px solid black')
+										.css('background-color', 'white')
+								
+								
+                var C = $('<canvas>').appendTo(flright)[0];
+                var S = $('<canvas>')[0]// .appendTo(my_patt)[0]
                 var ctx = C.getContext('2d')
-                //ctx.globalCompositeOperation = "xor";
+                
+				
                 var sctx = S.getContext('2d')
                 var base = 64;  
                 var WA = 0, HA = 0, A = 0, iWA = true, iHA = true;
@@ -979,7 +1434,7 @@
                 self._make_pallette()
                 var BG = this.Site.colors.pallette[0][3]
                 var FG = this.Site.colors.pallette[0][0]
-                // // console.log(BG,FG)
+                
                 
                 
                 var image, buffData
@@ -999,15 +1454,8 @@
                         ctx.scale(Z,Z)
 						rad = A* (3.14/180) 
                         ctx.rotate(rad)
-						//R = iw / 1.4142135623730951 
-						//dx = Math.cos(rad + (Math.PI/4)) * R
-						//dy = Math.sin(rad + (Math.PI/4)) * R 
-						//console.log(dx,dy)
-						//ctx.translate(-dx,-dy)
-						console.log(iw, ih)
                         ctx.globalAlpha = opacity / 100;
                         ctx.drawImage(image, -(iw/2), -(ih/2), iw, ih)
-                        //ctx.putImageData(buffData, 0,0)
                         ctx.restore()
                     }
                     
@@ -1070,7 +1518,7 @@
                     self.Site.backgrounds[type] = {data: img, type:'pattern' }
                     self.redraw_background();
                 }
-                $('<span>').text('custom patterns').appendTo(cp)
+                $('<span>').text('custom patterns').appendTo(my_patt)
                 $('<input>').prop('type', 'file').change(function(){
                     fr = new FileReader()
                     fr.onload = function(){
@@ -1108,30 +1556,33 @@
                         
                     }  
                     fr.readAsDataURL(this.files[0]);
-                }).appendTo(cp);
-                $('<button>').click(function(e){ iWA = ! iWA;redraw_ctx()}).appendTo(cp).text("-")
-                $('<button>').click(function(e){ iHA = ! iHA;redraw_ctx()}).appendTo(cp).text("|")
+                }).appendTo(my_patt);
+                $('<button>').click(function(e){ iWA = ! iWA;redraw_ctx()}).appendTo(my_patt).text("-")
+                $('<button>').click(function(e){ iHA = ! iHA;redraw_ctx()}).appendTo(my_patt).text("|")
                 
-                $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ WA = ui.value ;redraw_ctx() }} ).appendTo(cp)
-                $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ HA = ui.value;redraw_ctx() }} ).appendTo(cp)
-                $("<div>").width(250).slider({min:0, max:360,value:0, slide:function(event, ui){ A = ui.value ;redraw_ctx()}} ).appendTo(cp)
-                $("<div>").width(250).slider({min:1, max:100,value:1, slide:function(event, ui){ Z = (ui.value)/100 ;redraw_ctx()}} ).appendTo(cp)
-                $("<div>").width(250).slider({min:16, max:512,value:1, slide:function(event, ui){ base = ui.value ;redraw_ctx()}} ).appendTo(cp)
-                $("<div>").width(250).slider({min:0, max:100,value:100, slide:function(event, ui){ opacity = ui.value ;redraw_ctx()}} ).appendTo(cp)
+                $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ WA = ui.value ;redraw_ctx() }} ).appendTo(my_patt)
+                $("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ HA = ui.value;redraw_ctx() }} ).appendTo(my_patt)
+                $("<div>").width(250).slider({min:0, max:360,value:0, slide:function(event, ui){ A = ui.value ;redraw_ctx()}} ).appendTo(my_patt)
+                $("<div>").width(250).slider({min:1, max:100,value:1, slide:function(event, ui){ Z = (ui.value)/100 ;redraw_ctx()}} ).appendTo(my_patt)
+                $("<div>").width(250).slider({min:16, max:150,value:1, slide:function(event, ui){ base = ui.value ;redraw_ctx()}} ).appendTo(my_patt)
+                $("<div>").width(250).slider({min:0, max:100,value:100, slide:function(event, ui){ opacity = ui.value ;redraw_ctx()}} ).appendTo(my_patt)
                 
                 
                 
             },
             show_CP: function(active_tab){
+				
                 var self = this;
                 var C = $('div#controls');
                 this.cp = $("<div>").appendTo(C)
-                .width(240).height($(document).height())
+                .width(240).height(window.innerHeight)
                 .css('position','fixed').css('top',0).css('left',0)
+				
                 
                 this._app_admin_cont = $('<div>').css('position','fixed').css('overflow', 'scroll')
-                .css('top', 0).css('left', 240).width(1000).height($(document).height())
+                .css('top', 0).css('left', 240).width(1000).height(window.innerHeight)
                 .css('background', 'white')
+				.zIndex(2000)
                 .appendTo(C).hide() ;
                 
                 $('<div>')
@@ -1143,7 +1594,7 @@
                 
                 
                 
-                this.cp_acc = $("<div>").appendTo(this.cp)
+                this.cp_acc = $("<div>").appendTo(this.cp).zIndex(2000)
                 //.css('background-color', 'orange')
                 
                 // .appendTo(C)
@@ -1155,11 +1606,10 @@
                 $("<li>").append($("<a>").prop('href','#').text("Управление фоном").click(function(){ self.backgroundChooser() }) ).appendTo(ul) 
                 $("<li>").append($("<a>").prop('href','#').text("Цветовая схема").click(function(){ self.showColorScheme() }) ).appendTo(ul) 
                 $("<li>").append($("<a>").prop('href','#').text("Создание фонов").click(function(){ self.showBackgroundScheme() }) ).appendTo(ul) 
+                $("<li>").append($("<a>").prop('href','#').text("Шрифты").click(function(){ self.showFontsScheme() }) ).appendTo(ul) 
                 $("<li>").append($("<a>").prop('href','#').text("Управление геометрией").click(function(){ self.showLayoutScheme() }) ).appendTo(ul) 
                 $("<li>").append($("<a>").prop('href','#').text("Управление доменами").click(function(){ self.showDomainScheme() }) ).appendTo(ul) 
-                //$("<li>").append($("<a>").prop('href','#').text("Шапка").click(function(){ self.showHeaderScheme() }) ).appendTo(ul) 
-                // $("<li>").append($("<a>").prop('href','#').text("").click(function(){ self.showFooterScheme() }) ).appendTo(ul) 
-                
+				
                 // Page settings 1
                 $("<h3>").text("Страница").appendTo(this.cp_acc)
                 var d = $("<div>").appendTo(this.cp_acc)
@@ -1201,6 +1651,8 @@
                 $("<h3>").text("Виджеты").appendTo(this.cp_acc)
                 var d = $("<div>").appendTo(this.cp_acc)
                 var ul = $("<ul>").appendTo(d)
+				var self = this;
+				var draga;
                 $.each(this.Site.Applications, function(app_name, app){
                     if(app.widgets){
                         // // console.log(app.title);
@@ -1208,23 +1660,40 @@
                         var ul_ = $("<ul>").appendTo(li);
                         $.each(app.widgets, function(name, w){
                             // // console.log(name, w);
-                            $("<li>").addClass("draggable-module")
-                            .text(w.title).appendTo(ul_)
-                            .prop('type', app_name + '.' + name) 
-                            .draggable({helper: function( event ) {
-                                    return $( "<div class='ui-widget-header'>I'm a custom helper</div>" );
-                                    } 
+				                            $("<li>")
+				                            .text(w.title).appendTo(ul_)
+				                            .prop('type', app_name + '.' + name) 
+				                            .draggable({
+												scroll:false,
+												start:function(){
+                            	
+					                            },
+												helper: function(){
+													return $("<div>").text("drag me")
+								
+												},
+												drag:function(event, ui){
+													//console.log(ui.position)
+													var left = event.clientX  + $(document).scrollLeft() - self._main_offset.left ;
+													var top =  event.clientY  +  $(document).scrollTop() - self._main_offset.top ;
+													console.log(left, top)
+						                            var ll = self._stepping_left( left   )
+						                            var tt = self._stepping_top(  top  )
+						                            draga = {left:ll.block, top:tt.block };
+                            
+						                            ui.position = {top:tt.val -  $(document).scrollTop() + self._main_offset.top , 
+																   left: ll.val - $(document).scrollLeft() + self._main_offset.left   
+															   };
+												},
+												stop: function(){
+													var type = $(this).prop('type')
+						                            self.add_block(draga.left, draga.top, type );
+						                            self.redraw();
+												}
+	                            			})         
                                 })
+							}
                         })
-                        
-                    }
-                    //// // console.log(name, app)
-                })
-                
-                //$("<li>").append($("<a>").prop('href','').text("Общие").click(function(){ self.showPageSettings() }) ).appendTo(ul) 
-                //$("<li>").append($("<a>").prop('href','').text("Геометрия").click(function(){ self.showPageLayout() }) ).appendTo(ul) 
-                //$("<li>").append($("<a>").prop('href','').text("Геометрия").click(function(){ self.showPageLayout() }) ).appendTo(ul)
-                 
                 if (active_tab){
                     this.cp_acc.accordion({active: active_tab, heightStyle:'fill'});
                 }else{
@@ -1324,7 +1793,8 @@
                 
             },
             _block_width: function(){
-                block_width = (this.layout.width / this.layout.cols) - (2 * this.layout.padding.hor)
+				
+                block_width = ((this.layout.width ) / this.layout.cols) - (2 * this.layout.grid.hor) 
                 return block_width
                 
             },
@@ -1339,16 +1809,15 @@
             _calc_top: function(t){
                 var h = (this._calc_height(t))
                 if (h == 0){ var P =0} else {var P = 2}
-                // // // console.log(cbw)
-                return ( h + P*this.layout.padding.ver  ) ;// + this._main_offset.top;
-                // return (cbh * t); //+ (this.layout.padding *2 * (w-1))
+                return (  h + P*this.layout.grid.ver  ) ;// + this._main_offset.top;
             },
             
             _calc_left: function(l){
                 var w = (this._calc_width (l-1) )
                 if (w == 0){var P =0}else{var P=2}
-                return (this.layout.padding.hor + w + P*this.layout.padding.hor  ) + this._main_offset.left;
+                return (this.layout.grid.hor + w + P*this.layout.grid.hor  ) // + this._main_offset.left;
             },
+			
             _calc_height: function(h){
                 if (this._c_bh){
                     cbh = this._c_bh
@@ -1357,22 +1826,22 @@
                     this._c_bh = this._block_height()
                     cbh = this._c_bh
                 }
-                // // // console.log(cbw)
-                return (cbh * h) + (this.layout.padding.ver *2 * (h-1)); 
+                return (cbh * h) + (this.layout.grid.ver *2 * (h-1)); 
                 
                 
             },
             _calc_width: function(w){
                 if (w <= 0) return 0;
-                if (this._c_bw){
-                    cbw = this._c_bw
-                } 
-                else{
+                //if (this._c_bw){
+                //    cbw = this._c_bw
+                //} 
+                //else{
                     this._c_bw = this._block_width()
                     cbw = this._c_bw
-                }
-                
-                return (cbw * w) + (this.layout.padding.hor *2 * (w-1)) 
+					// }
+				
+                // console.log( "CALC WIDTH", this._c_bw,  cbw , w , (this.layout.grid.hor *2 * (w-1)) )
+                return (cbw * w) + (this.layout.grid.hor *2 * (w-1)) 
                 
                 
             },
@@ -1380,6 +1849,7 @@
                 var block_width = this._block_width();
                 var base_height = this.layout.base_height;
                 var self = this;
+				
                 if (this.layout.fixed){
                     var e = "px"
                 }else{
@@ -1388,21 +1858,34 @@
                 
                 $('body').css('margin', 0)
                 
-                total_height = this.Site.layout.drawen_lines * (this.Site.layout.base_height + 2*(this.Site.layout.padding.ver))
+                var total_height = this.Site.layout.drawen_lines * (this.Site.layout.base_height + 2*(this.Site.layout.grid.ver)) ,
+					window_width = window.innerWidth,
+					width = this.Site.layout.width,
+					w_left = window_width - width,
+					left = w_left / 2;
+					
+				//console.log("TOTAL", total_height)
                 this.layout_cont = $("<div>")
+							.css('position', 'absolute')
+				
                             .css('width', this.layout.width + e)
-                            .css('margin-left','auto')
-                            .css('top',0)
+                            // .css('margin-left','auto')
+                            .css('top', this.Site.layout.padding.top)
+							.css('left', left )
                             .css('height', total_height)
-                            .css('margin-right','auto').appendTo(to),
+                            // .css('margin-right','auto')
+							.appendTo(to)
                     c_off = this.layout_cont.offset();
-                to.css('top',0);
+                to.css('top', '0px');
+				
+				// console.log("OFFSET", c_off)
                     
                 this.redraw_background();
                 if(this.is_constructor){
                     $('<div>').css('background-color','orange').text('change background')
                     .css('position','fixed')
                     .css('top', 0).css('left','50px')
+					.zIndex(1000)
                     
                     .appendTo($('#controls'))
                     .click(function(){
@@ -1413,6 +1896,8 @@
                     $('<div>').css('background-color','orange').text('content background')
                     .css('position','fixed')
                     .css('top', 0).css('left','200px')
+					.zIndex(1000)
+					
                     
                     .appendTo($('#controls'))
                     .click(function(){
@@ -1427,17 +1912,23 @@
                         this._busy_regions = [];
                         this._moved_block_ = [] ;
                         $.each(this.blocks, function(ix, block){
+							var bw = block.settings ? block.settings.border_width : 0
                             var x = block.x; //Number(koords.split(':')[0]);
                             var y = block.y; // Number(koords.split(':')[1]);
-                            var xx = self._calc_left(x+1);
-                            var yy = self._calc_top(y);
+                            var xx = self._calc_left(x+1) - bw;
+                            var yy = self._calc_top(y)    - bw;
+		                    var w = block.width;
+		                    var h = block.height;
+		                    var W = self._calc_width(w);
+		                    var H = self._calc_height(h);
                             
                             // console.log(block_list);
                             var gp = { jq : $("<div>")
                                                 .appendTo(self.layout_cont)
                                                 .css('position','absolute')
                                                 .css('left', xx ).css('top',  yy)
-                                                .css('border', '1px solid black')
+												.width(W).css('height',H)
+                                                // .css('border', '1px solid black')
                                                 .css('overflow','hidden'),
                                     
                                        pos: ix,
@@ -1483,9 +1974,11 @@
                             .appendTo(this.layout_cont)
                             .css('position', 'absolute')
                             .css('border-radius', '10px')
+							.css('background-color','white')
+							.css('opacity','0.7')
                             .css('left',xx)
                             .css('top',yy)
-                            .css('border', '1px dotted black ')
+                            .css('border', '1px solid black ')
                             .css('width', this._calc_width(1) )
                             .css('height', this._calc_height(1) )
                             .css('left',xx)
@@ -1495,9 +1988,201 @@
                 }
                 
             },
-            
+			draw_color_chooser: function(onSelectColor){
+                color_chooser = $('<div>')
+                .css('position','absolute')
+                .css('background-color','white')
+                .css('border', '1px solid black')
+				.zIndex(1000)
+                
+				
+                this._make_pallette();
+                $.each(this.Site.colors.pallette , function(l, vars){
+                    var b, main
+					if (l == 0){
+						//console.log(l, vars)
+						$.each ( vars, function(i, col_){
+							var col = hsvToRgb(col_);
+							
+	                        if(i == 0){
+							
+								b = $('<div>').css('float','left').width(100).height(100).appendTo(color_chooser)
+							}
+								
+							$('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(100).height(100/6).appendTo(b)
+                            .click(function(evt){  
+								onSelectColor(col, {v:l, ix:i} )
+								evt.preventDefault(), evt.stopPropagation()
+								color_chooser.remove();
+							})
+
+						})
+					}
+					else{
+						// console.log(l, vars)
+	                    $.each ( vars, function(i, col_){
+	                        var col = hsvToRgb(col_);
+	                        if(i == 0){
+	                            b = $('<div>').css('float','left').width(100).height(100).appendTo(color_chooser)
+	                            main = $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(100).height(50)
+	                            .click(function(evt){  
+									onSelectColor(col, {v:l, ix:i} )
+									color_chooser.remove();
+									evt.preventDefault(), evt.stopPropagation()})
+	                        }else{
+	                            if(i == 3){
+	                                main.appendTo(b);
+	                            }
+	                            $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(50).height(25).appendTo(b)
+	                            .click(function(evt){  // console.log(col);  
+									onSelectColor(col,{v:l, ix:i});
+									evt.preventDefault(), evt.stopPropagation() 
+									color_chooser.remove();
+								})
+	                        }
+	                    })
+					}
+                })
+				return color_chooser; 	
+			}, 
+			apply_block_settings: function(obj, settings){
+				//console.log("HHHHH", obj)
+				var w = obj.jq,
+				bl = this.get_block(obj.pos);
+				
+				
+				w.css('border-color', settings.border_color)
+				 .css('opacity', settings.bg_opacity)
+				 .css('border-radius', settings.border_radius +'px')
+				 .css('border-width', settings.border_width +'px')
+				 .css('left', this._calc_left(bl.x+1) - settings.border_width )
+				 .css('top', this._calc_top(bl.y) - settings.border_width )
+				 
+				 .css('border-style','solid')
+				 .css('line-height', settings.line_height +'px')
+				 .css('font-size', settings.font_size +'px')
+				w.children()
+				 .css('margin-left',settings.padding_left_right +'px')
+				 .css('margin-right',settings.padding_left_right +'px')
+				 .css('padding-top',settings.padding_top +'px')
+				 // .css('width',20)
+				 
+				 
+				 
+				 if (settings.background.type == 'color'){
+					 w.css('background-color' , settings.background.color );
+				 }
+				
+			},
+            init_block_cp: function(obj,  to){
+				
+            	var m = $('<div>').appendTo(to);
+				var self = this;
+				var w = obj;
+				var settings = self.getWidgetSettings(obj.pos);
+				//console.log ("HAHAHA", obj, w, to)
+				
+				
+				cl = $('<button>').text('background-color').click(function(){
+					cb = function(col){ 
+						//console.log(settings);
+						settings.background = { type:'color', color:col }
+						self.apply_block_settings( w, settings )
+					}
+					cc = self.draw_color_chooser( cb );
+					cc.appendTo( to )
+					.position({of:this, my:'left top', at:'left top' } )
+					
+				}).appendTo(m)
+				cl = $('<button>').text('border-color').click(function(){
+					cb = function(col){ 
+						//console.log(settings);
+						settings.border_color = col
+						self.apply_block_settings( w, settings )
+						
+					}
+					cc = self.draw_color_chooser( cb );
+					cc.appendTo( to )
+					.position({of:this, my:'left top', at:'left top' } )
+					
+				}).appendTo(m)
+				vf = function(a,d){
+					
+					return typeof(a) == 'undefined'? d : a
+				}
+				$("<div>").width(250).slider({min:0, max:100,value:vf(settings.bg_opacity,0)*100, slide:function(event, ui){ 
+					settings.bg_opacity = ui.value/100 ;
+					self.apply_block_settings( w, settings )
+					
+					// w.css('opacity', settings.bg_opacity); 
+				}} ).appendTo(m)
+				
+				$("<div>").width(250).slider({min:0, max:100,value:vf(settings.border_radius,0), slide:function(event, ui){ 
+					settings.border_radius = ui.value ;
+					self.apply_block_settings( w, settings )
+					
+					//w.css('border-radius', settings.border_radius +'px'); 
+				}} ).appendTo(m)
+				
+				$("<div>").width(250).slider({min:0, max:100,value: vf(settings.border_width,0)*10, slide:function(event, ui){ 
+					settings.border_width = ui.value/10 ;
+					self.apply_block_settings( w, settings )
+
+				}} ).appendTo(m)
+		
+				def_lh =  obj.jq.width() / settings.font_size *0.75;
+				
+				var lhs = $("<div>").width(250).slider({min:0, max:300,value:vf(def_lh,0)*10, slide:function(event, ui){ 
+					settings.line_height = ui.value/10 ;
+					self.apply_block_settings( w, settings )
+					
+					// w.css('line-height', settings.line_height +'px'); 
+					
+				}} ).appendTo(m)
+				
+				$("<div>").width(250).slider({min:0, max:300,value:vf(settings.font_size,0)*10, slide:function(event, ui){ 
+					settings.font_size = ui.value/10 ;
+					
+					settings.line_height  = obj.jq.width() / settings.font_size *0.75;
+					self.apply_block_settings( w, settings )
+					
+					//w.css('font-size', settings.font_size +'px'); 
+					//w.css('line-height', lh +'px'); 
+					lhs.slider('value', settings.line_height * 10)
+					
+					
+				}} ).appendTo(m)
+				var pt = settings.padding_top ? settings.padding_top*10 : 0
+				
+				$("<div>").width(250).slider({min:0, max:300,value:pt, slide:function(event, ui){ 
+					settings.padding_top = ui.value/10 ;
+					self.apply_block_settings( w, settings )
+				}} ).appendTo(m)
+				var plr = settings.padding_left_right ? settings.padding_left_right*10 : 0
+				$("<div>").width(250).slider({min:0, max:300,value:plr, slide:function(event, ui){ 
+					settings.padding_left_right = ui.value/10 ;
+					self.apply_block_settings( w, settings )
+				}} ).appendTo(m)
+				
+				
+				//console.log(m,to)
+				
+				var o = {
+					save: function(){
+						//console.log(settings)
+						self.setWidgetSettings(obj.pos,  settings)
+					},
+					cancel:function(){
+						
+					},
+				}
+				return o; 
+				
+				
+				
+            },
             init_block: function(bl, to){
-				console.log (bl)
+				// console.log (bl)
                 var r = bl.top,
                     l = bl.left,
                     w = bl.width,
@@ -1507,15 +2192,11 @@
                     H = this._calc_height(h),
                     widget = bl.widget.name.split('.'),
                     wdata  = bl.widget.data;
-                function newWidget(c,data, t,p){
-                    return t.Site.Applications[widget[0]].widgets[widget[1]].init(c, data, t,p);
+                function newWidget(c, t,p, cp){
+                    return t.Site.Applications[widget[0]].widgets[widget[1]].init(c, t,p, cp);
                 }
-                    
                 
-                    
-                
-                // to.prop('pos',my_pos);
-                var w = $("<div>").width(W).css('height',H).appendTo(to.jq).addClass("draggable-module")
+                var w = $("<div>").css('width','100%').css('height', '100%').appendTo(to.jq).addClass("draggable-module")
                 var draga;
                 if(this.is_constructor){
                     
@@ -1553,7 +2234,7 @@
                             //var oldpos = to.pos.col +':' +  to.pos.row  ;
                             var new_pos = draga.left + ':' + draga.top;
                             self._moved_block = false;
-							console.log(draga);
+							// console.log(draga);
                             self.move_block(to.pos, draga.left, draga.top);
                             self.redraw();
                             
@@ -1561,9 +2242,11 @@
     
                     })
                 }
-                var Widget = newWidget(w, wdata, this, to.pos);
+				
+                var Widget = newWidget(w, this, to.pos);
                 Widget.draw();
-               
+				var settings = self.getWidgetSettings(to.pos)
+                self.apply_block_settings(to, settings)
                 if (this.is_constructor){
                     
                         to.jq.dblclick(function(){
@@ -1574,10 +2257,23 @@
                                     bl.unbind("mouseenter")
                                     bl.mouseleave();
                                     bl.unbind("mouseleave")
-                                    
                                 }
+								
                                 to.jq.draggable('destroy');
-                                Widget.settings();
+								
+								var control_panel = $('<div>').appendTo($('#controls'))
+                                control_panel.css('position','absolute')
+                            
+											.position({of: w, my:"left top", at: "right top", collision:'flip'})
+	                                        .css("border","2px solid black").css('background-color',"orange")
+	                                        .draggable({scroll:false})
+	                                        .css('padding',"10")
+											
+								var wco  = self.init_block_cp(to, control_panel )
+								
+								
+								
+                                Widget.settings(control_panel);
                                 
                                 $("<div>").css('background-color','orange').appendTo(to.jq).css('position','absolute')
                                 .position({of:to.jq, 
@@ -1590,14 +2286,19 @@
                                 .position({of:to.jq, my:"left top", at:"left-20 top", collision:'none none' })
                                 .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function(){
                                     Widget.save()
-                                    self._save_site();
+									wco.save()
+									self._save_site();
                                     self.redraw.apply(self,[])
+									control_panel.remove()
                                 });
                                 
                                 $("<div>").css('background-color','red').appendTo( to.jq.parent() ).css('position','absolute')
                                 .position({of:to.jq, my:"left top", at:"left-20 top+30", collision:'none none' })
                                 .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function(){
                                     
+									Widget.cancel()
+									control_panel.remove();
+									
                                     self.redraw.apply(self,[])
                                 });
         
@@ -1610,9 +2311,16 @@
                         var mouseWidth = W, mouseHeight = H,
 						start_x, start_y;
 						
+                        var delete_marker = $("<div>").appendTo(to.jq).css('position','absolute')
+                        .position({of:to.jq, my:"right top", at:"right-20 top"})
+                        .addClass("ui-icon ui-icon-closethick").width('20px').height('20px').hide().click(function(){
+                        	self.delete_block(to.pos);
+							self.redraw.apply(self,[])
+                        })
+						
                         var resize_marker = $("<div>").appendTo(to.jq).css('position','absolute')
-                        .position({of:to.jq, my:"right bottom", at:"right-14 bottom-14"})
-                        .css('background-color','black')
+                        .position({of:to.jq, my:"right bottom", at:"right-20 bottom-20"})
+                        
                         .addClass("ui-icon ui-icon-gripsmall-diagonal-se").width('20px').height('20px').hide()
                         .addClass('resize-marker')
                         .mouseenter(function(){  })
@@ -1622,14 +2330,9 @@
                             self.resize_frame = $("<div>")
                                                     .css("position", 'absolute')
                                                     .css('border', "1px solid black")
-                                                    // .addClass('resize-frame')
                                                     .appendTo(to.jq.parent())
                                                     .width(W)
                                                     .height(H)
-                                                    //.prop('orig_w', W)
-                                                    //.prop('orig_h', H)
-                                                    //.prop('begin_x', evt.clientX)
-                                                    //.prop('begin_y', evt.clientY)
                                                     .position({of:to.jq, my:'left top', at:'left top'});
 															
                             
@@ -1642,8 +2345,6 @@
                                 if(self.resize_frame){
                                     self.resize_frame.remove()
                                     self.resize_frame = false;
-                                    //var myw = to.jq.prop("cur_width");
-                                    //var myh = to.jq.prop("cur_height");
                                     self.blocks[to.pos].width = mouseWidth;
                                     self.blocks[to.pos].height= mouseHeight;
                                     self.redraw.apply(self, [])
@@ -1654,11 +2355,7 @@
                                 var fr = self.resize_frame;
                                 if (fr){
                                     if (fr.size()){
-                                        var //W  = fr.prop('orig_w'),
-                                            //H  = fr.prop('orig_h'),
-                                            //mx = fr.prop('begin_x'),
-                                            //my = fr.prop('begin_y'),
-                                            nh = evt.clientY - start_y + H,
+                                        var nh = evt.clientY - start_y + H,
                                             nw = evt.clientX - start_x + W,
                                             width_step = self._stepping_width(nw),
                                             height_step = self._stepping_height(nh);
@@ -1673,9 +2370,14 @@
                         to.jq.mouseenter(function(e){
                             resize_marker.show()
                             resize_marker.zIndex(1000);
+							delete_marker.zIndex(1000);
+							delete_marker.show()
+							
                             
                             
                         }).mouseleave(function(){
+							
+							delete_marker.hide()
                             resize_marker.hide()
         
                         })

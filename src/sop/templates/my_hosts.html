@@ -2,8 +2,20 @@
 {% block content %}
 <h1>Мои сайты</h1>
 
-{% for s in sites %}
-<a href='http://{{s}}/admin/'> {{s}}</a>
-{% endfor %}
+
+{% if sites %}
+<ul>
+	{% for s in sites %}
+	<li><a href='http://{{s}}/admin/'> {{s}}</a></li>
+	{% endfor %}
+</ul>
+{% endif %}
+
+<form method = 'post' action = '{% url "registration_addhost" %}'>
+	{% csrf_token %}
+	<input name='hostname' />.be-we.ru
+	<br>
+	<input type='submit' value = 'Добавить сайт'>
+</form>
 
 {% endblock %}

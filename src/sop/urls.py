@@ -149,7 +149,7 @@ def data_updaters(type_, cursor):
                         
                         new_blocks.append(bl)
                     item['pages'][p]['blocks'] = new_blocks
-        print item
+        # print item
         yield item
                 
                     
@@ -188,7 +188,7 @@ def data_connector(req):
                     else:
                         "This is just a long string"
                         res = obj
-                    print obj[:100]
+                    # print obj[:100]
                     gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
                     fh = gf.new_file()
                     fh.write(res)
@@ -371,7 +371,7 @@ class RegistrationView( FormView ):
             
         return redirect(reverse("registration_complete"))
     def form_invalid(self, form):
-        print "form insvalid", repr(form.errors)
+        # print "form insvalid", repr(form.errors)
         return self.render_to_response(self.get_context_data(form=form))
             
 class ActivationView( TemplateView ):

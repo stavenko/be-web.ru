@@ -29,8 +29,6 @@
 		var STATIC = "{{ STATIC_URL }}";
 		var DB = init_db("{% csrf_token %}")
 		var site_id = "{{site.id}}"
-				//var GET    = {{get}};
-		
 		$(function (){
 			var scr = $.ajax({
 								url: STATIC + "js/sop/constructor.js",
@@ -57,6 +55,9 @@
 		
 		
 		<style>
+		ui-accordion-content{
+			padding: 10;
+		}
 		
 		canvas {
 			    image-rendering: optimizeSpeed;             // Older versions of FF

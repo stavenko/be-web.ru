@@ -86,9 +86,10 @@ def site_view(site, req, *k, **kw):
 
     return render_to_response("constructor/displayer_page.html", c)
     
-def site_edit(site,req, *k, **kw):
+def site_edit(site, req, *k, **kw):
     c = RequestContext(req)
     is_debug = settings.DEBUG
+    # raise ValueError("%s, %s" % (req.user.id, site['django_user_id']))
     if req.user.id == site['django_user_id'] or is_debug:
         site['id'] = site['_id']
         c['site'] = site
@@ -187,7 +188,7 @@ def data_connector(req):
                             raise ValueError('unknown encoding')
                     else:
                         "This is just a long string"
-                        res = obj
+                        res = obj.encode('utf-8')
                     # print obj[:100]
                     gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
                     fh = gf.new_file()
@@ -385,8 +386,7 @@ class ActivationView( TemplateView ):
         u.save()
         
         return super(ActivationView, self).get(req, *k, **kw)
-        
-        
+ 
 class NewHostView(TemplateView):
     def post(self, req, *k, **kw):
         if 'hostname' in req.POST:

@@ -16,6 +16,114 @@
 					$("<div>").text("This is " + this.title + " admin page").appendTo(to) 
 				},
 				widgets: {
+					"gallery": {
+												  title:"Галерея",
+												  init:function(my_cont,  constructor_inst, pos, cp){// console.log(data)
+													var o = {
+														my_cont:my_cont,
+														constr :constructor_inst,
+														default_size: [3,1],
+														disobey:[],
+														
+														cp:cp,
+														pos: pos,
+														//_jq : null,
+														settings_draw :false,
+														draw: function(){
+															// console.log("Exactly after initing", this)
+															var data = this.constr.getWidgetData(pos, false)||{},
+															jq=this._jq=$(decodeURI(data.html||'<ul class="w_gallery empty" />'))
+															 .appendTo(this.my_cont),
+															w = data.size || 70, W=data.cellSize||80,
+															self=this, fromURL;
+															if(this.constr.is_constructor){
+																//----Загрузка картинок----
+																function loadImg(event) {
+																	$(new Image()).one('load', function(){
+																		if (this.width){
+																			jq.removeClass('empty').append(
+																			  $('<li>').append(this)
+																			  .css({width:W, lineHeight:W+'px'})
+																			)
+																		}
+																	}).prop({src:event.target.result||urlInp.val()})
+																	  .css({maxWidth:w, maxHeight:w})
+																	urlInp.val(''); return false
+																}
+
+																function displayFiles(files) { 
+																	$.each(files, function(i, file) {
+																	  if (!file.type.match(/image.*/)) {
+																		// Отсеиваем не картинки
+																		return true;
+																	  }
+																	  // Создаем объект FileReader и отображаем миниатюру 
+																	  var reader = new FileReader();
+																	  reader.onload = loadImg;
+																	  reader.readAsDataURL(file);
+																	});
+																}
+																var fInp = $('<input type="file" multiple>')
+																 .bind('change', function() {
+																	displayFiles(this.files);
+																	this.files=[];
+																	//inputs.hide()
+																}),
+																urlInp = $('<input type="text"  title="адрес в интернете" placeholder="адрес в интернете">'),
+																inputs = $("<form />")
+																 .css({position:'absolute', zIndex:1})
+																 .append(fInp).append('<hr>')
+																 .append(urlInp).append('<input type="submit">')
+																 // .appendTo(this.my_cont.parent().parent())
+																 .css({padding:10, backgroundColor:'orange'})
+																 // .position({of:this.my_cont, my:"left top", at:"left bottom", collision:"none none"})
+																 .submit(loadImg)
+
+															}
+															this.settings=function(controls){
+																var cp = $("<div>").appendTo(controls )
+																self.my_cont.off('mousemove mouseup mousedown dblclick')
+																jq.on('dblclick', 'li', function(){$(this).remove()})
+																  .on('mousewheel DOMMouseScroll', function(e){
+																	e=e.originalEvent;
+																	var d=(e.detail||-e.wheelDelta)<0?1.05:(1/1.05);
+																	$(e.target).is('img')?(w*=d):(W*=d)
+																	W=Math.max(w,W);
+																	$('li',jq).css({width:W, lineHeight:W+'px'})
+																	$('img',jq).css({maxWidth:w, maxHeight:w})
+																	e.preventDefault();
+																	return false
+																}).on('MozMousePixelScroll', function(e){
+																	e.preventDefault();
+																}).on({
+																	dragenter:function(){return false},
+																	dragover: function(){return false},
+																	drop: function(e) { //--drag&drop
+																	  var dt = e.originalEvent.dataTransfer;
+																	  if (dt) displayFiles(dt.files);
+																	  return false;
+																	} 
+																});
+																controls.show();
+																
+																inputs.appendTo(cp)// .show()
+
+																// inputs.show()
+															}
+															this.save=function(){
+																// inputs.remove();
+																console.log(my_cont.html())
+																data.html=encodeURI($(my_cont).html())
+																data.size=w; data.cellSize=W
+																self.constr.setWidgetData(self.pos, data )
+															}
+														},
+														cancel: function(){this.constr.redraw()},
+														jq: function(){ return this._jq } 
+													};
+													return o; 
+												  }
+					                            }, // конец галереи
 					"menubar" : {title:"Меню сайта", init: function(my_cont, constructor_inst, pos, cp){
 											//console.log(pos) 
 											var data = data;

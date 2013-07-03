@@ -1,6 +1,6 @@
 # Django settings for sop project.
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -132,6 +132,7 @@ TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
+SESSION_COOKIE_DOMAIN =".be-web.ru"
 
 INSTALLED_APPS = (
     'django.contrib.auth',

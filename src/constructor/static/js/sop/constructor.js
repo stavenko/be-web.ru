@@ -1115,6 +1115,7 @@
 				return ix
 			},
 			redraw_background: function(){
+				console.log('redraw background', this.Site.backgrounds)
 				var self = this;
 				$.each(this.Site.backgrounds, function(name, imgo){
 					// // console.log(name,imgo)
@@ -1597,6 +1598,7 @@
 					}
 					
 					if (BG){
+						console.log(BG)
 						c = self.get_color(BG)
 						ctx.fillStyle =	 hsvToRgb(c)// "rgba( 255,255, 255, 255)";
 					}
@@ -1648,6 +1650,7 @@
 						sctx.drawImage(img,0,0)
 						buffData = sctx.getImageData(0,0, img	.width, img.height)
 						if (FG){
+							console.log("FG", FG)
 							var c = self.get_color(FG)
 							
 						}
@@ -2218,11 +2221,16 @@
 				var w = obj.jq,
 				bl = this.get_block(obj.pos);
 				
+				console.log('apply_block-settings', settings)
 				
 				if(widget.disobey.indexOf('border_color') == -1){
 					if(typeof settings.border_color == 'string'){
 						w.css('border-color', settings.border_color);
 					}else{
+						if (typeof settings.border_color == 'undefined'){
+							settings.border_color = {v:0, ix:0}
+						}
+						// console.log('border-color', settings.border_color)
 						var color = this.get_color(settings.border_color)
 						var c = hsvToRgb(color);
 						w.css('border-color', c);
@@ -2302,7 +2310,7 @@
 				
 					cl = $('<button>').button().text('border-color').click(function(){
 						cb = function(col, ix){ 
-							if(col != clear){
+							if(col != 'clear'){
 								settings.border_color = ix
 								self.apply_block_settings( w, settings, widget )
 							}

@@ -47,13 +47,36 @@
 					}
 				}
 		function scaleImage(img, maxHeight, maxWidth){
+			
+			if(typeof useSmallest == 'undefined'){
+				useSmallest = false
+			}else{
+				useSmallest = true;
+			}
 			var width = img.width,
-				 height = img.height,
-				 scale = Math.max(maxWidth/width, maxHeight /height);	 
-			if (scale < 1) {
-					 width = parseInt(width * scale, 10);
-					 height = parseInt(height * scale, 10);
-			};
+				height = img.height;
+				//console.log("WH", width, height);
+			if(width > height){
+				scale = maxWidth / width;
+			}else if(width < height ){
+				scale = maxHeight / height;
+			}else{
+				if(maxWidth > maxHeight){
+					scale = maxHeight / height;
+				}else{
+					scale = maxWidth / width;
+				}
+			}
+				
+				
+				
+			//console.log("IMG sc", maxWidth/width, maxHeight / height )
+				
+			//console.log("IMG", scale)
+				
+			width = parseInt(width * scale, 10);
+			height = parseInt(height * scale, 10);
+			
 			img.width = width;
 			img.height = height;
 			return img;
@@ -2221,7 +2244,7 @@
 				var w = obj.jq,
 				bl = this.get_block(obj.pos);
 				
-				console.log('apply_block-settings', settings)
+				// console.log('apply_block-settings', settings)
 				
 				if(widget.disobey.indexOf('border_color') == -1){
 					if(typeof settings.border_color == 'string'){
@@ -2501,8 +2524,10 @@
 				var Widget = newWidget(w, this, to.pos);
 				Widget.draw();
 				var settings = self.getBlockSettings(to.pos)
-				// console.log(settings)
+				//console.log("B", w.width() )
 				self.apply_block_settings(to, settings, Widget)
+				//console.log("A", w.width() )
+				
 				if (this.is_constructor){
 					
 						to.jq.dblclick(function(){

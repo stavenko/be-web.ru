@@ -18,12 +18,13 @@ var o = {
 	widgets: {
 		"gallery": {
 		  title:"Галерея",
+		  default_size: [3,1],
 		  init:function(my_cont,  constructor_inst, pos, cp){// console.log(data)
 			  console.log(my_cont.width())
 			var o = {
 				my_cont:my_cont,
 				constr :constructor_inst,
-				default_size: [3,1],
+				
 				disobey:['padding_left_right', 'padding_top'],
 				
 				cp:cp,
@@ -49,12 +50,13 @@ var o = {
 							m = this.data.margin || 5,
 							spaceR = R*m,
 							spaceC = C*m,
-							hc = (my_cont.height()-1) / R,
-							wc = (my_cont.width()-1) / C,
+							hc = (( my_cont.height()) / R)-1,
+							wc = (( my_cont.width()) / C)-1 ,
 							
-							h = (my_cont.height()-spaceR-1) / R,
-							w = (my_cont.width()-spaceC-1) / C;
-							console.log(my_cont.width()-1)
+							h = ((my_cont.height()-spaceR) / R)-1,
+							w = ((my_cont.width()-spaceC) / C)-1;
+							
+							
 						$.each(this.data.images, function(ix, obj){
 							img = $(new Image()).one('load', function(){
 								
@@ -187,13 +189,15 @@ var o = {
 		  }
         }, // конец галереи
 									
-		"menubar" : {title:"Меню сайта", init: function(my_cont, constructor_inst, pos, cp){
+		"menubar" : {title:"Меню сайта", 
+					default_size: [3,1],
+					init: function(my_cont, constructor_inst, pos, cp){
 			//console.log(pos) 
 			var data = data;
 			var o = {
 					my_cont:my_cont,
 					constr :constructor_inst,
-					default_size: [3,1],
+					
 					disobey:[],
 					cp : cp,
 					pos: pos,
@@ -204,9 +208,9 @@ var o = {
 						} else{ font = this.constr.Site.fonts.content}
 						
 						this._jq = $("<ul>")
-									// .addClass('text-data')
 									.appendTo(this.my_cont)
 									.css('font-family', font )
+									.css('font-size', my_cont.width() / 40)
 									.css('padding',0).css('margin', 0)
 						var current_page = constructor_inst.current_page
 						var self = this;
@@ -218,21 +222,33 @@ var o = {
 						var width = this._jq.width()
 						var item_width = width / pages;
 						//console.log(my_cont, item_width, width)
-						$.each(constructor_inst.Site.pages, function(i, p){
-							var li = $("<li>").appendTo(self._jq)
-												 .css('float', 'left').width(item_width)
-												 .css('padding',0).css('margin', 0)
-												 .css('list-style-type','none')
-							if (i == current_page){
-								li.append(p.title)
-							}else{
-								$("<a>").prop('href', "#" + i).click(function(evt){
-									window.location.hash = i
-									constructor_inst._init_page()
-									constructor_inst.redraw()
-									evt.preventDefault();
-								}).append(p.title).appendTo(li)
+						
+						var pages = $.extend(true, {}, constructor_inst.Site.pages)
+						var pa = [];
+						$.each(pages,function(i, p){
+							p.slug = i
+							pa.push(p)
+						})
+				
+						pa.sort(function(a,b){ return a.order - b.order } )
+				
+				
+						$.each(pa, function(ix,p){	
+							var i = p.slug
+							if( p.show_in_menu ){
+								var li = $("<li>").appendTo(self._jq)
+													 .css('float', 'left').width(item_width)
+													 .css('padding',0).css('margin', 0)
+													 .css('list-style-type','none')
+								if (i == current_page){
+									li.append(p.title)
+								}else{
+									$("<a>").prop('href', "#!" + i).click(function(evt){
+										window.location.hash = "!" + i
+										evt.preventDefault();
+									}).append(p.title).appendTo(li)
 								
+								}
 							}
 							
 						})
@@ -243,7 +259,29 @@ var o = {
 				
 			}
 		},
-		"text" : {title:"Текстовое поле", init: function(my_cont, constructor_inst, pos, cp){
+		"empty" : {title:"Пустышка", 
+					default_size: [4,4],
+					init: function(my_cont, constructor_inst, pos, cp){
+			//console.log(pos) 
+			var data = data;
+			var o = {
+					my_cont:my_cont,
+					constr :constructor_inst,
+					
+					disobey:[],
+					cp : cp,
+					pos: pos,
+					_jq : false,
+					draw: function(){
+						this._jq = $('<span>')
+					},
+					jq: function(){ return this._jq } 
+				}
+				return o;
+				
+			}
+		},
+		"text" : {title:"Текстовое поле", default_size: [3,3],init: function(my_cont, constructor_inst, pos, cp){
 			//console.log(pos) 
 			var data = data;
 			var o = {
@@ -251,7 +289,7 @@ var o = {
 					constr :constructor_inst,
 					disobey:[],
 					// data : data,
-					default_size: [3,3],
+					
 					cp : cp,
 					pos: pos,
 					_jq : false,
@@ -333,14 +371,14 @@ var o = {
 
 
 			},
-		"header" : {title:"Заголовок", init: function(my_cont, constructor_inst, pos, cp){
+		"header" : {title:"Заголовок", 					default_size: [5,1],
+init: function(my_cont, constructor_inst, pos, cp){
 			//console.log(pos) 
 			var data = data;
 			var o = {
 			
 					my_cont:my_cont,
 					constr :constructor_inst,
-					default_size: [5,1],
 					disobey:['padding_top', 
 							 'padding_left_right'],
 					// data : data,
@@ -432,13 +470,13 @@ var o = {
 
 
 						},								
-	"image": {title:"Картинка", init:function(my_cont,constructor_inst, pos, cp){
+	"image": {title:"Картинка",			default_size: [4,4] , init:function(my_cont,constructor_inst, pos, cp){
 		// console.log(data)
 		var o = {
 			my_cont:my_cont,
 			constr :constructor_inst,
 			// data : data,
-			default_size: [4,4],
+
 			disobey:['padding_top','padding_left_right'],
 			cp:cp,
 			pos: pos,
@@ -606,7 +644,7 @@ var o = {
 						
 					}else{
 						var a = dt / Math.abs(dt)
-						zoom(0.1 *a, evt.clientX - off.left, evt.clientY - off.top)
+						zoom(0.1 *a, evt.pageX - off.left, evt.pageY - off.top)
 						// console.log(evt,dt);
 						
 					}
@@ -614,9 +652,11 @@ var o = {
 					return true
 				})
 					this.my_cont.mousemove(function(evt){
+						console.log(evt)
 						if (is_drag){
-							var cur_pos = {x: evt.clientX - off.left,
-										y: evt.clientY - off.top}
+							var cur_pos = {x: evt.pageX - off.left,
+										y: evt.pageY - off.top}
+							// console.log(cur_pos)			
 							var diff = {x: cur_pos.x - old_pos.x,
 										y: cur_pos.y - old_pos.y}
 										
@@ -638,8 +678,8 @@ var o = {
 						is_drag = false;
 					})
 					this.my_cont.mousedown(function(evt){
-						old_pos = {x: evt.clientX - off.left,
-									 y: evt.clientY - off.top}
+						old_pos = {x: evt.pageX - off.left,
+									 y: evt.pageY - off.top}
 						//console.log(start_pos)
 						is_drag = true;
 						

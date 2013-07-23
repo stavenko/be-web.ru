@@ -56,6 +56,20 @@ var init_db = function(csrf_token){
             
             xhr.send(fd)
         },
+		remove_object:function(type, query){
+			var o = {}
+			o.q = query
+			d={o : JSON.stringify(o), type:type}
+			d[cs_name] = cs_val;
+			$.ajax({
+				url:'/data/delete/',
+				data: d,
+				dataType:'json',
+				type:'POST',
+				
+			})
+			
+		},
 		get_blob_url:function(blob){
 			return "/blob/"+ blob._id['$oid'] + '/' 
 			

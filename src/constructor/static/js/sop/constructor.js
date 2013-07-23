@@ -46,33 +46,17 @@
 						},
 					}
 				}
-		function scaleImage(img, maxHeight, maxWidth){
+				
+		function scaleImage(img,  maxWidth, maxHeight, useMax){
 			
-			if(typeof useSmallest == 'undefined'){
-				useSmallest = false
-			}else{
-				useSmallest = true;
-			}
 			var width = img.width,
 				height = img.height;
-				//console.log("WH", width, height);
-			if(width > height){
-				scale = maxWidth / width;
-			}else if(width < height ){
-				scale = maxHeight / height;
+			if(useMax){
+				scale = Math.max(maxWidth / width, maxHeight / height); 
 			}else{
-				if(maxWidth > maxHeight){
-					scale = maxHeight / height;
-				}else{
-					scale = maxWidth / width;
-				}
+				scale = Math.min(maxWidth / width, maxHeight / height); 
 			}
 				
-				
-				
-			//console.log("IMG sc", maxWidth/width, maxHeight / height )
-				
-			//console.log("IMG", scale)
 				
 			width = parseInt(width * scale, 10);
 			height = parseInt(height * scale, 10);
@@ -237,17 +221,38 @@
 		var pg = {
 			// blocks : [],
 			page_vars : {},
+			_app_cache:{},
 			rect: function(x,y,w,h){
 			return {left:x, top:y, width:w, height:h}	 ;
 			},
-			move_block: function( ix, x, y){
+			set_app_cache: function (name, c) {
+				if (this._app_cache){
+					this._app_cache[name] = c
+				}
+				
+			},
+			get_app_cache: function (name) {
+				if (this._app_cache[name]){
+					return this._app_cache[name]
+				}else{
+					return {}
+				}
+				
+			},
+			
+			
+			
+			move_block: function( ix, x, y, dont_save){
 				var bl = this.Site.blocks.splice(ix,1)[0]
 				bl.x = x; bl.y = y;
 				this.Site.blocks.push(bl)
-				this._save_site();
+				if(!(dont_save)){
+					this._save_site();
+				}
 			},
-			add_block:function(x,y, type){
-				this.Site.blocks.push(	{width:1,height:1, 
+			add_block:function(x,y, type, ds){
+				
+				this.Site.blocks.push(	{width:ds[0],height:ds[1], 
 									x:x, y:y,
 									widget:{name:type, data: ''	 },
 									display_on : this.current_page,
@@ -271,19 +276,26 @@
 								async:false
 							}).responseText;
 							
-			var C = eval("[" + scr + "]")[0];
-			
-			App = C.getter()
+				var C = eval("[" + scr + "]")[0];
+				// console.log("WTF", ;
+				App = C.getter(this)
 			
 			return App;
 			},
-			load_site:function(){
-				
-				if (this.Site){
+			
+			load_site:function(do_reload){
+				if(typeof (do_reload) == 'undefined'){
+					do_reload = false
+				}else{
+					do_reload = true
+				}
+				var is_site = typeof this.Site != 'undefined'
+				//console.log(do_reload)
+				if (is_site & !do_reload){
 					return
 				}else{
 					// AJAX HERE
-					S = DB.get_objects(this._site_type, {site_id: this.site_id} )
+					S = DB.get_objects(this._site_type, {} )
 					// // // console.log(S)
 					
 					if (S.total_amount != 0 ) {
@@ -320,7 +332,14 @@
 						// console.log(this.Site.blocks)
 					}
 					
+					
 					delete this.Site.version
+					this.page_order_index = {};
+					this.page_amount = 0
+					for (i in this.Site.pages){
+						this.page_order_index[this.Site.pages[i].order] = i
+						this.page_amount +=1;
+					}
 				}
 				
 				
@@ -383,7 +402,8 @@
 			_init_page: function(){
 				
 				var hash_ = window.location.hash.slice(1).split('?')
-				var page_name = hash_[0]
+				// console.log(hash_)
+				var page_name = hash_[0].replace('!','')
 				var params = hash_[1]
 				this.current_page = page_name
 				if (params){
@@ -396,24 +416,16 @@
 						this.page_vars[par[0]] = val
 						
 					}
-					// // // console.log(this.page_vars)
+					
 				}
+				// console.log(this.page_vars)
 				
 				
 				pdata = this.getPageData(page_name);
-				//if (pdata.layout === 'same'){
 				this.layout = this.Site.layout 
-				//}else{
-				//	this.layout = pdata.layout;
-				//}
-				// this.blocks = pdata.blocks;
-				this.base_height = pdata.layout.base_height;
+				this.base_height = this.layout.base_height;//pdata.layout.base_height;
 				this.inited_blocks = [];
 				
-				// this.layout_padding = 10;
-				
-				
-				//this.redraw();
 			
 				
 			},
@@ -440,6 +452,13 @@
 				$(window).resize(function(){
 					self.redraw();
 				})
+				window.onhashchange=function(){
+					// console.log('hash changed')
+					self._init_page();
+					self.redraw()
+					
+					
+				}
 
 				
 				if(this.is_constructor){
@@ -1138,7 +1157,7 @@
 				return ix
 			},
 			redraw_background: function(){
-				console.log('redraw background', this.Site.backgrounds)
+				//ßßconsole.log('redraw background', this.Site.backgrounds)
 				var self = this;
 				$.each(this.Site.backgrounds, function(name, imgo){
 					// // console.log(name,imgo)
@@ -1185,7 +1204,7 @@
 					}else if (imgo.type == 'pattern'){
 						var pat = self.Site.patterns[ imgo.data ]
 						
-						console.log("Pattern_id", imgo.data)
+						// console.log("Pattern_id", imgo.data)
 						if(name == 'body'){
 							c = C[0]
 							
@@ -1621,7 +1640,7 @@
 					}
 					
 					if (BG){
-						console.log(BG)
+						//console.log(BG)
 						c = self.get_color(BG)
 						ctx.fillStyle =	 hsvToRgb(c)// "rgba( 255,255, 255, 255)";
 					}
@@ -1656,11 +1675,11 @@
 						}
 						self.Site.backgrounds[type] = {data:library_ix , type:'pattern' }
 					}else{
-						console.log('we shold change this');
+						// console.log('we shold change this');
 						self.Site.patterns[library_ix] = img;
 					}
 					
-					console.log('index in lib', library_ix);
+					// console.log('index in lib', library_ix);
 					redraw_pats();
 					self.redraw_background();
 				}
@@ -1673,7 +1692,7 @@
 						sctx.drawImage(img,0,0)
 						buffData = sctx.getImageData(0,0, img	.width, img.height)
 						if (FG){
-							console.log("FG", FG)
+							//console.log("FG", FG)
 							var c = self.get_color(FG)
 							
 						}
@@ -1729,16 +1748,26 @@
 					}
 					redraw_ctx()
 				}
+				ul = $('<li>').appendTo(my_patt)
 				
 				$('<button>').click(function(e){ self.draw_color_chooser( choose_bg ).appendTo(my_patt) }).appendTo(my_patt).text("Background")
 				$('<button>').click(function(e){ self.draw_color_chooser( choose_fg ).appendTo(my_patt) }).appendTo(my_patt).text("Foreground")
 				
-				//$("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ WA = ui.value ;redraw_ctx() }} ).appendTo(my_patt)
-				//$("<div>").width(250).slider({min:0, max:100,value:0, slide:function(event, ui){ HA = ui.value;redraw_ctx() }} ).appendTo(my_patt)
-				$("<div>").width(250).slider({min:0, max:360,value:0, slide:function(event, ui){ A = ui.value ;redraw_ctx()}} ).appendTo(my_patt)
-				$("<div>").width(250).slider({min:1, max:100,value:z*100, slide:function(event, ui){ Z = (ui.value)/100 ;redraw_ctx()}} ).appendTo(my_patt)
-				$("<div>").width(250).slider({min:64, max:300,value:base, slide:function(event, ui){ base = ui.value ;redraw_ctx()}} ).appendTo(my_patt)
-				$("<div>").width(250).slider({min:0, max:100,value:100, slide:function(event, ui){ opacity = ui.value ;redraw_ctx()}} ).appendTo(my_patt)
+				var li = $('<li>').appendTo(ul)
+				$('<span>').text('Угол поворота узора').appendTo(li)
+				
+				$("<div>").width(250).slider({min:0, max:360,value:0, slide:function(event, ui){ A = ui.value ;redraw_ctx()}} ).appendTo(li)
+				var li = $('<li>').appendTo(ul)
+				$('<span>').text('Размер узора').appendTo(li)
+				$("<div>").width(250).slider({min:1, max:100,value:z*100, slide:function(event, ui){ Z = (ui.value)/100 ;redraw_ctx()}} ).appendTo(li)
+				var li = $('<li>').appendTo(ul)
+				$('<span>').text('Размер тайла').appendTo(li)
+				
+				$("<div>").width(250).slider({min:64, max:300,value:base, slide:function(event, ui){ base = ui.value ;redraw_ctx()}} ).appendTo(li)
+				var li = $('<li>').appendTo(ul)
+				$('<span>').text('Прозрачность').appendTo(li)
+				
+				$("<div>").width(250).slider({min:0, max:100,value:100, slide:function(event, ui){ opacity = ui.value ;redraw_ctx()}} ).appendTo(li)
 				
 				
 				
@@ -1748,7 +1777,7 @@
 				var self = this;
 				var C = $('div#controls');
 				this.cp = $("<div>").appendTo(C)
-				.width(240).height(window.innerHeight)
+				.width(360).height(window.innerHeight)
 				.css('position','fixed').css('top',0).css('left',0)
 				
 				
@@ -1783,25 +1812,98 @@
 				$("<li>").append($("<a>").prop('href','#').text("Управление геометрией").click(function(){ self.showLayoutScheme() }) ).appendTo(ul) 
 				$("<li>").append($("<a>").prop('href','#').text("Управление доменами").click(function(){ self.showDomainScheme() }) ).appendTo(ul) 
 				
-				// Page settings 1
-				$("<h3>").text("Страница").appendTo(this.cp_acc)
-				var d = $("<div>").appendTo(this.cp_acc)
-				var ul = $("<ul>").appendTo(d)
-				$("<li>").append($("<a>").prop('href','#').text("Общие").click(function(){ self.showPageSettings() }) ).appendTo(ul) 
-				$("<li>").append($("<a>").prop('href','#').text("Геометрия").click(function(){ self.showPageLayout() }) ).appendTo(ul) 
-				$("<li>").append($("<a>").prop('href','#').text("Фон страницы").click(function(){ self.showPageBackgroundChooser() }) ).appendTo(ul)
-				// Page selection 2
+
 				$("<h3>").text("Мои страницы").appendTo(this.cp_acc)
 				var d = $("<div>").appendTo(this.cp_acc)
-				var ul = $("<ul>").appendTo(d)
-				$("<li>").append($("<a>").prop('href','#').text("Добавить").click(function(){ self.addPage() }) ).appendTo(ul)
-				$.each(this.Site.pages, function(i,p){
-					$("<li>").append($("<a>").prop('href','#' + i).text(p.title).click(function(e){
-						window.location.hash = i;
-						self._init_page();
-						self.redraw()
-						e.preventDefault();
-					}) ).appendTo(ul) 
+				var ul = $("<ul>").css('padding','0').appendTo(d)
+				
+				$("<li>").append($("<a>").prop('href','#').text("Добавить").click(function(){ 
+					self.addPage(true, true) 
+					self._save_site();
+					self.redraw();
+				}) ).appendTo(ul)
+				var pages = $.extend(true, {}, this.Site.pages)
+				var pa = [];
+				$.each(pages,function(i, p){
+					p.slug = i
+					pa.push(p)
+				})
+				
+				pa.sort(function(a,b){ return a.order - b.order } )
+				
+				
+				$.each(pa, function(ix,p){
+					console.log(p.order)
+					var i = p.slug
+					var li = $("<li>").appendTo(ul)
+					
+					if( p.order != 0){
+						li.append($("<button>")
+						.button( { icons: { primary: "ui-icon-arrowthick-1-n" } } )
+						.width(32)
+						.height(32)
+						.css('margin-left','5px')	
+						.css('background-size','120% 120%')
+						.click(function(){
+							self.upPage(i);
+							// self._save_site()
+							self.redraw()
+					
+						}))
+					}
+					if((self.page_amount-1) != p.order){
+						li.append($("<button>")
+						.button( { icons: { primary: "ui-icon-arrowthick-1-s" } } )
+						.width(32)
+						.height(32)
+						.css('margin-left','5px')	
+						.css('background-size','120% 120%')
+						.click(function(){
+							self.downPage(i);
+							//self._save_site()
+							self.redraw()
+					
+						}))
+					}
+					var a =  $("<a>").prop('href','#!' + i).text(p.title).click(function(e){
+											window.location.hash = i;
+											e.preventDefault();
+										}).appendTo(li)
+									
+					li.append($("<button>")
+					.button( { icons: { primary: "ui-icon-pencil" } } )
+					.width(32)
+					.height(32)
+					.css('margin-left','20px')	
+					.css('background-size','120% 120%')
+					.click(function(){
+						$('<input>').val(p.title).insertAfter(a).change(function(){
+							var val = $(this).val();
+							self.Site.pages[i].title = val
+							a.text(val)
+							a.show()
+							$(this).remove();
+						})
+						a.hide()
+						
+						
+					})).css('padding-bottom','10px') 
+					// console.log(self.Site.pages[i])
+					if(self.Site.pages[i].removable){
+						
+						li.append($("<button>")
+						.button( { icons: { primary: "ui-icon-closethick" } } )
+						.width(32)
+						.height(32)
+						.css('margin-left','5px')	
+						.css('background-size','120% 120%')
+						.click(function(){
+							self.deletePage(i);
+							self._save_site()
+							self.redraw()
+						
+						}))
+					}
 				})
 				 
 				// Applications 3
@@ -1830,56 +1932,104 @@
 						var li = $("<li>").text(app.title).appendTo(ul); 
 						var ul_ = $("<ul>").appendTo(li);
 						$.each(app.widgets, function(name, w){
-											$("<li>")
-											.text(w.title).appendTo(ul_)
-											.prop('type', app_name + '.' + name) 
-											.draggable({
-												scroll:false,
-												start:function(){
-								
-												 },
-												helper: function(){
-													return $("<div>").text("drag me")
-								
-												},
-												drag:function(event, ui){
-													//console.log(ui.position)
-													var left = event.clientX+ $(document).scrollLeft() - self._main_offset.left ;
-													var top =	event.clientY+$(document).scrollTop() - self._main_offset.top ;
-													// console.log(left, top)
-													var ll = self._stepping_left( left )
-													var tt = self._stepping_top(	top	 )
-													draga = {left:ll.block, top:tt.block };
-							
-													ui.position = {top:tt.val -$(document).scrollTop() + self._main_offset.top , 
-																 left: ll.val - $(document).scrollLeft() + self._main_offset.left	
-																};
-												},
-												stop: function(){
-													var type = $(this).prop('type')
-													self.add_block(draga.left, draga.top, type );
-													self.redraw();
-												}
-								 			})		 
+									$("<li>")
+									.text(w.title).appendTo(ul_)
+									.prop('type', app_name + '.' + name) 
+									.draggable({
+										scroll:false,
+										start:function(){
+						
+										 },
+										helper: function(){
+											return $("<div>").text("drag me")
+						
+										},
+										drag:function(event, ui){
+											//console.log(ui.position)
+											var left = event.clientX+ $(document).scrollLeft() - self._main_offset.left ;
+											var top =	event.clientY+$(document).scrollTop() - self._main_offset.top ;
+											// console.log(left, top)
+											var ll = self._stepping_left( left )
+											var tt = self._stepping_top(	top	 )
+											draga = {left:ll.block, top:tt.block };
+					
+											ui.position = {top:tt.val -$(document).scrollTop() + self._main_offset.top , 
+														 left: ll.val - $(document).scrollLeft() + self._main_offset.left	
+														};
+										},
+										stop: function(){
+											var type = $(this).prop('type')
+											self.add_block(draga.left, draga.top, type, w.default_size );
+											self.redraw();
+										}
+						 			})		 
 								})
 							}
 						})
+						
 				if (active_tab){
 					this.cp_acc.accordion({active: active_tab, heightStyle:'fill'});
 				}else{
 					this.cp_acc.accordion()
 				}
 			},
-			addPage: function(){
-			var amount = 0
-			for (k in this.Site.pages){amount += 1};
-			slug = "Untitled_page_" + (amount + 1);
-			var newPage = {title: "Untitled page " + (amount + 1),
-							 blocks :[],
-							 layout : 'same'}
-			this.Site.pages[slug] = newPage;	 
-			this.redraw_cp(2);
+			downPage: function (name) {
+				var ix = this.Site.pages[name].order
+				
+				this.Site.pages[name].order = ix + 1
+				
+				var subst = this.page_order_index[ix+1]
+				console.log(name, subst, this.page_order_index)
+				var ix_s = this.Site.pages[subst].order
+				this.Site.pages[subst].order = ix_s -1
+				this._save_site();
+				this.load_site()
+				this.redraw_cp(1);
+			},
+			upPage: function (name) {
+				var ix = this.Site.pages[name].order
+				//new_order = ix-1
+				this.Site.pages[name].order = ix-1
+				
+				
+				var subst = this.page_order_index[ix-1]
+				console.log(name, subst, this.page_order_index)
+				var ix_s = this.Site.pages[subst].order
+				// new_order_subst = ix_s +1
+				this.Site.pages[subst].order = ix_s +1
+				this._save_site();
+				
+				this.load_site()
+				this.redraw_cp(1);
+			},
 			
+			
+			addPage: function(is_removable, is_menu_item, title, name){
+				var amount = 0
+				for (k in this.Site.pages){amount += 1};
+				
+				if (typeof name == 'undefined'){
+					slug = "Untitled_page_" + (amount + 1);
+					title = "Untitled page " + (amount + 1)
+
+				}else{
+					slug = name
+					title = title
+				}
+				var newPage = {title: title,
+								 blocks :[],
+								 removable: is_removable,
+								 show_in_menu: is_menu_item,
+								 layout : 'same',
+								 order: amount + 1}
+				this.Site.pages[slug] = newPage;	 
+				this.redraw_cp(1);
+			
+			},
+			deletePage:function(name){
+				delete this.Site.pages[name] ;	 
+				this.redraw_cp(1);
+				
 			},
 			redraw: function(){
 				//this.show_CP();
@@ -1964,9 +2114,11 @@
 				
 			},
 			_block_width: function(){
+				var base_width = Math.round ((this.layout.width - (this.layout.padding.left) ) / this.layout.cols)
+				var block_width = (base_width - ( 2 * this.layout.grid.hor ) )
+				console.log(base_width, block_width)
 				
-				block_width = ((this.layout.width ) / this.layout.cols) - (2 * this.layout.grid.hor) 
-				return block_width
+				return Math.round(block_width)
 				
 			},
 			_block_left: function(){
@@ -1977,6 +2129,14 @@
 				return block_height;
 				
 			},
+			_uncalc_top: function (T) {
+				return  T  / this._block_height(); 
+				
+			},
+			_uncalc_left: function(L){
+				return L / this._block_width();
+			},
+			
 			_calc_top: function(t){
 				var h = (this._calc_height(t))
 				if (h == 0){ var P =0} else {var P = 2}
@@ -1985,8 +2145,12 @@
 			
 			_calc_left: function(l){
 				var w = (this._calc_width (l-1) )
-				if (w == 0){var P =0}else{var P=2}
-				return (this.layout.grid.hor + w + P*this.layout.grid.hor) // + this._main_offset.left;
+				if (l > 1){var P =2 }else{var P=0}
+				return (this.layout.padding.left + w + P*this.layout.grid.hor) // + this._main_offset.left;
+				
+				// console.log('LL', l)
+				//var w = this._calc_width( l-1 ) // Ширина блока учитывается при значениях больше 1 (0,1)
+				//return (this.layout.padding.left + w +(this.layout.grid.hor * (l-1)*2))
 			},
 			
 			_calc_height: function(h){
@@ -2012,7 +2176,7 @@
 					// }
 				
 				// console.log( "CALC WIDTH", this._c_bw,cbw , w , (this.layout.grid.hor *2 * (w-1)) )
-				return (cbw * w) + (this.layout.grid.hor *2 * (w-1)) 
+				return (cbw * w) + (this.layout.grid.hor *2 * (w-1) ) 
 				
 				
 			},
@@ -2049,6 +2213,10 @@
 				c_off = this.layout_cont.offset();
 				to.css('top', '0px');
 				
+				
+					
+			
+				
 				// console.log("OFFSET", c_off)
 				this._main_offset = c_off;
 
@@ -2083,6 +2251,46 @@
 				
 				
 				//console.log(this.Site.blocks)
+				var bw = self._block_width(1);
+				var bh = self._block_height(1);
+				var bhp = self.Site.layout.grid.hor;
+				var bvp = self.Site.layout.grid.ver;
+				var gw = bw + (bhp * 2);
+				var gh = bh + (bvp * 2);
+				var gp = self.Site.layout.padding.left;
+				//var gvvp = self.Site.layout.padding.t
+				var gmp =  (gp - ( bhp * 2 ))
+				if(this.is_constructor){
+					var gridd = $('<div>')
+					.addClass('empty-block')
+					.appendTo(this.layout_cont)
+					.css('position', 'absolute')
+					// .css('border-radius', '10px')
+					.css('background-color','white')
+					.css('background','linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px),'+
+				 					  'linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px),'+
+								  
+									  'linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px),' +
+									  'linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px),'+
+									  // now verticals
+									  'linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px),'+
+									  'linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px),'+
+								  
+									  'linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px),'+
+									  'linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)'
+								  
+								  )
+					.css('background-size',gw +'px 1px,  '+gw+'px 1px,  '+gw+'px 1px,  '+gw+'px 1px, 1px '+gh+'px, 1px '+gh+'px, 1px '+gh+'px, 1px '+gh+'px  ')
+					.css('background-position', gp + 'px 0px, '+ (gp + 1) +'px 0px, '+gmp+'px 0px, '+(gmp + 1)+'px 0px, 0px 0px,0px 1px, 0px -'+(bvp*2)+'px,0px -'+((bvp*2)-1)+'px' )
+					//.css('opacity','0.7')
+					.css('left',0)
+					.css('top',0)
+					// .css('border', '1px solid black')
+					.css('width', this.Site.layout.width )
+					.css('height', total_height )
+					//.zIndex(-100)
+				}
+				
 				$.each(this.Site.blocks, function(ix, block){
 					if(block.display_on == 'all'){
 						//console.log(block.dont_display_on , self.current_page)
@@ -2102,13 +2310,33 @@
 					var bw = set ? set.border_width : 0
 					var x = block.x; //Number(koords.split(':')[0]);
 					var y = block.y; // Number(koords.split(':')[1]);
-					var xx = self._calc_left(x+1) - bw;
-					var yy = self._calc_top(y)	- bw;
+					if(!(set.unsnap_to_grid)){
+						//console.log('orig', x,y)
+						var xx = self._calc_left(x+1) - bw;
+						var yy = self._calc_top(y)	- bw;
+					}else{
+						//self.move_block(ix, 0, 0)
+						//consmoveole.log('my', x,y)
+						var xx = x;
+						var yy = y;
+						
+					}
+					//console.log("XX", xx,yy, self._calc_left(2), self._calc_top(5) )
+					
 					var w = block.width;
 					var h = block.height;
-					var W = self._calc_width(w);
-					var H = self._calc_height(h);
-					
+					if(!(set.unsnap_to_grid))
+					{
+						var W = self._calc_width(w);
+						var H = self._calc_height(h);
+						
+					}else{
+						
+						var W = w;
+						var H = h;
+						// console.log(W,H)
+							
+					}
 					// console.log(block_list);
 					var gp = { jq : $("<div>")
 										.appendTo(self.layout_cont)
@@ -2120,58 +2348,31 @@
 							
 							 pos: ix,
 						}
-						 self.inited_blocks.push(self.init_block(block, gp))
-						 if(self.is_constructor){
-							 for (w = x; w< x + block.width; w++){
-								 for (h = y; h < y+block.height; h++){
-									 self._busy_regions.push(w +":"+ h ) 
-						
-								 }
+					 
+					 
+					 self.inited_blocks.push(self.init_block(block, gp))
+					 if(self.is_constructor){
+						 for (w = x; w< x + block.width; w++){
+							 for (h = y; h < y+block.height; h++){
+								 self._busy_regions.push(w +":"+ h ) 
+					
 							 }
-				
 						 }
+			
+					 }
 					
 					
 					
 
 				})
 				
-				if(this.is_constructor) {
-					this.redraw_empty_blocks();
-				}
-			},
-			redraw_empty_blocks: function(){
-				$('.empty_blocks').remove();
-				for (cols = 0; cols < this.layout.cols; cols++){
-					for(row = 0; row < this.Site.layout.drawen_lines; row++){
-						var c = cols + ":" + row;
-						is_busy = this._busy_regions.indexOf(c) !== -1
-						is_moved = this._moved_block_.indexOf(c) !== -1
-						
-						
-						if(!is_busy || is_moved){
-							xx = this._calc_left(cols+1) // + c_off.left;
-							yy = this._calc_top(row);
-							
-							$('<div>')
-							.addClass('empty-block')
-							.appendTo(this.layout_cont)
-							.css('position', 'absolute')
-							.css('border-radius', '10px')
-							.css('background-color','white')
-							.css('opacity','0.7')
-							.css('left',xx)
-							.css('top',yy)
-							.css('border', '1px solid black ')
-							.css('width', this._calc_width(1) )
-							.css('height', this._calc_height(1) )
-							.css('left',xx)
-							
-						} 
-					}
-				}
+
 				
 			},
+			
+			redraw_empty_blocks: function(){
+
+			}, 
 			draw_color_chooser: function(onSelectColor){
 				color_chooser = $('<div>')
 				.css('position','absolute')
@@ -2264,9 +2465,17 @@
 				if(widget.disobey.indexOf('bg_opacity') == -1)w.css('opacity', settings.bg_opacity);
 				if(widget.disobey.indexOf('border_radius')== -1 )w.css('border-radius', settings.border_radius +'px')
 				if(widget.disobey.indexOf('border_width') == -1){
+					if(!(settings.unsnap_to_grid)){
+						var xx = this._calc_left(bl.x+1) - settings.border_width
+						var yy = this._calc_top(bl.y) - settings.border_width
+					}else{
+						var xx = bl.x
+						var yy = bl.y
+						
+					}
 					w.css('border-width', settings.border_width +'px')
-					w.css('left', this._calc_left(bl.x+1) - settings.border_width )
-					w.css('top', this._calc_top(bl.y) - settings.border_width )
+					w.css('left',  xx)
+					w.css('top',  yy)
 					w.css('border-style','solid')
 					
 				}
@@ -2310,7 +2519,7 @@
 				
 				
 				if(widget.disobey.indexOf('background_color') == -1){
-					cl = $('<button>').button().text('background-color').click(function(){
+					cl = $('<button>').button().text('Выбрать цвет фона').click(function(){
 						cb = function(col, ix){ 
 							if(col == 'clear') {
 								settings.background = { type:'none'}
@@ -2318,7 +2527,7 @@
 								settings.background = { type:'color', color: ix }
 								
 							}
-							console.log(settings);
+							//console.log(settings);
 							self.apply_block_settings( w, settings, widget)
 						}
 						cc = self.draw_color_chooser( cb );
@@ -2331,7 +2540,7 @@
 				//console.log(widget.disobey.indexOf('border_color') == -1)
 				if(widget.disobey.indexOf('border_color') == -1){
 				
-					cl = $('<button>').button().text('border-color').click(function(){
+					cl = $('<button>').button().text('выбрать цвет рамки').click(function(){
 						cb = function(col, ix){ 
 							if(col != 'clear'){
 								settings.border_color = ix
@@ -2352,30 +2561,43 @@
 					
 					return typeof(a) == 'undefined'? d : a
 				}
+				var ul =$('<ul>').appendTo(m).addClass('cp-ul')
+				
 				if(widget.disobey.indexOf('bg_opacity') == -1){
+					var li = $('<li>').appendTo(ul)
+					$('<span>').text('Прозрачность блока').appendTo(li)
 					$("<div>").width(250).slider({min:0, max:100,value:vf(settings.bg_opacity,100)*100, slide:function(event, ui){ 
 						settings.bg_opacity = ui.value/100 ;
 						self.apply_block_settings( w, settings, widget )
 					
 						// w.css('opacity', settings.bg_opacity); 
-					}} ).appendTo(m)
+					}} ).appendTo(li)
 				}
 				if(widget.disobey.indexOf('border_radius') == -1){
+					
+					var li = $('<li>').appendTo(ul)
+					$('<span>').text('Радиус границы').appendTo(li)
+					
 					$("<div>").width(250).slider({min:0, max:100,value:vf(settings.border_radius,0), slide:function(event, ui){ 
 						settings.border_radius = ui.value ;
 						self.apply_block_settings( w, settings, widget)
 					
 						//w.css('border-radius', settings.border_radius +'px'); 
-					}} ).appendTo(m)
+					}} ).appendTo(li)
 				}
 				if(widget.disobey.indexOf('border_width') == -1){
+					var li = $('<li>').appendTo(ul)
+					$('<span>').text('Ширина границы').appendTo(li)
 					$("<div>").width(250).slider({min:0, max:100,value: vf(settings.border_width,0)*10, slide:function(event, ui){ 
 						settings.border_width = ui.value/10 ;
 						self.apply_block_settings( w, settings, widget)
 
-					}} ).appendTo(m)
+					}} ).appendTo(li)
 				}
 				if(widget.disobey.indexOf('line_height') == -1){
+					var li = $('<li>').appendTo(ul)
+					$('<span>').text('Межстрочный интервал').appendTo(li)
+					
 					def_lh =obj.jq.width() / settings.font_size *0.75;
 				
 					var lhs = $("<div>").width(250).slider({min:0, max:300,value:vf(def_lh,0)*10, slide:function(event, ui){ 
@@ -2384,9 +2606,11 @@
 					
 						// w.css('line-height', settings.line_height +'px'); 
 					
-					}} ).appendTo(m)
+					}} ).appendTo(li)
 				}
 				if(widget.disobey.indexOf('font_size') == -1){				
+					var li = $('<li>').appendTo(ul)
+					$('<span>').text('Размер шрифта').appendTo(li)
 					$("<div>").width(250).slider({min:0, max:300,value:vf(settings.font_size,0)*10, slide:function(event, ui){ 
 						settings.font_size = ui.value/10 ;
 					
@@ -2398,23 +2622,26 @@
 						lhs.slider('value', settings.line_height * 10)
 					
 					
-					}} ).appendTo(m)
+					}} ).appendTo(li)
 				}
 				if(widget.disobey.indexOf('padding_top') == -1){
+					var li = $('<li>').appendTo(ul)
+					$('<span>').text('отступ сверху').appendTo(li)
 					var pt = settings.padding_top ? settings.padding_top*10 : 0
 				
 					$("<div>").width(250).slider({min:0, max:300,value:pt, slide:function(event, ui){ 
 						settings.padding_top = ui.value/10 ;
 						self.apply_block_settings( w, settings, widget)
-					}} ).appendTo(m)
+					}} ).appendTo(li)
 				}
 				if(widget.disobey.indexOf('padding_left_right') == -1){
-				
+					var li = $('<li>').appendTo(ul)
+					$('<span>').text('Отступ слева-справа').appendTo(li)
 					var plr = settings.padding_left_right ? settings.padding_left_right*10 : 0
 					$("<div>").width(250).slider({min:0, max:300,value:plr, slide:function(event, ui){ 
 						settings.padding_left_right = ui.value/10 ;
 						self.apply_block_settings( w, settings, widget)
-					}} ).appendTo(m)
+					}} ).appendTo(li)
 				}
 				
 				$("<label for='available_all_pages'>").appendTo(m).append('Показывать на всех страницах')
@@ -2429,13 +2656,43 @@
 				})
 				cb.prop('checked', self.Site.blocks[obj.pos].display_on == 'all')
 				$("<br>").appendTo(m)
+				// ------
+				$("<label for='unsnap_to_grid'>").appendTo(m).append('Свободный блок')
+				cb = $("<input type='checkbox' id='unsnap_to_grid'>").appendTo(m).click(function(){
+					bl = self.get_block(obj.pos);
+					settings.unsnap_to_grid = this.checked
+					if (this.checked){
+						self.move_block(obj.pos, self._calc_left(bl.x + 1) + settings.border_width,
+												 self._calc_top(bl.y + 1) + settings.border_width,
+												 true)
+ 						self.Site.blocks[obj.pos].width  = self._calc_width(bl.width);
+ 						self.Site.blocks[obj.pos].height = self._calc_height(bl.height);						 
+						
+					}else{
+						// x = obj.jq.css('left')
+						self.move_block(obj.pos, self._uncalc_left(bl.x ) + settings._border_width,
+												 self._uncalc_top(bl.y ) + settings._border_width,
+												 true)
+						self.Site.blocks[obj.pos].width  /= self._block_width();
+						self.Site.blocks[obj.pos].height /=  self._block_height();						 
+						
+					}
+					
+				})
+				cb.prop('checked', settings.unsnap_to_grid )
+				$("<br>").appendTo(m)
+				// ------
 				
 				cl = $('<button>').button().text('Применить для всех новых блоков').click(function(){
 					self.Site.default_block_settings = settings;
 					self.redraw()
 					m.remove();
 					
-				}).appendTo(m)
+				})
+				.css('display','block')
+				.css('padding','5px')
+				.css('margin-bottom', '10px')
+				.appendTo(m)
 				
 				cl = $('<button>').button().text('Применить для всех имеющихся блоков').click(function(){
 					self.Site.default_block_settings = settings;
@@ -2444,10 +2701,15 @@
 						
 						// console.log(bl)
 					})
+
+
 					self.redraw();
 					to.remove()
 					
 				}).appendTo(m)
+				.css('display','block')
+				.css('padding','5px')
+				.css('margin-bottom', '10px')
 				var o = {
 					save: function(){
 						//console.log(settings)
@@ -2470,12 +2732,27 @@
 					H = this._calc_height(h),
 					widget = bl.widget.name.split('.'),
 					wdata= bl.widget.data;
+					
+					
+					// console.log(W,H)
 				function newWidget(c, t,p, cp){
 					return t.Site.Applications[widget[0]].widgets[widget[1]].init(c, t,p, cp);
 				}
 				
 				var w = $("<div>").css('width','100%').css('height', '100%').appendTo(to.jq).addClass("draggable-module")
 				var draga;
+				
+				var Widget = newWidget(w, this, to.pos);
+				Widget.draw();
+				var settings = self.getBlockSettings(to.pos)
+				//console.log("B", w.width() )
+				self.apply_block_settings(to, settings, Widget)
+				
+				if(settings.unsnap_to_grid){
+					W = bl.width;
+					H = bl.height;
+				}
+				// console.log("WH", W,H)
 				if(this.is_constructor){
 					
 					to.jq.draggable({
@@ -2500,32 +2777,30 @@
 						drag: function(event, ui){
 							// // // console.log(ui)
 							// var C = ui.helper;
-							var ll = self._stepping_left(ui.position.left)
-							var tt = self._stepping_top(ui.position.top)
-							draga = {left:ll.block, top:tt.block };
+							//console.log(settings)
+							if (! (settings.unsnap_to_grid)){
+								var ll = self._stepping_left(ui.position.left)
+								var tt = self._stepping_top(ui.position.top)
+								draga = {left:ll.block, top:tt.block };
 							
-							ui.position = {top:tt.val, left: ll.val};
-							
+								ui.position = {top:tt.val, left: ll.val};
+							}else{
+								draga = {left:ui.position.left, top:ui.position.top };
+							}
 							
 						},
 						stop:function(){
-							//var oldpos = to.pos.col +':' +to.pos.row;
-							var new_pos = draga.left + ':' + draga.top;
 							self._moved_block = false;
-							// console.log(draga);
 							self.move_block(to.pos, draga.left, draga.top);
 							self.redraw();
+						
 							
 						},
 	
 					})
 				}
 				
-				var Widget = newWidget(w, this, to.pos);
-				Widget.draw();
-				var settings = self.getBlockSettings(to.pos)
-				//console.log("B", w.width() )
-				self.apply_block_settings(to, settings, Widget)
+				
 				//console.log("A", w.width() )
 				
 				if (this.is_constructor){
@@ -2549,7 +2824,8 @@
 								
 								control_panel.css('position','absolute')
 											.position({of: w, my:"left top", at: "right top", collision:'none none'})
-											 .css("border","2px solid black").css('background-color',"orange")
+											 .css("border","2px solid black")
+											 .css('background-color',"white")
 											 .draggable({scroll:false})
 											 .css('padding',"10")
 											
@@ -2652,6 +2928,7 @@
 									self.resize_frame = false;
 									self.Site.blocks[to.pos].width = mouseWidth;
 									self.Site.blocks[to.pos].height= mouseHeight;
+									console.log('redraw')
 									self.redraw.apply(self, [])
 								}
 								
@@ -2666,13 +2943,22 @@
 									if (fr.size()){
 										//console.log('move evtnt')
 										var nh = evt.clientY - start_y + H,
-											nw = evt.clientX - start_x + W,
-											width_step = self._stepping_width(nw),
-											height_step = self._stepping_height(nh);
-											 fr.width(width_step.val)
-											 fr.height(height_step.val)
-											 mouseWidth =width_step.block;
-											 mouseHeight = height_step.block;
+											nw = evt.clientX - start_x + W;
+											if(!(settings.unsnap_to_grid)){
+												var width_step = self._stepping_width(nw),
+													height_step = self._stepping_height(nh);
+												fr.width(width_step.val)
+												fr.height(height_step.val)
+												mouseWidth =width_step.block;
+												mouseHeight = height_step.block;
+												
+											}else{
+												fr.width(nw)
+												fr.height(nh)
+												mouseWidth = nw;
+												mouseHeight = nh;
+												
+											}
 									 }
 								}
 								evt.preventDefault();

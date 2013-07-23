@@ -99,9 +99,7 @@ def site_edit(site, req, *k, **kw):
         return HttpResponseRedirect('/')
 
 
-
-def base(req, *k, **kw):
-    
+def _get_current_site(req):
     host = req.META['HTTP_HOST']
     if ':' in host:
         bh, port = host.split(':')
@@ -110,10 +108,27 @@ def base(req, *k, **kw):
         port = ''
     
     if bh == settings.MY_BASE_HOST:
-        return _my_base(req,*k,**kw)
+        return None
     else:
         #print host
         site = req.storage.findOne(accounts, {"hostname": bh})
+        return site
+    
+
+def base(req, *k, **kw):
+    
+    host = req.META['HTTP_HOST']
+    #if ':' in host:
+    #    bh, port = host.split(':')
+    #else:
+    #    bh = host
+    #    port = ''
+    
+    if host == settings.MY_BASE_HOST:
+        return _my_base(req,*k,**kw)
+    else:
+        #print host
+        site = req.storage.findOne(accounts, {"hostname": host})
         # raise IndexError("S")
         if site:
             if kw.get('is_admin', False):
@@ -140,7 +155,10 @@ def data_updaters(type_, cursor):
     for item in cursor:
         if type_ == sites:
             for p in item['pages']:
-                if type(item['pages'][p]['blocks']) != list:
+                if 'show_in_menu' not in item['pages'][p]:
+                    item['pages'][p]['show_in_menu'] = True
+                    
+                if type(item['pages'][p].get('blocks', None)) == dict:
                     
                     new_blocks = []
                     for pos, bl in item['pages'][p]['blocks'].iteritems():
@@ -155,96 +173,124 @@ def data_updaters(type_, cursor):
                 
                     
     # return cursor 
-def data_connector(req):
-    if req.META['REQUEST_METHOD'] == 'POST':
-        # data = req.POST.get('object')
-        #type = req.POST.get('type')
-        obj =  json.loads( req.POST.get('x-data'),object_hook = json_util.object_hook  )
-        def blob_storage(obj):
-            if isinstance(obj, dict):
-                return dict([(k, blob_storage(v)) for (k,v) in obj.iteritems() ] )
-            elif isinstance(obj, list):
-                return [blob_storage(v) for v in obj ] 
-            elif isinstance(obj, (str,unicode)):
-                if len(obj) > MAX_NON_BLOB:
-                    obj_type = obj.split(',')[0]
-                    if(obj_type[:4] == 'data'):
-                        # what kind of data
-                        #print "okey, data"
-                        a =  obj_type.split(':')[1]
-                        if ';' in a: 
-                            #print "okey, a in the mimetype"
-                            mime_type, encoding = a.split(';')
-                        else:
-                            #print "no encoding"
-                            mime_type = a
-                            encoding = None
-                        if encoding == 'base64':
-                            #print "okey its base 64"
-                            obj_d = obj.split(',')[1]
-                            res = base64.decodestring(obj_d)
-                            #print res[:50]
-                        else:
-                            raise ValueError('unknown encoding')
-                    else:
-                        "This is just a long string"
-                        res = obj.encode('utf-8')
-                    # print obj[:100]
-                    gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
-                    fh = gf.new_file()
-                    fh.write(res)
-                    fh.close()
-                    return {"blob":1, "_id":fh._id}
-                else:
-                    return obj
-            else: 
-                return obj
-                    
-                
-                
-        to_store = blob_storage(obj['object'] )
-        type = obj['type'] 
-        
-        if "_id" in to_store:
-            
-            req.storage.safe_update(type, to_store)
-        else:
-            req.storage.insert(type, to_store)
-            
-            
-        
-        return HttpResponse(json.dumps({"success": True, "_id": to_store['_id']} , default = json_util.default) )
+def data_deleter(req):
+    site = _get_current_site(req)
+    if site is None:
+        return HttpResponse ("{}")
     else:
-        type = req.GET.get('type')
-        r    = json.loads(req.GET.get('o','{}'))
+        type = req.POST.get('type')
+        opts   = json.loads(req.POST.get('o','{}'),object_hook = json_util.object_hook)
+        q = opts['q']
+        q['site_id'] = site['_id']
         
-        if 'q' in r:
-            objs = req.storage.find(type, r['q'])
-        else:
-            objs = req.storage.find(type)
-        total_amount = objs.count()
+        req.storage.remove(type, q)
+        s = req.storage.find(type, q)
+        raise IndexError('dds')
+        return HttpResponse(json.dumps({"success": True} , default = json_util.default) )
+        
+def data_connector(req):
+    site = _get_current_site(req)
+    if site is None:
+        return HttpResponse ("{}")
+    else:
+            
+        if req.META['REQUEST_METHOD'] == 'POST':
+            # data = req.POST.get('object')
+            #type = req.POST.get('type')
+            obj =  json.loads( req.POST.get('x-data'),object_hook = json_util.object_hook  )
         
         
-        if 'p' in r:
-            cur_page = r['p']['current_page']
-            per_page = r['p']['per_page']
-        else:
-            cur_page = 0
-            per_page = 100
-        total_pages = total_amount / per_page + (1 if total_amount % per_page else 0)
-        beg  = cur_page * per_page
-        fin  = beg + per_page
-        lst = list( objs[ beg:fin ] )
         
-        lst = list(data_updaters(type, lst))
+            def blob_storage(obj):
+                if isinstance(obj, dict):
+                    return dict([(k, blob_storage(v)) for (k,v) in obj.iteritems() ] )
+                elif isinstance(obj, list):
+                    return [blob_storage(v) for v in obj ] 
+                elif isinstance(obj, (str,unicode)):
+                    if len(obj) > MAX_NON_BLOB:
+                        obj_type = obj.split(',')[0]
+                        if(obj_type[:4] == 'data'):
+                            # what kind of data
+                            #print "okey, data"
+                            a =  obj_type.split(':')[1]
+                            if ';' in a: 
+                                #print "okey, a in the mimetype"
+                                mime_type, encoding = a.split(';')
+                            else:
+                                #print "no encoding"
+                                mime_type = a
+                                encoding = None
+                            if encoding == 'base64':
+                                #print "okey its base 64"
+                                obj_d = obj.split(',')[1]
+                                res = base64.decodestring(obj_d)
+                                #print res[:50]
+                            else:
+                                raise ValueError('unknown encoding')
+                        else:
+                            "This is just a long string"
+                            res = obj.encode('utf-8')
+                        # print obj[:100]
+                        gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
+                        fh = gf.new_file()
+                        fh.write(res)
+                        fh.close()
+                        return {"blob":1, "_id":fh._id}
+                    else:
+                        return obj
+                else: 
+                    return obj
+                
+                
+            to_store = blob_storage( obj['object'] )
+            to_store['site_id'] = site['_id'] 
+            type = obj['type'] 
         
-        send = {'total_pages': total_pages,
-                'total_amount':total_amount,
-                'objects' : lst}
+            if "_id" in to_store:
+            
+                req.storage.safe_update(type, to_store)
+            else:
+                req.storage.insert(type, to_store)
+            
             
         
-        #raise ValueError('STOP')
-        return HttpResponse(json.dumps(send, default = json_util.default))
+            return HttpResponse(json.dumps({"success": True, "_id": to_store['_id']} , default = json_util.default) )
+        else:
+            type = req.GET.get('type')
+            r    = json.loads(req.GET.get('o','{}'), object_hook = json_util.object_hook )
+            
+            q = {'site_id': site['_id']}
+            #print q
+        
+            if 'q' in r:
+                q.update( r['q'] )
+                #print q
+                objs = req.storage.find(type, q)
+            else:
+                objs = req.storage.find(type, q)
+            total_amount = objs.count()
+        
+        
+            if 'p' in r:
+                cur_page = r['p'].get('current_page', 0)
+                per_page = r['p'].get('per_page', 20)
+            else:
+                cur_page = 0
+                per_page = 100
+            total_pages = total_amount / per_page + (1 if total_amount % per_page else 0)
+            beg  = cur_page * per_page
+            fin  = beg + per_page
+            lst = list( objs[ beg:fin ] )
+        
+            lst = list(data_updaters(type, lst))
+        
+            send = {'total_pages': total_pages,
+                    'total_amount':total_amount,
+                    'objects' : lst}
+            
+        
+            #raise ValueError('STOP')
+            return HttpResponse(json.dumps(send, default = json_util.default))
 
 
 
@@ -424,7 +470,9 @@ urlpatterns = patterns('',
     # url(r'^sop/', include('sop.foo.urls')),
     
     url(r'^admin/', base, {'is_admin' : True} ),
-    url(r'^data/', data_connector),
+    url(r'^data/$', data_connector),
+    url(r'^data/delete/$', data_deleter),
+    
     
     
     url(r'^blob/(?P<blob_id>[a-zA-Z0-9].*)/', blob_extruder),

@@ -1,20 +1,31 @@
-{
-    Main:function(constr){
-		console.log("CP", constr.Site.pages)
+
 		var discount = function(product){ return true};
 		var get_price = function(product){ return '50.00'};
 		var get_base_price = function(product) {return '70.00'};
 		if(!('shop' in constr.Site.pages)){
-			constr.addPage(false, true,'Магазин','shop') //, show_in_menu : true, removable:false }
+			constr.addPage(false, true,'Магазин','shop',{'per_page':6, 'page':0 }) //, show_in_menu : true, removable:false }
 			
 		}		
 		if(!('product' in constr.Site.pages)){
-			constr.addPage(false, false, 'Товар', 'Product')
+			constr.addPage(false, false, 'Товар', 'Product', {'product_id':''})
 			
 		}
 
+		var _scaleImage = function(img, maxHeight, maxWidth){
+		    var width = img.width,
+		        height = img.height,
+		        scale = Math.min(maxWidth/width, maxHeight /height);    
+		    if (scale < 1) {
+		        var width = parseInt(width * scale, 10);
+		        var height = parseInt(height * scale, 10);
+		    }
+		    img.width = width;
+		    img.height = height;
+		    return img
+
+		}
         var o = {
-            title: "The shop",
+
             _common_per_page: 5,
             //_product_list_current_page : 0,
 			_validators : {'int':{l:'Целое', f:function(v){return parseInt(v) } },
@@ -23,12 +34,13 @@
 						   'float':{l:'Дробное', f:function(v){return parseFloat(v) } },	 
 			},
             _get_product_list: function(page){
-                //console.log(this)
-                return DB.get_objects('product', {}, {current_page:page, per_page:this._common_per_page})
+				console.log(appid)
+                return DB.get_objects(appid, 'product', {}, {current_page:page, per_page:this._common_per_page})
             },
 			_init_prod_props_list: function( prod_props_cont ){
 				table = $('<table>').appendTo( prod_props_cont )
-                props = DB.get_objects('property', {}, {})
+				console.log(appid);
+                props = DB.get_objects(appid, 'property', {}, {})
 				self  = this;
 				self._props_cache = props
 				
@@ -40,7 +52,6 @@
 				$('<th>').appendTo(tr ).text('Единица измерения') 
 				
 				$.each(props.objects, function( ix, o ){
-					console.log(o,ix)
 					dtr = $('<tr>').appendTo(table);
 					$('<td>').text( o.name ).appendTo(dtr)
 					if (o.validator){
@@ -48,7 +59,7 @@
 					}else{ $('<td>').text( o.validator ).appendTo(dtr)}
 					$('<td>').text( o.measure ).appendTo(dtr)
 					$('<input type="button" value="Удалить">').appendTo($('<td>').appendTo(dtr) ).click(function(){
-						DB.remove_object('property', {'_id': o['_id']})
+						DB.remove_object(appid, 'property', {'_id': o['_id']})
 						prod_props_cont.find('*').remove()
 						self._init_prod_props_list(prod_props_cont)
 					})
@@ -71,7 +82,7 @@
 					o.name = tr.find('input[name=name]').val()
 					o.validator  = tr.find('select').val()
 					o.measure   = tr.find('input[name=measure]').val()
-					DB.save_object('property', o, function(){}, function(){})
+					DB.save_object(appid, 'property', o, function(){}, function(){})
 					prod_props_cont.find('*').remove()
 					self._init_prod_props_list(prod_props_cont)
 					
@@ -137,11 +148,12 @@
 				    }
     
 				},
+
+				
 				_scaleImage : function(img, maxHeight, maxWidth){
 				    var width = img[0].width,
 				        height = img[0].height,
 				        scale = Math.min(maxWidth/width, maxHeight /height);    
-				    //console.log(width,height)
 				    if (scale < 1) {
 				        var width = parseInt(width * scale, 10);
 				        var height = parseInt(height * scale, 10);
@@ -157,13 +169,11 @@
 					}
 				  to.find('*').remove()
 				  var self = this;
-				  //console.log('init')
 				  if(this._product_draft == undefined || !this._product_draft){
 				    this._product_draft = {}
 				    this._product_draft.images = []
 				  }
 				  var self = this;
-				  //console.log("PD", !this._product_draft, this._product_draft);
   
 				  to.append($('<h3>').text("Product form" ))
 				  var ul = $("<ul>")  
@@ -207,7 +217,7 @@
 				var Desc = $('<div>')
 				R.append($('<div>').width(400).css('float','left').append(Desc) )
 				$('<h4>').text('Description').appendTo(Desc)
-				$('<textarea>').prop('name','description' ).width(Desc.width()).appendTo(Desc).change(clc)
+				$('<textarea>').prop('name','description' ).val(self._product_draft.description).width(Desc.width()).appendTo(Desc).change(clc)
 
 
 				R.append($("<div>")
@@ -256,7 +266,7 @@
 					  
 				  }else{ src = imgd }
 				  $(new Image()).one('load', function(){
-				  	$('<div>').css('float', 'left').append(self._scaleImage($(this), 160, 160)).appendTo(d) 
+				  	$('<div>').css('float', 'left').append(_scaleImage($(this), 160, 160)).appendTo(d) 
 				  }).prop('src', src)
 				  
               })
@@ -288,16 +298,14 @@
               
               
               var progress_f = function(){
-                  //console.log('progress', this)
               }
               var complete_f = function(){
-                  // console.log('complete', this)
                   self._product_draft = false;
               }
 
               
               $("<button>").text("save").click(function(evt){
-                  DB.save_object('product', self._product_draft, progress_f, complete_f)
+                  DB.save_object(appid, 'product', self._product_draft, progress_f, complete_f)
                   self.admin_page(to.parent().parent())
               }).appendTo(to)
               $("<button>").text('close form').click(function(evt){
@@ -341,8 +349,10 @@
 				"product": {
 					title:'Демонстрация продукта',
 					default_size: [6,4],
+
 					init : function (my_cont,  constructor_inst, pos, cp) {
 						var o = {
+							
 							my_cont:my_cont,
 			  				constr :constructor_inst,
 				            _common_per_page: 16,
@@ -352,9 +362,22 @@
 			  				cp:cp,
 			  				pos: pos,
 			  				settings_draw :false,
+							setSEO: function(){
+								var is_set = constructor_inst._get_page_var('title_set')
+								if(is_set){
+									return
+								}else{
+									constructor_inst._add_title( this.product.name)
+									constructor_inst._set_description(this.product.description);
+									constructor_inst._set_keywords([this.product.name].concat(this.product.tags.split(' ') ) )
+									constructor_inst._set_page_var('title_set', true);
+								}
+							},
 							draw: function(){
 								var product_id = constructor_inst.page_vars.product_id;
-								var product = DB.get_objects('product', {_id: { '$oid':product_id }}).objects[0]
+								var product = DB.get_objects(appid,'product', {_id: { '$oid':product_id }}).objects[0]
+								this.product = product;
+								this.setSEO();
 								var W = my_cont.width();
 								var H = my_cont.height();
 								
@@ -371,9 +394,7 @@
 									width:W/2,
 									height:H
 								}).appendTo(my_cont)
-								
-								console.log(product)
-								
+
 								
 							},
 						
@@ -387,7 +408,8 @@
 				},
 				'product_basket':{
 					title:'Положить в корзину',
-					default_size: [2,2],
+					default_size: [2,2],					
+					
 					init : function (my_cont,  constructor_inst, pos, cp) {
 						var o = {
 							my_cont:my_cont,
@@ -403,7 +425,15 @@
 								my_cont.find('*').remove()
 								this.draw();
 							},
-							
+							setSEO: function(){
+								var is_set = constructor_inst._get_page_var('title_set')
+								if(is_set){
+									return
+								}else{
+									constructor_inst._add_title( this.product.name)
+									constructor_inst._set_page_var('title_set', true);
+								}
+							},
 							draw: function(){
 								var product_id = constructor_inst.page_vars.product_id;
 								var cache = constructor_inst.get_app_cache("theshop");
@@ -413,7 +443,7 @@
 									
 								}else{
 									if(product_id){
-										var product = DB.get_objects('product', {_id: { '$oid':product_id }}).objects[0];
+										var product = DB.get_objects(appid, 'product', {_id: { '$oid':product_id }}).objects[0];
 										cache[product_id] = product;
 										constructor_inst.set_app_cache("theshop", cache)
 										
@@ -422,7 +452,10 @@
 									}
 									
 								}
-								 
+								this.product = product;
+								this.setSEO();
+
+								
 								var W = my_cont.width();
 								var H = my_cont.height();
 								
@@ -495,7 +528,7 @@
 				},
 				'product_properties':{
 					title:'Свойства продукта',
-					default_size: [2,2],
+					default_size: [2,2],					
 					init : function (my_cont,  constructor_inst, pos, cp) {
 						var o = {
 							my_cont:my_cont,
@@ -506,7 +539,15 @@
 			  				disobey: [], //['padding_left_right', 'padding_top'],
 			  				cp:cp,
 			  				pos: pos,
-			  				settings_draw :false,
+			  				setSEO: function(){
+								var is_set = constructor_inst._get_page_var('title_set')
+								if(is_set){
+									return
+								}else{
+									constructor_inst._add_title( this.product.name)
+									constructor_inst._set_page_var('title_set', true);
+								}
+							},
 							draw: function(){
 								var product_id = constructor_inst.page_vars.product_id;
 								var cache = constructor_inst.get_app_cache("theshop")
@@ -515,15 +556,17 @@
 									
 								}else{
 									if(product_id){
-										var product = DB.get_objects('product', {_id: { '$oid':product_id }}).objects[0];
+										var product = DB.get_objects(appid,'product', {_id: { '$oid':product_id }}).objects[0];
 										cache[product_id] = product;
 										constructor_inst.set_app_cache("theshop", cache)
 										
 									}else{
-										var product = DB.get_objects('product').objects[0];
+										var product = DB.get_objects(appid,'product').objects[0];
 									}
 									
 								}
+								this.product = product;
+								this.setSEO();
 								 
 								var W = my_cont.width();
 								var H = my_cont.height();
@@ -542,20 +585,15 @@
 									
 									})
 								}
-								
-								
-								
-								
-								
 							},
-						
 						}
 						return o;
 					},
 				},
 				'product_description':{
 					title:'Описание продукта',
-					default_size: [2,2],
+					default_size: [2,2],	
+							
 					init : function (my_cont,  constructor_inst, pos, cp) {
 						var o = {
 							my_cont:my_cont,
@@ -567,6 +605,15 @@
 			  				cp:cp,
 			  				pos: pos,
 			  				settings_draw :false,
+							setSEO: function(){
+								var is_set = constructor_inst._get_page_var('title_set')
+								if(is_set){
+									return
+								}else{
+									constructor_inst._add_title( this.product.name)
+									constructor_inst._set_page_var('title_set', true);
+								}
+							},
 							draw: function(){
 								var product_id = constructor_inst.page_vars.product_id;
 								var cache = constructor_inst.get_app_cache("theshop")
@@ -575,15 +622,17 @@
 									
 								}else{
 									if(product_id){
-										var product = DB.get_objects('product', {_id: { '$oid':product_id }}).objects[0];
+										var product = DB.get_objects(appid,'product', {_id: { '$oid':product_id }}).objects[0];
 										cache[product_id] = product;
 										constructor_inst.set_app_cache("theshop", cache)
 										
 									}else{
-										var product = DB.get_objects('product').objects[0];
+										var product = DB.get_objects(appid, 'product').objects[0];
 									}
 									
 								}
+								this.product = product;
+								this.setSEO();
 								 
 								var W = my_cont.width();
 								var H = my_cont.height();
@@ -605,7 +654,8 @@
 				},
 				'product_image':{
 					title:'Изображение продукта',
-					default_size: [2,2],
+					default_size: [2,2],					
+
 					init : function (my_cont,  constructor_inst, pos, cp) {
 						var o = {
 							my_cont:my_cont,
@@ -617,6 +667,15 @@
 			  				cp:cp,
 			  				pos: pos,
 			  				settings_draw :false,
+							setSEO: function(){
+								var is_set = constructor_inst._get_page_var('title_set')
+								if(is_set){
+									return
+								}else{
+									constructor_inst._add_title( this.product.name)
+									constructor_inst._set_page_var('title_set', true);
+								}
+							},
 							draw: function(){
 								var product_id = constructor_inst.page_vars.product_id;
 								var cache = constructor_inst.get_app_cache("theshop")
@@ -625,16 +684,18 @@
 									
 								}else{
 									if(product_id){
-										var product = DB.get_objects('product', {_id: { '$oid':product_id }}).objects[0];
+										var product = DB.get_objects(appid,'product', {_id: { '$oid':product_id }}).objects[0];
 										cache[product_id] = product;
 										constructor_inst.set_app_cache("theshop", cache)
 										
 									}else{
-										var product = DB.get_objects('product').objects[0];
+										var product = DB.get_objects(appid,'product').objects[0];
 									}
 									
 								}
-								 
+								this.product = product;
+								this.setSEO();
+								
 								var W = my_cont.width();
 								var H = my_cont.height();
 								
@@ -645,7 +706,7 @@
 									src = product.images[0]
 								}
 								$(new Image()).one('load', function(){
-									my_cont.append(scaleImage(this, W, H, true))
+									my_cont.append(_scaleImage(this, W, H, true))
 								}).prop('src', src )
 								
 								
@@ -668,7 +729,7 @@
 			            _common_per_page: 16,
 			            _product_list_current_page : 0,
 		  				
-		  				disobey:['padding_left_right', 'padding_top'],
+		  				disobey:['padding_left_right', 'padding_top','line_height'],
 		  				cp:cp,
 		  				pos: pos,
 		  				settings_draw :false,
@@ -677,10 +738,12 @@
 			            _get_product_list: function(){
 							var cur_page = parseInt(constructor_inst.page_vars['page'])
 							if(! cur_page){cur_page = 0}
+							this.cur_page = cur_page;
 			                
-			                return DB.get_objects('product', {}, {current_page:cur_page, per_page:this._common_per_page})
+			                return DB.get_objects(appid,'product', {}, {current_page:cur_page, per_page:constructor_inst.page_vars['per_page']})
 			            },
 						draw: function(){
+							
 							if (typeof this.constr.Site.fonts == 'undefined' ){
 								font = 'Times New Roman'
 							} else{ font = this.constr.Site.fonts.content}
@@ -697,22 +760,28 @@
 													  height:'100%'});
 							var self = this;
 							my_cont.find('*').remove();
+							var products = self._get_product_list()
+							
 					
+							if( products.total_pages > 1){
+								var pagination_height = 20;
+							}else{
+								var pagination_height = 0;
+								
+							}
+							
 							var R = this.data.rows || 4,
 								C = this.data.cols || 3,
-								m = this.data.margin || 5,
+								m = this.data.margin || 6,
 								spaceR = R*m,
 								spaceC = C*m,
 							
-								hc = (( my_cont.height()) / R)- 20,
-								wc = (( my_cont.width()) / C) ;
+								hc = (( my_cont.height()- pagination_height ) / R) ,
+								wc = Math.floor((( my_cont.width()) / C)) ;
 						
 								self._common_per_page = R * C;
-								// console.log(wc,wc*3, my_cont.width())
-							products = self._get_product_list()
 							var rows_filled, counter;
-							var pr_cont = $('<div>').appendTo(my_cont).width(wc * C).height(hc*R)
-							
+							var pr_cont = $('<div>').appendTo(my_cont).width(wc * C).height(hc*R - pagination_height)
 							$.each(products.objects, function(ix, obj){
 								counter += 1
 								var cc = $('<div>').appendTo(pr_cont)
@@ -743,7 +812,7 @@
 									overflow:'hidden',
 								})
 								h_h = desc_h / 2
-								$('<div>').appendTo(ccc)
+								var lc = $('<div>').appendTo(ccc)
 								.css({
 									//'background-color':'red',
 									margin: 'auto',
@@ -751,12 +820,8 @@
 									'text-align': 'center',
 									width: img_w,
 									height: h_h,
-								}).append($('<a>').text(obj.name).prop('href', "#!product?product_id=" + obj._id['$oid']).click(function(evt){
-									// console.log(obj)
-									//window.location.hash="!" + 'product' + "?product_id="+  obj._id['$oid'];
-
-									//evt.preventDefault();
-								}))
+								})
+								$('<a>').text(obj.name).prop('href', "#!Product?product_id=" + obj._id['$oid']).click(function(evt){} ).appendTo(lc)
 								if( discount(obj) ){
 									$('<div>').appendTo(ccc).text( get_price(obj) )
 									.css({
@@ -794,10 +859,8 @@
 								}else{
 									src = obj.images[0]
 								}
-								//console.log(src)
 								$(new Image()).one('load',function(){
-									// console.log(img_w, img_h)
-									var I = scaleImage(this, img_w, img_h,true)
+									var I = _scaleImage(this, img_w, img_h,true)
 									
 									img_div.append(I);
 								}).prop('src', src)
@@ -806,10 +869,24 @@
 							
 							$("<div>").css({display:'block', clear:'both'}).appendTo(my_cont)
 							
-							$("<div>").css({height:20, 'font-family':font, width:my_cont.width(),
-								'text-align':'center','vertical-align':'middle'})
-								.appendTo(my_cont)
-								.text('pagination')
+							if (products.total_pages > 1 ){
+								var pagination = $("<div>").css({height:20, 'font-family':font, width:my_cont.width(),
+									'text-align':'center','vertical-align':'middle'})
+									.appendTo(my_cont)
+									var is_last_page = this.cur_page == products.total_pages - 1;
+									var is_first_page = this.cur_page == 0;
+									if(! is_first_page){
+										$('<a>').text('Prev page').prop('href', "#!shop?page=" + (this.cur_page - 1)).appendTo(pagination)
+									}
+									if(! is_last_page){
+										$('<a>').text('Next page').prop('href', "#!shop?page=" + (this.cur_page + 1)).appendTo(pagination)
+									}
+									// .text('pagination')
+									
+									
+								
+							}else{
+							}
 							
 							
 					
@@ -826,8 +903,8 @@
             }
         }
         return o;
-    },
-    getter: function(constr){
-		return this.Main(constr)
-	},
-}
+//    },
+//    getter: function(constr){
+//		return this.Main(constr)
+//	},
+// }

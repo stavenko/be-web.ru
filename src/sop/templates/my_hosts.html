@@ -4,12 +4,32 @@
 
 
 {% if sites %}
+<h3> Сайты, которыми я владею </h3>
+ <p> Вы можете использовать несколько доменных имен для каждого сайта. А также настроить перенаправление с длинного на короткий адрес. Первоначальная регистрация сайта тем не менее должна быть произведена как поддомен be-web.ru.
+ </p>
 <ul>
 	{% for s in sites %}
-	<li><a href='http://{{s}}/admin/'> {{s}}</a></li>
+	
+	<li><a href='http://{{s.hostname|first}}/admin/'> {{s.hostname|first }}</a></li>
+	
 	{% endfor %}
 </ul>
 {% endif %}
+
+
+{% if invites %}
+<h3>Инвайты на чужие сайты</h3>
+<ul>
+
+{% for inv in invites %}
+	{% for s in invites %}
+	<li><a href='http://{{ s.to }}/admin/'> {{ s.to }}</a>  </li>
+	
+	{% endfor %}
+
+{% endfor %}
+</ul>
+{%endif %}
 
 <form method = 'post' action = '{% url "registration_addhost" %}'>
 	{% csrf_token %}

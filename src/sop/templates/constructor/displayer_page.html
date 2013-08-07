@@ -1,24 +1,20 @@
 <html>
 	<head>
 		
+		<meta name="fragment" content="!">
+		
+		{{ site.metas|safe }}
+		
 		<script  src="{{STATIC_URL}}js/jquery-1.9.0.js"></script>
 		<script src="{{STATIC_URL}}js/jquery-ui-1.10.0.custom.js"></script>
 		<script  src="{{STATIC_URL}}js/jquery.mousewheel.min.js"></script>
 		
-		
+		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/sop/constructor.js"></script>
+
 		
 		<link rel="stylesheet" href="{{STATIC_URL}}css/jquery-ui-1.10.0.custom.css" type="text/css" media="all">
 		
 		<script src="{{STATIC_URL}}js/sop/common/nicEdit-latest.js" type="text/javascript"></script>
-		
-		
-		<!--
-		<link rel="stylesheet" href="{{STATIC_URL}}css/wysihtml5/editor.css" type="text/css" media="all">
-		<link rel="stylesheet" href="{{STATIC_URL}}css/wysihtml5/stylesheet.css" type="text/css" media="all">
-		
-		<script  src="{{STATIC_URL}}js/sop/common/wysihtml5.js"></script>
-		-->
-
 		<script  src="{{STATIC_URL}}js/sop/Application.js"></script>
 		
 		
@@ -26,12 +22,15 @@
 		
 		
 		<script>
-		var STATIC = "{{ STATIC_URL }}";
-		var DB = init_db("{% csrf_token %}")
-		var site_id = "{{site.id}}"
-		
+		window.STATIC = "{{ STATIC_URL }}";
+		window.DB = init_db("{% csrf_token %}")
+		window.site_id = "{{site.id}}"
+		window.get_application_url = '/a/';
+        window.is_constructor = false;
+        
 				//var GET    = {{get}};
-		
+
+        /*
 		$(function (){
 			var scr = $.ajax({
 								url: STATIC + "js/sop/constructor.js",
@@ -45,7 +44,7 @@
 		
 		
 		
-
+*/
 			
 			
 			
@@ -86,13 +85,23 @@
 				width: 0;
 				height: 0;
 			}
+			html,body{
+				margin:0;
+				overflow:auto;
+				height:100%;
+				
+			}
 
 		</style>
 	</head>
 	
 	
 	<body>
+				
 		<div id="id-top-cont">
+			<div class="hidden-links">
+				{{ site.cached_urls|safe }}
+			</div>
 			
 		</div>
 		

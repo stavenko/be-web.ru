@@ -1,0 +1,17 @@
+{
+           
+			"app_name":"theshop",
+			"title": "The shop",
+			"roles":["client", "manager"],
+			"default_role": "client",
+			"data":{"product":{"view":["client","manager"],
+			 	  	"add":["manager"], 
+					"del":["manager"] } ,
+					"property":{"view":["client","manager"],
+								 	  	"add":["manager"], 
+										"del":["manager"] } },
+			"author": "Vasiliy G. Stavenko",
+			"author_email": "stavenko@gmail.com",
+			"homepage":"be-web.ru"
+					
+}

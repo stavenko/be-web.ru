@@ -20,3 +20,11 @@ src/sop/settings_dev.pyc
 src/sop/urls.pyc
 
 *.pyc
+
+.idea/*
+
+src/constructor.js/node_modules/*
+src/constructor/static/js/cp/parsers/jquery.ui.colorpicker-cmyk-parser.js
+
+src/constructor/static/js/sop/old-trash/*
+src/constructor.js/src/*.js

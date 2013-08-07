@@ -1,0 +1,8 @@
+{	"app_name":"generic",
+    "title": "Generic Application",
+	"roles":["guest","admin"],
+	"default_role": "guest",
+	"author": "Vasiliy G. Stavenko",
+	"author_email": "stavenko@gmail.com",
+	"homepage":"be-web.ru"
+}

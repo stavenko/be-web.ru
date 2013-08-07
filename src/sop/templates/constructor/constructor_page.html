@@ -4,12 +4,18 @@
 		<script  src="{{STATIC_URL}}js/jquery-1.9.0.js"></script>
 		<script src="{{STATIC_URL}}js/jquery-ui-1.10.0.custom.js"></script>
 		<script  src="{{STATIC_URL}}js/jquery.mousewheel.min.js"></script>
+        <script  src="{{STATIC_URL}}js/mustache.js"></script>
+
+		<script  src="{{STATIC_URL}}js/cp/jquery.colorpicker.js"></script>
+
 		
-		
-		
+		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/editarea_0_8_2/edit_area/edit_area_full.js"></script>
+		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/sop/constructor.js"></script>
+
 		<link rel="stylesheet" href="{{STATIC_URL}}css/jquery-ui-1.10.0.custom.css" type="text/css" media="all">
 		
-		<script src="{{STATIC_URL}}js/sop/common/nicEdit-latest.js" type="text/javascript"></script>
+		<link rel="stylesheet" href="{{STATIC_URL}}css/jquery.colorpicker.css" type="text/css" media="all">
+		
 		
 		
 		<!--
@@ -22,13 +28,16 @@
 		<script  src="{{STATIC_URL}}js/sop/Application.js"></script>
 		
 		
-
-		
 		
 		<script>
-		var STATIC = "{{ STATIC_URL }}";
-		var DB = init_db("{% csrf_token %}")
-		var site_id = "{{site.id}}"
+		window.STATIC = "{{ STATIC_URL }}";
+		window.DB = init_db("{% csrf_token %}")
+		window.site_id = "{{site.id}}"
+		window.get_application_url = '/a/';
+        window.is_constructor = true;
+
+
+        /*
 		$(function (){
 			var scr = $.ajax({
 								url: STATIC + "js/sop/constructor.js",
@@ -36,12 +45,24 @@
 							}).responseText;
 			var C = eval("[" + scr + "]")[0];
 			
-			Constructor = C.getter()
+			var Constructor = C.getter()
 			Constructor.init(true, site_id);
+			
+			//var bb = new BlobBuilder();
+			//bb.append(document.querySelector('#cache_worker').textContent)
+			//var cache_worker = new Worker(window.URL.createObjectURL(bb.getBlob()));
+			//var cache_worker = new Worker("{{STATIC_URL}}js/sop/cacher.js");
+			
+			//cache_worker.onmessage = function(e){
+			//	console.log("Received", e.data);
+				//}
+			//cache_worker.postMessage("start");
+			//Constructor.set_cache_worker(cache_worker)
+			
 		})
 		
 		
-		
+		*/
 
 			
 			
@@ -107,17 +128,32 @@
 			.cp-ul li span{
 				font-size: 16px;
 			}
+			#controls{
+				/*overflow-y:scroll;*/
+				
+				width:100%;
+				height:100%;
+				
+			}
+			html,body{
+				margin:0;
+				overflow:auto;
+				height:100%;
+				
+			}
 			
 		</style>
 	</head>
 	
 	
 	<body>
-		<div id="id-top-cont">
-			
+
+        <div id="id-top-cont">
+
+        </div>
+		<div id="controls">
+
 		</div>
-		
-		<div id="controls"></div>
 		
 		
 	</body>

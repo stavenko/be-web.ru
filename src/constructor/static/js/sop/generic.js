@@ -1,16 +1,7 @@
 
-
-{
-Main: function(){
-	
 var o = {
-	types : {"image": {"tip": "text",
-				"name" : "text",
-				"binary":"binary",
-				"id":"id"},
-		"text":{"id":"id",
-				"content":"html"}},
-	title: "Basic Site",
+
+	
 	admin_page: function(to){
 		to.find('*').remove()
 		$("<div>").text("This is " + this.title + " admin page").appendTo(to) 
@@ -219,9 +210,9 @@ var o = {
 						for(i in constructor_inst.Site.pages){
 							pages+=1
 						}
-						var width = this._jq.width()
+						var width = my_cont.width();
 						var item_width = width / pages;
-						//console.log(my_cont, item_width, width)
+						//console.log('MENU_DIM', item_width, width)
 						
 						var pages = $.extend(true, {}, constructor_inst.Site.pages)
 						var pa = [];
@@ -693,13 +684,19 @@ init: function(my_cont, constructor_inst, pos, cp){
 		}
 			}
 		 };	
+		 
 	return o
+	
+	
+	
+	
+/*	
  
 },
 	getter: function(){
 	return this.Main()
 },
-junk : function(){
+junk : function(){*/
 	/*
 	 * _rect_path:function(r, strokeWidth, strokeColor, dash){
 													var p = new Point(r.x, r.y)
@@ -752,6 +749,6 @@ junk : function(){
 													return a;
 												},
 	 */
-}
+	//}
 	
-}
+	//}

@@ -57,7 +57,7 @@ var o = {
 									 // 'padding-top':m/2 + 'px',
 									 width:wc, 
 									 height:hc,
-									 float:'left',
+									 float:'left'
 									 
 								  });
 								
@@ -183,7 +183,6 @@ var o = {
 		"menubar" : {title:"Меню сайта", 
 					default_size: [3,1],
 					init: function(my_cont, constructor_inst, pos, cp){
-			//console.log(pos) 
 			var data = data;
 			var o = {
 					my_cont:my_cont,
@@ -193,35 +192,36 @@ var o = {
 					cp : cp,
 					pos: pos,
 					_jq : false,
+
 					draw: function(){
 						if (typeof this.constr.Site.fonts == 'undefined' ){
 							font = 'Times New Roman'
 						} else{ font = this.constr.Site.fonts.content}
-						
+
+
 						this._jq = $("<ul>")
 									.appendTo(this.my_cont)
 									.css('font-family', font )
 									.css('font-size', my_cont.width() / 40)
 									.css('padding',0).css('margin', 0)
+
+
 						var current_page = constructor_inst.current_page
 						var self = this;
-						// console.log(constructor_inst.Site.pages)
 						var pages = 0
 						for(i in constructor_inst.Site.pages){
 							pages+=1
 						}
 						var width = my_cont.width();
 						var item_width = width / pages;
-						//console.log('MENU_DIM', item_width, width)
-						
+
 						var pages = $.extend(true, {}, constructor_inst.Site.pages)
 						var pa = [];
 						$.each(pages,function(i, p){
 							p.slug = i
 							pa.push(p)
 						})
-				
-						pa.sort(function(a,b){ return a.order - b.order } )
+				        pa.sort(function(a,b){ return a.order - b.order } )
 				
 				
 						$.each(pa, function(ix,p){	
@@ -243,6 +243,7 @@ var o = {
 							}
 							
 						})
+
 					},
 					jq: function(){ return this._jq } 
 				}

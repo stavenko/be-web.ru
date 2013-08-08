@@ -402,12 +402,28 @@ def blob_storage(obj):
     else: 
         return obj    
 
+
 def setTriggers(req, site ,datatype, event_type, object):
     hostname =  req.META['HTTP_HOST']
-    if datatype == (sites + '@generic.' + settings.MY_BASE_HOST):
+    print "TRIGGET",  unicode(datatype) == unicode(sites + u'@generic.' + settings.MY_MAIN_SITE)
+    if datatype == unicode(sites + '@generic.' + settings.MY_MAIN_SITE):
+        print "OKEY"
         metas = object.get('seo',{}).get('metas',{})
         site['metas'] = "\n".join(metas.values())
+
+        textColors = object.get('textColors',{})
+        ass = {"link_color":"#id-top-cont A:link",
+               "text_color":"#id-top-cont",
+               "hover_color":"#id-top-cont A:hover",
+               "active_color":"#id-top-cont A:active",
+               "visited_color":"#id-top-cont A:visited"}
+        colors = "\n".join(["%s{color:%s}\n"%(ass[k], textColors[k]['rgb']) for k in textColors if textColors[k].get('rgb', False)])
+        site['textColors'] = colors
+
+        print site['textColors']
         req.storage.safe_update(accounts, site)
+
+
         
 
 def data_connector(req):

@@ -126,7 +126,7 @@ var init_db = function(csrf_token){
 			
 		},
         get_objects: function(appid, type, query, paging, view, sort){
-			console.log(type, appid);
+			// console.log(type, appid);
             var d = {type: type + "@" + appid }
             var o = {}
             if (query){o['q'] =query}

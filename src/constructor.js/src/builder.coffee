@@ -15,16 +15,18 @@ window.Constructor.draw= (custom_cont = @page_cont, custom_head=$('head'), custo
       @init_grid(custom_cont, custom_head)
 
 window.Constructor._init_page = (hash_ = window.location.hash.slice(1).split('?'), head = $('head') ) -> #Done
+  @page_vars= {} if not @page_vars?
   page_name = hash_[0].replace('!','')
   params = if hash_[1]?
       hash_[1]
     else ""
   @current_page = page_name
   pdata = @getPageData(page_name)
-  # log(page_name, hash_, head, pdata)
+  #log(pdata)
   if  pdata.params
     for p, val of pdata.params
       do (p, val) =>
+        log(@, p, val)
         @page_vars[p] = val
 
   #log('c')
@@ -41,7 +43,8 @@ window.Constructor._init_page = (hash_ = window.location.hash.slice(1).split('?'
   if params
     a = params.split('&')
     for p in a
-      do (p) ->
+      do (p) =>
+        log(p)
         _p = p.split('=')
         name = _p[0]
         val =  _p[1]
@@ -58,6 +61,7 @@ window.Constructor.getPageData = ( page_name ) -> # DOne
   @load_site();
   # log(page_name,this.Site.pages[page_name]);
   @Site.pages[page_name]
+  #log(@Site.pages, page_name)
 
 
 window.Constructor.load_site = (do_reload = false ) -> #done
@@ -92,27 +96,6 @@ window.Constructor.load_site = (do_reload = false ) -> #done
 
 
 
-###
-
-getApp = `function (name){
-				var scr = $.ajax({
-								url: window.get_application_url + name + '/',
-								async:false
-							}).responseText;
-				app_egg = JSON.parse(scr)
-				app_egg.Main = new Function(app_egg.Main.attr, app_egg.Main.body)
-				app_egg.getter = new Function(app_egg.getter.attr, app_egg.getter.body)
-
-				var App = app_egg.getter(this, name)
-				App.roles = app_egg.roles;
-				App.default_role = app_egg.default_role;
-				App.app_name = app_egg.app_name;
-				App.title = app_egg.title;
-
-				return App;
-			}`
-
-###
 
 window.Constructor.getAppJson = (name) ->
     xhr = $.ajax({url: window.get_application_url + name + "/",async: false})
@@ -142,52 +125,24 @@ window.Constructor.getApp = (name) ->
 
 
 
+window.Constructor.set_app_cache = (n,v)->
+  if @_app_cache?
+    @_app_cache[n]=v
+  else
+    @_app_cache = {}
+    @_app_cache[n] = v
 
 
-
-
-set_app_cache = `function (name, c) {
-				if (this._app_cache){
-					this._app_cache[name] = c
-				}
-
-			}`
-window.Constructor.set_app_cache = set_app_cache
-
-
-
-
-get_app_cache = `function (name) {
-				if (this._app_cache[name]){
-					return this._app_cache[name]
-				}else{
-					return {}
-				}
-
-			}`
-window.Constructor.get_app_cache = get_app_cache
+window.Constructor.get_app_cache = (n)->
+  if @_app_cache? and @_app_cache[n]?
+      @_app_cache[n]
+  else{}
 
 
 
 
 
-set_cache_worker = `function (worker) {
-				this.worker = worker
-				}`
-window.Constructor.set_cache_worker = set_cache_worker
-
-
-
-get_block = `function (p){
-				return this.Site.blocks[p]
-
-			}`
-window.Constructor.get_block = get_block
-
-
-
-
-
+window.Constructor.get_block = (ix) -> @Site.blocks[ix]
 
 
 getBlockSettings = `function (pos){
@@ -312,7 +267,7 @@ window.Constructor._get_page_var = _get_page_var
 
 get_color = `function (c){
 				this._make_pallette()
-				// console.log(this.Site.colors, c)
+				console.log(this.Site.colors, c)
 				if (c.v == 'C') {// color from custom palette
 					return this.Site.colors.custom_pallette[c.ix]
 
@@ -326,10 +281,29 @@ window.Constructor.get_color = get_color
 
 
 
+###
+    set_colors = (c) =>
+    s = "<style id='a_stylo'>
+  {{#link_color}}a:link {color: {{link_color}} }  {{/link_color}}
+  {{#text_color}}body   {color: {{text_color}} }  {{/text_color}}
+  {{#visited_color}}a:visited {color: {{visited_color}} }  {{/visited_color}}
+  {{#active_color}}a:active {color: {{active_color}} }  {{/active_color}}
+  {{#hover_color}}a:hover {color: {{hover_color}} }  {{/hover_color}}
+
+    </style>"
+    lc = {}
+    for k in ["text_color", "link_color", "visited_color", "active_color", 'hover_color']
+      if c[k]?
+        lc[k] = hsvToRgb(@get_color(c[k]))
+      else
+        lc[k] = defaults[k]
+    #$('head').find('#a_stylo')
+
+    $('head').html(Mustache.render(s,lc))
+###
 
 
-
-
+###
 
 init_grid = `function ( to, head ){
         // log(to,head);
@@ -478,7 +452,146 @@ init_grid = `function ( to, head ){
 					self.init_block(block, gp)
 				})
 			}`
-window.Constructor.init_grid = init_grid
+###
+window.Constructor.getTextColors = ->
+  colors = if not @Site.textColors? then {} else @Site.textColors
+  defaults =
+    text_color : "rgb(0,0,0)"
+    link_color : "#0000ff"
+    visited_color : "#800080"
+    active_color : "#ff0000"
+    hover_color  : "#0000ff"
+  lc = {}
+  #log('W', @Site.textColors, colors)
+  for k in ["text_color", "link_color", "visited_color", "active_color", 'hover_color']
+
+    if colors[k]? and colors[k].index?
+      lc[k] = hsvToRgb(@get_color(colors[k].index))
+    else
+      lc[k] = defaults[k]
+  log("FINAL", lc)
+  lc
+
+window.Constructor.init_grid = (to, head) ->
+
+  # log(to,head);
+  block_width = @_block_width()
+  base_height = @layout.base_height
+  self = this
+  if @layout.fixed
+    e = "px"
+  else
+    e = "%"
+  $("body").css "margin", 0
+  total_height = @Site.layout.drawen_lines * (@Site.layout.base_height + 2 * (@Site.layout.grid.ver))
+  window_width = window.innerWidth
+  width = @Site.layout.width
+  w_left = window_width - width
+  left = w_left / 2
+  #log "TOTAL", @Site
+
+  # .css('margin-left','auto')
+
+  # .css('margin-right','auto')
+  @layout_cont = $("<div>").css("position", "absolute").css("width", @layout.width + e).css("top", @Site.layout.padding.top).css("left", left).css("height", total_height).appendTo(to)
+  c_off = @layout_cont.offset()
+  to.css "top", "0px"
+
+  # console.log("OFFSET", c_off)
+  @_main_offset = c_off
+  @redraw_background()
+  @_busy_regions = []
+  @_moved_block_ = []
+
+  #console.log(this.Site.blocks)
+  bw = self._block_width(1)
+  bh = self._block_height(1)
+  bhp = self.Site.layout.grid.hor
+  bvp = self.Site.layout.grid.ver
+  gw = bw + (bhp * 2)
+  gh = bh + (bvp * 2)
+  gp = self.Site.layout.padding.left
+
+  #var gvvp = self.Site.layout.padding.t
+  gmp = (gp - (bhp * 2))
+
+  # .css('border-radius', '10px')
+
+
+  #log head.find('#a_stylo').length
+  ###
+
+  if head.find('#a_stylo').length is 0
+    colors = @getTextColors()
+    s = """<style id='a_stylo'>
+    {{#link_color}}A:link {color: {{link_color}}; };  {{/link_color}}
+    {{#text_color}}#id-top-cont *  {color: {{text_color}} !important; };  {{/text_color}}
+    {{#visited_color}}A:visited {color: {{visited_color}}; };  {{/visited_color}}
+    {{#active_color}}A:active {color: {{active_color}}; };  {{/active_color}}
+    {{#hover_color}}A:hover {color: {{hover_color}}; };  {{/hover_color}}
+
+      </style>"""
+
+    s = Mustache.render(s,colors)
+    #log("STYLE", s)
+    head.append(s)
+  ###
+
+
+
+  # now verticals
+
+  #.css('opacity','0.7')
+
+  # .css('border', '1px solid black')
+  gridd = $("<div>").addClass("empty-block").appendTo(@layout_cont).css("position", "absolute").css("background-color", "white").css("background", "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)").css("background-size", gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px  ").css("background-position", gp + "px 0px, " + (gp + 1) + "px 0px, " + gmp + "px 0px, " + (gmp + 1) + "px 0px, 0px 0px,0px 1px, 0px -" + (bvp * 2) + "px,0px -" + ((bvp * 2) - 1) + "px").css("left", 0).css("top", 0).css("width", @Site.layout.width).css("height", total_height)  if @is_constructor
+
+  #.zIndex(-100)
+  $.each @Site.blocks, (ix, block) ->
+    if block.display_on is "all"
+
+      #console.log(block.dont_display_on , self.current_page)
+
+      #console.log('do not display it', ix)
+      return  unless block.dont_display_on.indexOf(self.current_page) is -1
+    else return  unless block.display_on is self.current_page
+    set = self.getBlockSettings(ix)
+
+    #console.log("IG",set)
+    bw = (if set then set.border_width else 0)
+    x = block.x #Number(koords.split(':')[0]);
+    y = block.y # Number(koords.split(':')[1]);
+    unless set.unsnap_to_grid
+
+      #console.log('orig', x,y)
+      xx = self._calc_left(x + 1) - bw
+      yy = self._calc_top(y) - bw
+    else
+
+      #self.move_block(ix, 0, 0)
+      #consmoveole.log('my', x,y)
+      xx = x
+      yy = y
+
+    #console.log("XX", xx,yy, self._calc_left(2), self._calc_top(5) )
+    w = block.width
+    h = block.height
+    unless set.unsnap_to_grid
+      W = self._calc_width(w)
+      H = self._calc_height(h)
+    else
+      W = w
+      H = h
+
+    # console.log(W,H)
+
+    # console.log(block_list);
+    gp =
+      jq: $("<div>").appendTo(self.layout_cont).css("position", "absolute").css("left", xx).css("top", yy).width(W).css("height", H).css("overflow", "hidden")
+      pos: ix
+
+    self.init_block block, gp
+
 
 
 
@@ -573,7 +686,7 @@ window.Constructor.init_block = (bl, to) ->
   init_resizer = ->
   newWidget = (c, t, p, cp) ->
 
-    log("New widget", t.Site.Applications, widget_name,app_name );
+    #log("New widget", t.Site.Applications, widget_name,app_name );
     t.Site.Applications[app_name].widgets[widget_name].init c, t, p, cp
   r = bl.top
   l = bl.left
@@ -590,6 +703,7 @@ window.Constructor.init_block = (bl, to) ->
   w = $("<div>").css("width", to.jq.width()).css("height", to.jq.height()).appendTo(to.jq).addClass("draggable-module")
   draga = undefined
   Widget = newWidget(w, this, to.pos)
+  #log( widget_name, app_name)
   Widget.draw()
   settings = self.getBlockSettings(to.pos)
 

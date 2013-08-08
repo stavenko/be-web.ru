@@ -7,6 +7,7 @@
         <script  src="{{STATIC_URL}}js/mustache.js"></script>
 
 		<script  src="{{STATIC_URL}}js/cp/jquery.colorpicker.js"></script>
+        <script  src="{{STATIC_URL}}js/jquery.visited.js"></script>
 
 		
 		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/editarea_0_8_2/edit_area/edit_area_full.js"></script>
@@ -141,7 +142,17 @@
 				height:100%;
 				
 			}
-			
+        {{ site.textColors|safe}}
+        {% comment %}
+
+            A:link {color:rgba(94,92,230,1)}
+
+            A:visited {color: rgba(149,224,150,1)}
+            #id-top-cont  {color:rgba(255,255,255,1)}
+        {% endcomment %}
+
+
+
 		</style>
 	</head>
 	

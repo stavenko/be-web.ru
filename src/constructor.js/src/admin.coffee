@@ -161,6 +161,7 @@ _save_site = `function ( do_cache ){
 			}`
 window.Constructor._save_site = _save_site
 
+###
 
 init_block_cp = `function (obj,to, widget){
 
@@ -397,7 +398,211 @@ init_block_cp = `function (obj,to, widget){
 				}
 				return o;
 			}`
-window.Constructor.init_block_cp = init_block_cp
+###
+window.Constructor.init_block_cp = (obj, to, widget) ->
+  m = $("<div>").appendTo(to)
+  self = this
+  w = obj
+  settings = self.getBlockSettings(obj.pos)
+  old_settings = $.extend(true, {}, settings)
+
+  #console.log ("HAHAHA", obj, w, to)
+  onPatternChoice = (pattern) ->
+    settings.background =
+      type: "pattern"
+      pattern: pattern
+
+    self.apply_block_settings w, settings, widget
+
+  onColorChoice = (color, pal_ix, hsba) ->
+    if col is "clear"
+      settings.background = type: "none"
+    else
+      settings.background =
+        type: "color"
+        color: pal_ix
+    self.apply_block_settings w, settings, widget
+    $(this).dialog "close"
+
+  onCancel = ->
+    settings = old_settings
+    self.apply_block_settings w, old_settings, widget
+    $(this).dialog "close"
+
+  onSave = ->
+    $(this).dialog "close"
+
+  if widget.disobey.indexOf("background_color") is -1
+    cl = $("<button>").button().text("Выбор фона").click(->
+      self.drawBackgroundSelectorDialog onPatternChoice, onColorChoice, onCancel, onSave
+    ).appendTo(m)
+
+  #console.log(widget.disobey.indexOf('border_color') == -1)
+  if widget.disobey.indexOf("border_color") is -1
+    cl = $("<button>").button().text("выбрать цвет рамки").click(->
+      cb = (col, ix) ->
+        unless col is "clear"
+          settings.border_color = ix
+          self.apply_block_settings w, settings, widget
+
+      cc = self.draw_color_chooser(cb)
+      cc.appendTo(to).position
+        of: this
+        my: "left top"
+        at: "left top"
+
+    ).appendTo(m)
+  vf = (a, d) ->
+    (if typeof (a) is "undefined" then d else a)
+
+  ul = $("<ul>").appendTo(m).addClass("cp-ul")
+  if widget.disobey.indexOf("bg_opacity") is -1
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Прозрачность блока").appendTo li
+
+    # w.css('opacity', settings.bg_opacity);
+    $("<div>").width(250).slider(
+      min: 0
+      max: 100
+      value: vf(settings.bg_opacity, 100) * 100
+      slide: (event, ui) ->
+        settings.bg_opacity = ui.value / 100
+        self.apply_block_settings w, settings, widget
+    ).appendTo li
+  if widget.disobey.indexOf("border_radius") is -1
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Радиус границы").appendTo li
+
+    #w.css('border-radius', settings.border_radius +'px');
+    $("<div>").width(250).slider(
+      min: 0
+      max: 100
+      value: vf(settings.border_radius, 0)
+      slide: (event, ui) ->
+        settings.border_radius = ui.value
+        self.apply_block_settings w, settings, widget
+    ).appendTo li
+  if widget.disobey.indexOf("border_width") is -1
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Ширина границы").appendTo li
+    $("<div>").width(250).slider(
+      min: 0
+      max: 100
+      value: vf(settings.border_width, 0) * 10
+      slide: (event, ui) ->
+        settings.border_width = ui.value / 10
+        self.apply_block_settings w, settings, widget
+    ).appendTo li
+  if widget.disobey.indexOf("line_height") is -1
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Межстрочный интервал").appendTo li
+    def_lh = obj.jq.width() / settings.font_size * 0.75
+
+    # w.css('line-height', settings.line_height +'px');
+    lhs = $("<div>").width(250).slider(
+      min: 0
+      max: 300
+      value: vf(def_lh, 0) * 10
+      slide: (event, ui) ->
+        settings.line_height = ui.value / 10
+        self.apply_block_settings w, settings, widget
+    ).appendTo(li)
+  if widget.disobey.indexOf("font_size") is -1
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Размер шрифта").appendTo li
+
+    #w.css('font-size', settings.font_size +'px');
+    #w.css('line-height', lh +'px');
+    $("<div>").width(250).slider(
+      min: 0
+      max: 300
+      value: vf(settings.font_size, 0) * 10
+      slide: (event, ui) ->
+        settings.font_size = ui.value / 10
+        settings.line_height = obj.jq.width() / settings.font_size * 0.75
+        self.apply_block_settings w, settings, widget
+        lhs.slider "value", settings.line_height * 10
+    ).appendTo li
+  if widget.disobey.indexOf("padding_top") is -1
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("отступ сверху").appendTo li
+    pt = (if settings.padding_top then settings.padding_top * 10 else 0)
+    $("<div>").width(250).slider(
+      min: 0
+      max: 300
+      value: pt
+      slide: (event, ui) ->
+        settings.padding_top = ui.value / 10
+        self.apply_block_settings w, settings, widget
+    ).appendTo li
+  if widget.disobey.indexOf("padding_left_right") is -1
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Отступ слева-справа").appendTo li
+    plr = (if settings.padding_left_right then settings.padding_left_right * 10 else 0)
+    $("<div>").width(250).slider(
+      min: 0
+      max: 300
+      value: plr
+      slide: (event, ui) ->
+        settings.padding_left_right = ui.value / 10
+        self.apply_block_settings w, settings, widget
+    ).appendTo li
+  $("<label for='available_all_pages'>").appendTo(m).append "Показывать на всех страницах"
+  cb = $("<input type='checkbox' id='available_all_pages'>").appendTo(m).click(->
+
+    # console.log(self.Site.blocks, to)
+    if self.Site.blocks[obj.pos].display_on is "all"
+      self.Site.blocks[obj.pos].display_on = self.current_page
+    else
+      self.Site.blocks[obj.pos].display_on = "all"
+  )
+  cb.prop "checked", self.Site.blocks[obj.pos].display_on is "all"
+  $("<br>").appendTo m
+
+  # ------
+  $("<label for='unsnap_to_grid'>").appendTo(m).append "Свободный блок"
+  cb = $("<input type='checkbox' id='unsnap_to_grid'>").appendTo(m).click(->
+    bl = self.get_block(obj.pos)
+    settings.unsnap_to_grid = @checked
+    if @checked
+      self.move_block obj.pos, self._calc_left(bl.x + 1) + settings.border_width, self._calc_top(bl.y + 1) + settings.border_width, true
+      self.Site.blocks[obj.pos].width = self._calc_width(bl.width)
+      self.Site.blocks[obj.pos].height = self._calc_height(bl.height)
+    else
+
+      # x = obj.jq.css('left')
+      self.move_block obj.pos, self._uncalc_left(bl.x) + settings._border_width, self._uncalc_top(bl.y) + settings._border_width, true
+      self.Site.blocks[obj.pos].width /= self._block_width()
+      self.Site.blocks[obj.pos].height /= self._block_height()
+  )
+  cb.prop "checked", settings.unsnap_to_grid
+  $("<br>").appendTo m
+
+  # ------
+  cl = $("<button>").button().text("Применить для всех новых блоков").click(->
+    self.Site.default_block_settings = settings
+    self.redraw()
+    m.remove()
+  ).css("display", "block").css("padding", "5px").css("margin-bottom", "10px").appendTo(m)
+
+  # console.log(bl)
+  cl = $("<button>").button().text("Применить для всех имеющихся блоков").click(->
+    self.Site.default_block_settings = settings
+    $.each self.Site.blocks, (i, bl) ->
+      delete bl["settings"]
+
+    self.redraw()
+    to.remove()
+  ).appendTo(m).css("display", "block").css("padding", "5px").css("margin-bottom", "10px")
+  o =
+    save: ->
+
+      #console.log(settings)
+      self.setBlockSettings obj.pos, settings
+
+    cancel: ->
+
+  o
 
 
 drawBackgroundSelectorDialog = `function (onPatternChoice, onColorChoice, onCancel, onSave){
@@ -2116,43 +2321,70 @@ window.Constructor.showSEOScheme = ->
     $(this).show()
 
 
-###
+window.Constructor.showTextColorScheme = ->
 
-backgroundChooser = `function (type){
-				var self = this;
+  templ = "
+<div>
+  <ul>
+  <li> Текст <div name ='text_color' style='width:30px; height:20px; background-color:{{ text_color }}; display:inline-block'></div></li>
+  <li> Ссылки <div name ='link_color' style='width:30px; height:20px; background-color:{{ link_color }}; display:inline-block'></div></li>
+  <li> Посещенные ссылки <div name ='visited_color' style='width:30px; height:20px; background-color:{{ visited_color }}; display:inline-block'></div></li>
+  <li> Активные ссылки <div name ='active_color' style='width:30px; height:20px; background-color:{{ active_color }}; display:inline-block'></div></li>
+  <li> Ссылка под курсором <div name ='hover_color' style='width:30px; height:20px; background-color:{{ hover_color }}; display:inline-block'></div></li>
 
-				var old_background = $.extend(true, {}, self.Site.backgrounds[type]);
 
-				var onPattern = function (patt) {
-					self.Site.backgrounds[type] = {type:'pattern', pattern:patt};
-					self.redraw_background()
-				}
-				var onColor = function (color, pal_ix, hsba) {
-					self.Site.backgrounds[type] = {type:'color', color:pal_ix};
-					self.redraw_background()
-				}
-				var onCancel = function () {
-					self.Site.backgrounds[type] = old_background;
-					self.redraw_background()
-					$(this).dialog('close')
+</ul>
+<p> Могут примениться только после перезагрузки всего сайта это требует его сохранения</p>
+</div>
+"
 
-				}
-				var onSave = function () {
-
-					self.redraw_background()
-					self._save_site();
-					$(this).dialog('close')
-
-				}
+  #colors = @getTextColors()
+  hsbas = {}
+  if @Site.textColors?
+    for attr, val of @Site.textColors
+      hsbas[attr] = val
+  current_cols = @getTextColors()
 
 
 
+  ht = Mustache.render(templ, current_cols)
+  cold = $("<div>").html(ht)
+  cold.find('div[name]').click (e) =>
+    col_type = $(e.target).attr('name')
+    d =$(e.target)
+    setter = (col, ix, hsba) ->
+      d.css('background-color', col )
+      hsbas[col_type] = {index:ix,rgb:col}
+      {}
 
-				self.drawBackgroundSelectorDialog(onPattern, onColor, onCancel, onSave)
-			}`
+    color_chooser = @draw_color_chooser setter
+    color_chooser.appendTo($('#controls')).position({of:$(e.target), my:'left top', at:'right bottom'})
 
+  #log("SMT")
+  cold.dialog(
+    title: "Цвет ссылок и текста"
+    width: 400
+    height: 400
+    buttons:
+      "Сохранить и перезагрузить": =>
+        log(@)
+        @Site.textColors = hsbas
+        @_save_site()
 
-  ###
+        cold.dialog('close')
+        window.location.reload()
+      "Сохранить без перезагрузки": =>
+        log(@)
+        @Site.textColors = hsbas
+        @_save_site()
+        @redraw()
+        cold.dialog('close')
+
+      "Отмена": =>
+        @redraw()
+        cold.dialog('close')
+
+  )
 
 window.Constructor.backgroundChooser =(type) ->
   self = this
@@ -2236,12 +2468,14 @@ window.Constructor.show_CP = (active_tab) ->
   d = $("<div>").appendTo(@cp_acc)
   ul = $("<ul>").appendTo(d)
   $("<li>").append($("<a>").prop("href", "#").text("Фон сайта").click(->self.backgroundChooser "body")).appendTo ul
-  $("<li>").append($("<a>").prop("href", "#").text("Фон центральной части сайта").click(->
-    self.backgroundChooser "content"
-  )).appendTo ul
+  $("<li>").append($("<a>").prop("href", "#").text("Фон центральной части сайта").click(->self.backgroundChooser "content")).appendTo ul
   $("<li>").append($("<a>").prop("href", "#").text("Цветовая схема").click(->
     self.showColorScheme()
   )).appendTo ul
+  $("<li>").append($("<a>").prop("href", "#").text("Цвет текста").click(->
+    self.showTextColorScheme()
+  )).appendTo ul
+
   $("<li>").append($("<a>").prop("href", "#").text("Создание фонов").click(->
     self.showBackgroundScheme()
   )).appendTo ul

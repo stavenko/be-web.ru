@@ -180,6 +180,8 @@ hsvToRgb = 	(o, as_array = false ) ->
       a = 1
     "rgba(" + rr + "," + gg + "," + bb + "," + a + ")"
 
+window.hsvToRgb = hsvToRgb
+
 default_site =
   _Apps : ['generic.'  + BASE_SITE, 'theshop.' + BASE_SITE]
   layout:

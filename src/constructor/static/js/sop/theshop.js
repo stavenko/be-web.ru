@@ -507,7 +507,7 @@
 									}).appendTo(my_cont)
 								}else{
 									$('<input>').val('положить в корзину').prop('type','button').click(function(evt){
-										basket.products[product._id['$oid']] = 1
+										basket.products[product._id['$oid']] = {amount:1, name: product.name, price: get_base_price(product) }
 										localStorage.setItem(basket_id, JSON.stringify( basket ))
 										
 										self._redraw()
@@ -515,10 +515,7 @@
 									}).appendTo(my_cont)
 									
 								}
-								
-								
-								
-								
+
 								
 							},
 						

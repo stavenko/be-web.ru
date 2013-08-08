@@ -443,14 +443,14 @@ window.Constructor.draw_color_chooser = (onSelectColor) ->
         col = hsvToRgb(col_)
         b = $("<div>").css("float", "left").width(100).height(100).appendTo(color_chooser)  if i is 0
         $("<button>").css("padding", "0").css("border", "0").css("display", "block").css("background-color", col).css("float", "left").width(100).height(100 / 6).appendTo(b).click (evt) ->
+          color_chooser.remove()
           onSelectColor col,
             v: l
             ix: i
           , col_
+
           evt.preventDefault()
           evt.stopPropagation()
-
-          color_chooser.remove()
 
 
     else
@@ -462,11 +462,14 @@ window.Constructor.draw_color_chooser = (onSelectColor) ->
         if i is 0
           b = $("<div>").css("float", "left").width(100).height(100).appendTo(color_chooser)
           main = $("<button>").css("padding", "0").css("border", "0").css("display", "block").css("background-color", col).css("float", "left").width(100).height(50).click((evt) ->
+            color_chooser.remove()
             onSelectColor col,
               v: l
               ix: i
             , col_
-            color_chooser.remove()
+            log("HERE", color_chooser )
+
+
             evt.preventDefault()
             evt.stopPropagation()
           )

@@ -107,16 +107,23 @@ var init_db = function(csrf_token){
             xhr.send(fd)
 			return JSON.parse(xhr.responseText)
         },
-		remove_object:function(appid, type, query){
+		remove_object:function(appid, type, query, complete){
 			var o = {}
 			o.q = query
 			d={o : JSON.stringify(o), type:type+ "@" + appid}
 			d[cs_name] = cs_val;
+            var success = function(js){
+                if (complete != null){
+                  complete(js);
+
+                }
+            };
 			$.ajax({
 				url:'/data/delete/',
 				data: d,
 				dataType:'json',
 				type:'POST',
+                success: success
 				
 			})
 			

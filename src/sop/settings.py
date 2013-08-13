@@ -1,6 +1,6 @@
 # Django settings for sop project.
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -35,7 +35,7 @@ DATABASES = {
 
 DATABASE_ROUTERS = ['powerdns.routers.PowerDNSRouter']
 MY_BASE_HOST = 'be-web.ru'
-MY_MAIN_SITE = 'main.be-web.ru'
+MY_MAIN_SITE = 'www.be-web.ru'
 
 MONGO_HOST = 'localhost'
 MONGO_DATABASE = "sop"

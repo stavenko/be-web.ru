@@ -81,11 +81,11 @@ window.Constructor._stepping_width = _stepping_width
 
 
 _block_width = `function (){
-				var base_width = Math.round ((this.layout.width - (this.layout.padding.left) ) / this.layout.cols)
+				var base_width =  ((this.layout.width - ( 2 * this.layout.padding.left) ) / this.layout.cols)
 				var block_width = (base_width - ( 2 * this.layout.grid.hor ) )
-				// console.log(base_width, block_width)
+				//console.log(base_width, block_width)
 
-				return Math.round(block_width)
+				return block_width
 
 			}`
 window.Constructor._block_width = _block_width
@@ -141,7 +141,7 @@ window.Constructor._calc_top = _calc_top
 _calc_left = `function (l){
 				var w = (this._calc_width (l-1) )
 				if (l > 1){var P =2 }else{var P=0}
-				return (this.layout.padding.left + w + P*this.layout.grid.hor) // + this._main_offset.left;
+				return (this.layout.padding.left + this.layout.grid.hor  + w + P*this.layout.grid.hor) // + this._main_offset.left;
 
 				// console.log('LL', l)
 				//var w = this._calc_width( l-1 ) // Ширина блока учитывается при значениях больше 1 (0,1)
@@ -171,15 +171,8 @@ window.Constructor._calc_height = _calc_height
 
 _calc_width = `function (w){
 				if (w <= 0) return 0;
-				//if (this._c_bw){
-				//	cbw = this._c_bw
-				//}
-				//else{
-					this._c_bw = this._block_width()
-					cbw = this._c_bw
-					// }
-
-				// console.log( "CALC WIDTH", this._c_bw,cbw , w , (this.layout.grid.hor *2 * (w-1)) )
+				this._c_bw = this._block_width()
+				cbw = this._c_bw
 				return (cbw * w) + (this.layout.grid.hor *2 * (w-1) )
 
 

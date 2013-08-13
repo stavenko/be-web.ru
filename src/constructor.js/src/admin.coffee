@@ -28,19 +28,6 @@ window.Constructor.addCustomColor = addCustomColor
 
 
 
-###
-add_block = `function (x,y, type, ds){
-
-				this.Site.blocks.push(	{width:ds[0],height:ds[1],
-									x:x, y:y,
-									widget:{name:type, data: ''	 },
-									display_on : this.current_page,
-									dont_display_on :[]
-								});
-			}`
-
-###
-
 window.Constructor.add_block = (x, y, type, ds) ->
   @Site.blocks.push
     width: ds[0]
@@ -161,244 +148,6 @@ _save_site = `function ( do_cache ){
 			}`
 window.Constructor._save_site = _save_site
 
-###
-
-init_block_cp = `function (obj,to, widget){
-
-				var m = $('<div>').appendTo(to);
-				var self = this;
-				var w = obj;
-				var settings = self.getBlockSettings(obj.pos);
-				var old_settings = $.extend(true, {}, settings)
-
-				//console.log ("HAHAHA", obj, w, to)
-
-				var onPatternChoice = function (pattern){
-				  settings.background = {type:'pattern', pattern: pattern}
-				  self.apply_block_settings(w, settings, widget)
-
-				}
-				var onColorChoice = function (color, pal_ix, hsba ) {
-					if(col == 'clear') {
-						settings.background = { type:'none'}
-					}else{
-						settings.background = { type:'color', color: pal_ix }
-					}
-					self.apply_block_settings( w, settings, widget)
-					$(this).dialog('close')
-
-				}
-
-				var onCancel = function () {
-				 settings = old_settings;
-				 self.apply_block_settings( w, old_settings, widget)
-				 $(this).dialog('close')
-
-				}
-				var onSave = function () {
-   				 $(this).dialog('close')
-
-				}
-
-
-
-
-
-				if(widget.disobey.indexOf('background_color') == -1){
-					cl = $('<button>').button().text('Выбор фона').click(function(){
-
-						self.drawBackgroundSelectorDialog(onPatternChoice, onColorChoice, onCancel, onSave);
-
-
-
-					}).appendTo(m)
-				}
-
-				//console.log(widget.disobey.indexOf('border_color') == -1)
-				if(widget.disobey.indexOf('border_color') == -1){
-
-					cl = $('<button>').button().text('выбрать цвет рамки').click(function(){
-						cb = function(col, ix){
-							if(col != 'clear'){
-								settings.border_color = ix
-								self.apply_block_settings( w, settings, widget )
-							}
-
-						}
-						cc = self.draw_color_chooser( cb );
-						cc.appendTo( to ).position({of:this, my:'left top', at:'left top' } )
-
-					}).appendTo(m)
-				}
-
-
-
-
-				vf = function(a,d){
-
-					return typeof(a) == 'undefined'? d : a
-				}
-				var ul =$('<ul>').appendTo(m).addClass('cp-ul')
-
-				if(widget.disobey.indexOf('bg_opacity') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Прозрачность блока').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:100,value:vf(settings.bg_opacity,100)*100, slide:function(event, ui){
-						settings.bg_opacity = ui.value/100 ;
-						self.apply_block_settings( w, settings, widget )
-
-						// w.css('opacity', settings.bg_opacity);
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('border_radius') == -1){
-
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Радиус границы').appendTo(li)
-
-					$("<div>").width(250).slider({min:0, max:100,value:vf(settings.border_radius,0), slide:function(event, ui){
-						settings.border_radius = ui.value ;
-						self.apply_block_settings( w, settings, widget)
-
-						//w.css('border-radius', settings.border_radius +'px');
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('border_width') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Ширина границы').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:100,value: vf(settings.border_width,0)*10, slide:function(event, ui){
-						settings.border_width = ui.value/10 ;
-						self.apply_block_settings( w, settings, widget)
-
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('line_height') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Межстрочный интервал').appendTo(li)
-
-					def_lh =obj.jq.width() / settings.font_size *0.75;
-
-					var lhs = $("<div>").width(250).slider({min:0, max:300,value:vf(def_lh,0)*10, slide:function(event, ui){
-						settings.line_height = ui.value/10 ;
-						self.apply_block_settings( w, settings, widget)
-
-						// w.css('line-height', settings.line_height +'px');
-
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('font_size') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Размер шрифта').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:300,value:vf(settings.font_size,0)*10, slide:function(event, ui){
-						settings.font_size = ui.value/10 ;
-
-						settings.line_height	= obj.jq.width() / settings.font_size *0.75;
-						self.apply_block_settings( w, settings, widget)
-
-						//w.css('font-size', settings.font_size +'px');
-						//w.css('line-height', lh +'px');
-						lhs.slider('value', settings.line_height * 10)
-
-
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('padding_top') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('отступ сверху').appendTo(li)
-					var pt = settings.padding_top ? settings.padding_top*10 : 0
-
-					$("<div>").width(250).slider({min:0, max:300,value:pt, slide:function(event, ui){
-						settings.padding_top = ui.value/10 ;
-						self.apply_block_settings( w, settings, widget)
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('padding_left_right') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Отступ слева-справа').appendTo(li)
-					var plr = settings.padding_left_right ? settings.padding_left_right*10 : 0
-					$("<div>").width(250).slider({min:0, max:300,value:plr, slide:function(event, ui){
-						settings.padding_left_right = ui.value/10 ;
-						self.apply_block_settings( w, settings, widget)
-					}} ).appendTo(li)
-				}
-
-				$("<label for='available_all_pages'>").appendTo(m).append('Показывать на всех страницах')
-				cb = $("<input type='checkbox' id='available_all_pages'>").appendTo(m).click(function(){
-					// console.log(self.Site.blocks, to)
-					if(self.Site.blocks[obj.pos].display_on == 'all')
-					{
-						self.Site.blocks[obj.pos].display_on = self.current_page
-					}else{
-						self.Site.blocks[obj.pos].display_on = 'all'
-					}
-				})
-				cb.prop('checked', self.Site.blocks[obj.pos].display_on == 'all')
-				$("<br>").appendTo(m)
-				// ------
-				$("<label for='unsnap_to_grid'>").appendTo(m).append('Свободный блок')
-				cb = $("<input type='checkbox' id='unsnap_to_grid'>").appendTo(m).click(function(){
-					bl = self.get_block(obj.pos);
-					settings.unsnap_to_grid = this.checked
-					if (this.checked){
-						self.move_block(obj.pos, self._calc_left(bl.x + 1) + settings.border_width,
-												 self._calc_top(bl.y + 1) + settings.border_width,
-												 true)
- 						self.Site.blocks[obj.pos].width  = self._calc_width(bl.width);
- 						self.Site.blocks[obj.pos].height = self._calc_height(bl.height);
-
-					}else{
-						// x = obj.jq.css('left')
-						self.move_block(obj.pos, self._uncalc_left(bl.x ) + settings._border_width,
-												 self._uncalc_top(bl.y ) + settings._border_width,
-												 true)
-						self.Site.blocks[obj.pos].width  /= self._block_width();
-						self.Site.blocks[obj.pos].height /=  self._block_height();
-
-					}
-
-				})
-				cb.prop('checked', settings.unsnap_to_grid )
-				$("<br>").appendTo(m)
-				// ------
-
-				cl = $('<button>').button().text('Применить для всех новых блоков').click(function(){
-					self.Site.default_block_settings = settings;
-					self.redraw()
-					m.remove();
-
-				})
-				.css('display','block')
-				.css('padding','5px')
-				.css('margin-bottom', '10px')
-				.appendTo(m)
-
-				cl = $('<button>').button().text('Применить для всех имеющихся блоков').click(function(){
-					self.Site.default_block_settings = settings;
-					$.each(self.Site.blocks, function(i, bl){
-						delete bl['settings']
-
-						// console.log(bl)
-					})
-
-
-					self.redraw();
-					to.remove()
-
-				}).appendTo(m)
-				.css('display','block')
-				.css('padding','5px')
-				.css('margin-bottom', '10px')
-				var o = {
-					save: function(){
-						//console.log(settings)
-						self.setBlockSettings(obj.pos,settings)
-					},
-					cancel:function(){
-
-					}
-				}
-				return o;
-			}`
-###
 window.Constructor.init_block_cp = (obj, to, widget) ->
   m = $("<div>").appendTo(to)
   self = this
@@ -406,7 +155,6 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
   settings = self.getBlockSettings(obj.pos)
   old_settings = $.extend(true, {}, settings)
 
-  #console.log ("HAHAHA", obj, w, to)
   onPatternChoice = (pattern) ->
     settings.background =
       type: "pattern"
@@ -415,14 +163,15 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
     self.apply_block_settings w, settings, widget
 
   onColorChoice = (color, pal_ix, hsba) ->
-    if col is "clear"
+    log("DIAL", this)
+    if color is "clear"
       settings.background = type: "none"
     else
       settings.background =
         type: "color"
         color: pal_ix
     self.apply_block_settings w, settings, widget
-    $(this).dialog "close"
+    #$(this).dialog "close"
 
   onCancel = ->
     settings = old_settings
@@ -496,13 +245,13 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
   if widget.disobey.indexOf("line_height") is -1
     li = $("<li>").appendTo(ul)
     $("<span>").text("Межстрочный интервал").appendTo li
-    def_lh = obj.jq.width() / settings.font_size * 0.75
+    # def_lh = obj.jq.width() / settings.font_size * 0.75
 
     # w.css('line-height', settings.line_height +'px');
     lhs = $("<div>").width(250).slider(
       min: 0
       max: 300
-      value: vf(def_lh, 0) * 10
+      value: settings.line_height
       slide: (event, ui) ->
         settings.line_height = ui.value / 10
         self.apply_block_settings w, settings, widget
@@ -516,12 +265,12 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
     $("<div>").width(250).slider(
       min: 0
       max: 300
-      value: vf(settings.font_size, 0) * 10
+      value: settings.font_size
       slide: (event, ui) ->
         settings.font_size = ui.value / 10
-        settings.line_height = obj.jq.width() / settings.font_size * 0.75
+        #settings.line_height = obj.jq.width() / settings.font_size * 0.75
         self.apply_block_settings w, settings, widget
-        lhs.slider "value", settings.line_height * 10
+        #lhs.slider "value", settings.line_height * 10
     ).appendTo li
   if widget.disobey.indexOf("padding_top") is -1
     li = $("<li>").appendTo(ul)
@@ -831,7 +580,7 @@ showColorScheme = `function (){
 window.Constructor.showColorScheme = showColorScheme
 
 
-
+###
 showLayoutScheme = `function (){
 
 				var to = this._app_admin_contents;
@@ -878,7 +627,74 @@ showLayoutScheme = `function (){
 				}).appendTo(to)
 				this._app_admin_cont.show()
 			 }`
-window.Constructor.showLayoutScheme = showLayoutScheme
+###
+window.Constructor.showLayoutScheme = ->
+  to = @_app_admin_contents
+  to.find("*").remove()
+  to.width 500
+  self = this
+  lo = $.extend(true, {}, @Site.layout)
+  ul = $("<ul>").appendTo(to).width(500)
+  labels =
+    "drawen_lines":"Количество строк"
+    "cols":"Количество столбцов"
+    "padding":"Отступ"
+    "top":"Сверху"
+    "left":"Слева-справа"
+    "width":"Ширина"
+    "grid":"Расстояния"
+    "hor":"Между столбцами"
+    "ver":"между строками"
+    "base_height":"Высота строки"
+
+  s = undefined
+  recount = =>
+    s.text("Ширина блока: " + @_block_width(1) + "; Высота блока: " + @_block_height(1));
+  $.each lo, (i, val) =>
+    changer_1 = (event, ui) =>
+          @Site.layout[i] = ui.value
+          recount();
+    unless i is 'fixed'
+      l = $("<li>").text(labels[i]).appendTo(ul)
+      if i is "grid" or i is "padding"
+        inner = $("<ul>").appendTo(l)
+        $.each val, (j, val) =>
+          changer_2 = (event, ui) =>
+            @Site.layout[i][j] = ui.value
+            recount()
+
+          l = $("<li>").text(labels[j]).appendTo(inner)
+          sp = $("<input>").appendTo(l).spinner({spin: changer_2})
+          sp.spinner "value", val
+          sp.on('keyup', (e)=>
+            v = $(e.target).val();
+            @Site.layout[i][j] = parseInt(v)
+            recount()
+          )
+
+      else
+        sp = $("<input>").appendTo(l).spinner({spin: changer_1} )
+        sp.spinner "value", val
+        sp.on('keyup', (e)=>
+            v = $(e.target).val();
+            @Site.layout[i] = parseInt(v)
+            recount();
+          )
+
+  s = $('<div></div>').text("Ширина блока: " + @_block_width(1) + "; Высота блока: " + @_block_height(1)).appendTo to
+
+  $('<div></div>').text("Если оставить ширину или длину дробной - сайт может выглядеть криво из-за ограничений HTML - сложность отрисовки дробных пикселей").appendTo to
+  finaldiv = $('<div></div>').appendTo to
+  $("<button>").text("save").click(=>
+    @_save_site()
+  ).appendTo finaldiv
+  $("<button>").text("cancel").click(=>
+    @Site.layout = lo
+    @showLayoutScheme()
+    @redraw()
+  ).appendTo finaldiv
+
+  @_app_admin_cont.show()
 
 
 
@@ -892,14 +708,18 @@ showFontsScheme = `function (){
 				var to = this._app_admin_contents;
 					to.find('*').remove()
 					// head sans
-					D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
-					.text("Here's fonts scheme with Sans in headers, Serifs in texts").appendTo(to)
+
+					$("<h3>").text("Here's fonts scheme with Sans in headers, Serifs in texts").appendTo(to);
+
+					// D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
+
+					$('<div>').appendTo(to).css('clear', 'both').css('display','none')
 					// console.log(hsvToRgb({h:0, s: 50, b:100 } ) )
 					$.each(available_fonts_sans, function(i, h){
 						$.each(available_fonts_serif, function(i, c){
-							D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
+							var D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
 							.mouseenter(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 10, b:100 } ) ) })
-							.mouseleave(function(){ sho$(this).css('background-color', hsvToRgb({h:0, s: 0, b:100 } ) ) })
+							.mouseleave(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 0, b:100 } ) ) })
 							$("<h3></h3>").css('font-family', h).appendTo(D).text("Header with font " + h)
 							$("<p>").css('font-family', c).text(c).appendTo(D)
 							$("<p>").css('font-family', c).appendTo(D)
@@ -912,13 +732,15 @@ showFontsScheme = `function (){
 							})
 						} )
 					})
-					D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
-					.text("Here's fonts scheme with Serifs in headers, Sans in texts").appendTo(to)
+					// $("<h3>").text("Here's fonts scheme with Sans in headers, Serifs in texts").appendTo(to);
+
+//					D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
+//					.text("Here's fonts scheme with Serifs in headers, Sans in texts").appendTo(to)
 
 					// head serif
 					$.each(available_fonts_serif, function(i, h){
 						$.each(available_fonts_sans, function(i, c){
-							D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
+							var D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
 							.mouseenter(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 10, b:100 } ) ) })
 							.mouseleave(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 0, b:100 } ) ) })
 
@@ -1054,7 +876,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('left').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							cenli = $('<input>').val(g_grad.rad_l.v).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.rad_l.v = v; cenls.slider('value',v);put_grad() })
+							cenli = $('<input>').val(g_grad.rad_l.v).appendTo(C).width(30).keyup(function(){
+							  //console.log($(this).val());
+							  var v = parseInt($(this).val());g_grad.rad_l.v = v; cenls.slider('value',v);put_grad() })
 							cenls = $("<div>").width(30).slider({min:0, max:360,value:g_grad.rad_l.v, slide:function(event, ui){ g_grad.rad_l.v = ui.value ;cenli.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 							$('<select>').appendTo(C).append($('<option>').text('%').val('%')).append( $('<option>').text('px').val('px')).change(function(){g_grad.rad_l.m = $(this).val();put_grad(); })
 
@@ -1062,7 +886,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('top').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							centi = $('<input>').val(g_grad.rad_t.v).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.rad_t.v = v; cents.slider('value',v);put_grad() })
+							centi = $('<input>').val(g_grad.rad_t.v).appendTo(C).width(30).keyup(function(){
+							//console.log($(this).val());
+							var v = parseInt($(this).val());g_grad.rad_t.v = v; cents.slider('value',v);put_grad() })
 							cents = $("<div>").width(30).slider({min:0, max:360,value:grad.rad_t.v, slide:function(event, ui){ g_grad.rad_t.v = ui.value ;centi.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 							$('<select>').appendTo(C).append($('<option>').text('%').val('%')).append( $('<option>').text('px').val('px')).change(function(){g_grad.rad_t.m = $(this).val();put_grad(); })
 
@@ -1072,7 +898,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('width').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							sizewi = $('<input>').val(g_grad.rad_w.v).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.rad_w.v = v; sizews.slider('value',v);put_grad() })
+							sizewi = $('<input>').val(g_grad.rad_w.v).appendTo(C).width(30).keyup(function(){
+							//console.log($(this).val());
+							var v = parseInt($(this).val());g_grad.rad_w.v = v; sizews.slider('value',v);put_grad() })
 							sizews = $("<div>").width(30).slider({min:0, max:360,value:grad.rad_w.v, slide:function(event, ui){ g_grad.rad_w.v = ui.value ;sizewi.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 							$('<select>').appendTo(C).append($('<option>').text('%').val('%')).append( $('<option>').text('px').val('px')).change(function(){g_grad.rad_w.m = $(this).val();put_grad(); })
 
@@ -1080,7 +908,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('height').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							sizehi = $('<input>').val(g_grad.rad_h.v).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.rad_h.v = v; sizehs.slider('value',v);put_grad() })
+							sizehi = $('<input>').val(g_grad.rad_h.v).appendTo(C).width(30).keyup(function(){
+							//console.log($(this).val());
+							var v = parseInt($(this).val());g_grad.rad_h.v = v; sizehs.slider('value',v);put_grad() })
 							sizehs = $("<div>").width(30).slider({min:0, max:360,value:grad.rad_h.v, slide:function(event, ui){ g_grad.rad_h.v = ui.value ;sizehi.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 							$('<select>').appendTo(C).append($('<option>').text('%').val('%')).append( $('<option>').text('px').val('px')).change(function(){g_grad.rad_h.m = $(this).val();put_grad(); })
 
@@ -1088,7 +918,8 @@ _show_css_pattern_editor = `function (to) {
 						}
 						var C = $('<div>').width(50).appendTo(grc).css('padding-left','20px').css('padding-right','20px');
 						var sel =$('<select>').appendTo(C)
-						$.each(['linear','radial'], function(_,t){$('<option>').text(t).val(t).appendTo(sel) })
+						// Exclude radial gradients for now
+						$.each(['linear'], function(_,t){$('<option>').text(t).val(t).appendTo(sel) })
 						sel.val(grad.type).change(function(){
 							g_grad.type = $(this).val();
 							if (g_grad.type =='radial'){
@@ -2143,7 +1974,7 @@ window.Constructor.showUserScheme = ->
     width: 600
     height: 500
   )
-  log "SITE ROLES", @Site.Roles
+  #log "SITE ROLES", @Site.Roles
   if not  @Site.Roles?
     $("<div>").appendTo(dialog).text("Чтобы управлять пользователями надо сначала сохранить сайт хотя бы один раз")
   else
@@ -2160,7 +1991,7 @@ window.Constructor.showUserScheme = ->
           $(this).parent().find("inactive ul.-stops").remove()
           ul = $("<ul>").appendTo($(this)).addClass("-stops")
           add_group_controls = (_ix, app) ->
-            log "check app_name", _ix, app
+            #log "check app_name", _ix, app
             i = 0
 
             while i < app.roles.length
@@ -2189,80 +2020,6 @@ window.Constructor.showUserScheme = ->
       user_control.on "click", expand
 
 
-###
-
-
-showSEOScheme = `function () {
-				var self = this;
-				var meta_yandex, meta_google, sname;
-
-				var save_metas = function () {
-					// console.log('>');
-					var my = meta_yandex.val();
-					var mg = meta_google.val();
-					var sname_ = sname.val();
-					if ('seo' in self.Site){
-						self.Site['seo']['metas'] = { yandex:my, google:mg };
-					}else{
-						self.Site['seo'] = {'metas': { yandex:my, google:mg } };
-					}
-					self.Site['seo']['title'] = sname_
-				}
-
-				var seod = $('<div>').dialog({title:"Оптимизация для поисковых систем",width:500, height:400,
-					buttons:{'Сохранить': function(){
-						save_metas();
-						self._save_site()
-						self.redraw();
-
-					}
-
-					}
-				})
-
-				var ul = $('<ul>').appendTo(seod)
-
-				var li = $('<li>').appendTo(ul)
-				$('<span>').text('Наименование сайта (отображается в title)').appendTo(li);
-				sname = $('<input>').appendTo(li).change(function(){
-					save_metas()
-				})
-				if ('seo' in self.Site){
-					sname.val(self.Site['seo']['title'] )
-				}
-
-				var li = $('<li>').appendTo(ul)
-				$('<span>').text('Яндекс').appendTo(li);
-				meta_yandex = $('<input>').appendTo(li).change(function(){
-					save_metas()
-				})
-				if ('seo' in self.Site){
-					meta_yandex.val(self.Site['seo']['metas']['yandex'] )
-				}
-				var li = $('<li>').appendTo(ul)
-				$('<span>').text('Google').appendTo(li);
-				meta_google = $('<input>').appendTo(li).change(function(){
-					save_metas()
-				})
-				if ('seo' in self.Site){
-					meta_google.val(self.Site['seo']['metas']['google'] )
-				}
-
-
-				var li = $('<li>').appendTo(ul)
-				$('<span>').text('Кеширование содержимого - обязательно').appendTo(li);
-				$('<input type="button">').val('Запустить').button()
-				.appendTo(li).click(function(){
-					$(this).hide();
-					self.caching();
-					$(this).show();
-
-				})
-
-
-
-			}`
-###
 window.Constructor.showSEOScheme = ->
   self = this
   meta_yandex = undefined
@@ -2367,14 +2124,14 @@ window.Constructor.showTextColorScheme = ->
     height: 400
     buttons:
       "Сохранить и перезагрузить": =>
-        log(@)
+        #log(@)
         @Site.textColors = hsbas
         @_save_site()
 
         cold.dialog('close')
         window.location.reload()
       "Сохранить без перезагрузки": =>
-        log(@)
+        #log(@)
         @Site.textColors = hsbas
         @_save_site()
         @redraw()
@@ -2446,7 +2203,7 @@ Main: function(constr, appid ){
   app.name = app.app_name.split('.')[0]
 
   result = Mustache.render(T, app)
-  log(result)
+  #log(result)
   result
 
 
@@ -2565,12 +2322,18 @@ window.Constructor.show_CP = (active_tab) ->
     li.append($("<button>").button(icons:
       primary: "ui-icon-pencil"
     ).width(32).height(32).css("margin-left", "20px").css("background-size", "120% 120%").click(->
+      page_slug = $("<input>").appendTo(li).val(i).keyup ->
+
       diag = $("<div>").dialog(
         title: "Опции страницы"
         width: 600
         height: 300
         buttons:
           "Сохранить": ->
+            np = $.extend(true, {}, self.Site.pages[i])
+            delete self.Site.pages[i]
+            ix = page_slug.val()
+            self.Site.pages[ix] = np
             self._save_site false
             self.redraw()
             self.redraw_cp 1
@@ -2584,25 +2347,24 @@ window.Constructor.show_CP = (active_tab) ->
       li = $("<li>").appendTo(ul)
       $("<span>").appendTo(li).text "slug(англ)"
       if i isnt ""
-        $("<input>").appendTo(li).val(i).keyup ->
-          np = $.extend(true, {}, self.Site.pages[i])
-          delete self.Site.pages[i]
-
-          ix = $(this).val()
-          self.Site.pages[ix] = np
+        page_slug.appendTo(li);
 
       else
         $("<span>").css("color", "red").appendTo(li).text "Не изменяется для главной страницы"
+
       li = $("<li>").appendTo(ul)
       $("<span>").appendTo(li).text "Ключевые слова через запятую"
       kw = $("<input>").appendTo(li).val(self.Site.pages[i].keywords).keyup(->
         self.Site.pages[i].keywords = $(this).val()
+        log self.Site.pages[i]
+
+
       )
       li = $("<li>").appendTo(ul)
       $("<span>").appendTo(li).text "Описание страницы"
       descr = $("<textarea>").appendTo(li).val(self.Site.pages[i].description).keyup(->
         self.Site.pages[i].description = $(this).val()
-        #log self.Site.pages[i]
+        log self.Site.pages[i]
       )
     )).css "padding-bottom", "10px"
     if self.Site.pages[i].removable
@@ -2619,7 +2381,7 @@ window.Constructor.show_CP = (active_tab) ->
 <div>
   <ul id="id_app_list">
     {{#apps}}
-      <li> <a id="id_open_admin" href="#" app_name={{val.app_name}}>{{ val.title }} </a>{{#val.is_own}}<a id="id_edit_app" href="#" app_name="{{ val.app_name }}" >edit</a>{{/val.is_own}}</li>
+      <li> <a id="id_open_admin" href="#" app_name={{val.app_name}}>{{ val.title }} </a>{{#val.is_own}} <a class="remove" style="color:red;" href="#" app_name="{{ val.app_name }}" >remove</a> <a class="edit" href="#" app_name="{{ val.app_name }}" >edit</a>{{/val.is_own}}</li>
     {{/apps}}
   </ul>
 </div>'
@@ -2661,7 +2423,6 @@ window.Constructor.show_CP = (active_tab) ->
   E = (evt) =>
 
     app = $(evt.target).attr 'app_name'
-    #log "FFFuuu", app
 
     if app?
         source = @getAppSource app
@@ -2694,14 +2455,29 @@ window.Constructor.show_CP = (active_tab) ->
       syntax: "js"
       start_highlight: true
       replace_tab_by_spaces: 4
+  R = (evt) =>
 
+    app = $(evt.target).attr 'app_name'
+    if app isnt "generic." + BASE_SITE
+      log(@Site.Applications[app])
+      if @Site.Applications[app].remove?
+        @Site.Applications[app].remove()
+      delete @Site.Applications[app]
+      ix = @Site._Apps.indexOf(app)
+      @Site._Apps.splice(ix,1)
+      @_save_site();
+      @redraw();
+      #log(@Site._Apps)
+    #else
+    #  log('no delete')
 
   $("<h3>").text("Приложения").appendTo @cp_acc
   app_menu = $( Mustache.render(app_menu_template, {'apps':({key:k,val:v } for k,v of @Site.Applications )}) )
   @cp_acc.append app_menu
   ul = app_menu.find('#id_app_list')
-  app_menu.find('a#id_edit_app').click E
-  #log("LINKS WHERE", app_menu.find('a#id_open_admin').bind)
+  app_menu.find('a.edit').click E
+  app_menu.find('a.remove').click R
+
   app_menu.find('a#id_open_admin').css('cursor','pointer').bind 'click', (e)=>
     app_name = $(e.target).attr('app_name')
     app = @Site.Applications[app_name]
@@ -2754,7 +2530,7 @@ window.Constructor.show_CP = (active_tab) ->
               res_cont.html reshtml
               res_cont.find('._add_button').click adder
 
-          # TODO: отобразить диалог
+
 
   $("<li>").appendTo(ul).append( $("<a>").prop("href", "#").text("Создать").click (E) )
   $("<li>").appendTo(ul).append( $("<a>").prop("href", "#").text("Найти и добавить").click (SF) )
@@ -2802,26 +2578,3 @@ window.Constructor.show_CP = (active_tab) ->
     @cp_acc.accordion()
 
 
-
-###
-
-    #  buttons:
-    #    save: ->
-    #      t = editAreaLoader.getValue("id_source_textarea")
-    #      res = eval_("(" + t + ")")
-    #      res = JSON.stringify(res, (key, val) ->
-    #        if typeof val is "function"
-    #          fstr = val.toString()
-    #          startBody = fstr.indexOf("{") + 1
-    #          endBody = fstr.lastIndexOf("}")
-    #          body = fstr.substring(startBody, endBody)
-    #          fobj =
-    #            is_function: true
-    #            body: body
-    #
-    #            return fobj
-    #        val
-    #      )
-    #      DB.save_application res  if "Main" of res and "getter" of res and "roles" of res and "data" of res
-    #)
-###

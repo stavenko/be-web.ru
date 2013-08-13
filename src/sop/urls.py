@@ -25,8 +25,10 @@ import bson,zlib
 
     
 
-
-from BeautifulSoup import BeautifulSoup as bs
+try:
+    from bs4 import BeautifulSoup as bs
+except ImportError as e:
+    from BeautifulSoup import BeautifulSOAP as bs
 
 
 
@@ -54,6 +56,9 @@ Site = json.loads(Site_json)
         
     else:
 """    
+
+email_re = r"^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$"
+e_re = re.compile(email_re)
 
 accounts = "accounts"
 sites    = 'sites'
@@ -90,7 +95,12 @@ def _get_current_roles(req, acc_site = None):
     #raise ValueError('?')
     
     return roles
-    
+def _get_role_email(req, site, role):
+    aasite = _get_current_site_inst(req, site)
+    for r in aasite.get('Roles', []):
+        print role, r
+        if role in r['roles']:
+            return r['user']
     
 def getApplicationRoles(req, app_name):
     application_roles = req.storage.findOne('application', {'app_name': app_name}, {'data':1, 'default_role':1})
@@ -128,7 +138,7 @@ def check_roles(req, datatype, perm, site = None):
     
 
 def _my_base(req, *k, **kw):
-    return render_to_response("main_page.html", {})
+    return HttpResponseRedirect("http://" + settings.MY_MAIN_SITE + "/")
 
 def profile_page(req, *k, **kw):
     if req.user.is_authenticated():
@@ -150,15 +160,14 @@ def profile_page(req, *k, **kw):
         return  HttpResponseRedirect('/register/') # render_to_response("main_page.html", c)
     
 def site_view(site, req, *k, **kw):
-    escaped = req.GET.get('_escaped_fragment_',None)
+    escaped = req.GET.get('_escaped_fragment_', None)
     if escaped is not None:
-        # send cached data to google
+        # send cached data to google or yandex
         site = _get_current_site(req, with_cache = True)
         
-        html = site['cache'][escaped]
-        soup=bs(html)                #make BeautifulSoup
-        prettyHTML=soup.prettify() 
-        
+        html = site.get('cache',{}).get(escaped, '')
+        # soup=bs(html)                #make BeautifulSoup
+        # prettyHTML=soup.prettify()
         return HttpResponse(html)
         
     site['id'] = site['_id']
@@ -248,26 +257,7 @@ def data_updaters(req, type_, cursor):
                 
                     
     # return cursor 
-def data_deleter(req):
-    site = _get_current_site(req)
-    if site is None:
-        return HttpResponse ("{}")
-    else:
-        type = req.POST.get('type')
-        if ('.' in type):
-            app, mongo_db = type.split('.')
-        else:
-            mongo_db = type
-            
-        opts   = json.loads(req.POST.get('o','{}'),object_hook = json_util.object_hook)
-        q = opts['q']
-        q['site_id'] = site['_id']
-        
-        req.storage.remove(mongo_db, q)
-        s = req.storage.find(mongo_db, q)
-        # raise IndexError('dds')
-        return HttpResponse(json.dumps({"success": True} , default = json_util.default) )
-        
+
 def get_application(req, app_name):
     
     site = _get_current_site(req)
@@ -317,28 +307,22 @@ def find_application(req):
 def adding_application(req):
     
     def save_app(site, app, to_global = False):
-        #print "ADD DATA", app
         appl = req.storage.findOne('application', {'app_name': app['app_name'], "site_id": site['_id']})
-        #print  app['app_name']
         if appl:
-            #print "we got application"
             appl.update(app)
-            print "title" in appl, appl['title']
             res = req.storage.safe_update('application', appl)
             id_ = res[1]['_id']
         else:
-            print "no app"
             id_ = req.storage.insert('application', app)
         if to_global:
             put_application_to_global_index( req, site, app )
         
         return id_
-        
+
     app = json.loads(req.POST.get('x-data'))
     site = _get_current_site(req)
     if "app_name" not in app:
         app['app_name'] = ".".join([app.get('name',''), site['hostname'][0] ])
-        #print "ADDED"
 
     app_def_name = app['app_name'] 
     app_name_with_host = app_def_name + u'.' + site['hostname'][0]
@@ -346,11 +330,7 @@ def adding_application(req):
     
     if req.user.is_authenticated():
         app['site_id']  = site['_id']
-        print "OKEY"
-         
         obj_id = save_app(site, app)
-        print obj_id
-        # do not make it global yet
     else:
         auth_token = req.POST.get('crypt', "")
         
@@ -407,7 +387,8 @@ def setTriggers(req, site ,datatype, event_type, object):
     hostname =  req.META['HTTP_HOST']
     print "TRIGGET",  unicode(datatype) == unicode(sites + u'@generic.' + settings.MY_MAIN_SITE)
     if datatype == unicode(sites + '@generic.' + settings.MY_MAIN_SITE):
-        print "OKEY"
+
+
         metas = object.get('seo',{}).get('metas',{})
         site['metas'] = "\n".join(metas.values())
 
@@ -420,9 +401,34 @@ def setTriggers(req, site ,datatype, event_type, object):
         colors = "\n".join(["%s{color:%s}\n"%(ass[k], textColors[k]['rgb']) for k in textColors if textColors[k].get('rgb', False)])
         site['textColors'] = colors
 
-        print site['textColors']
-        req.storage.safe_update(accounts, site)
+        # Необходимо доставать этот объект целиком перед сохранением, поскольку для оптимизации мы его
+        # Достаем без кеша - только учетные данные
+        full_object = req.storage.findOne(accounts, {'_id': site['_id'] })
+        full_object.update(site) # Вставляем новые данные
+        req.storage.safe_update(accounts, full_object)
 
+def data_deleter(req):
+    site = _get_current_site(req)
+    if site is None:
+        return HttpResponse ("{}")
+    else:
+        type = req.POST.get('type')
+        if ('@' in type):
+            mongo_db, app = type.split('@')
+        else:
+            mongo_db = type
+
+        opts   = json.loads(req.POST.get('o','{}'), object_hook = json_util.object_hook)
+        q = opts['q']
+        q['site_id'] = site['_id']
+
+        if check_roles(req, type, 'del', site=site):
+            req.storage.remove(mongo_db, q)
+            s = req.storage.find(mongo_db, q)
+            # raise IndexError('dds')
+            return HttpResponse(json.dumps({"success": True} , default = json_util.default) )
+        else:
+            raise ValueError("no permission")
 
         
 
@@ -497,7 +503,7 @@ def data_connector(req):
 def blob_extruder(req, blob_id):
     
     gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
-    f = gf.get( ObjectId(blob_id ))
+    f = gf.get( ObjectId(blob_id )) # Здесь надо узнать - есть ли файл, если нету - поискать в базе его путь
     return HttpResponse( f )
 class RegisterMixture(forms.Form):
     def __init__(self, *k, **kw):
@@ -668,7 +674,7 @@ class NewHostView(TemplateView):
                     site = {"hostname":[ full ],
                             "email" : req.user.username,
                             "django_user_id" : req.user.id }
-                    raise ValueError('a')
+                    # raise ValueError('a')
                     s = req.storage.insert(accounts, site )
                     d,is_created = pmodels.Domain.objects.get_or_create(name =settings.MY_BASE_HOST)
                     r,is_c = pmodels.Record.objects.get_or_create(name = full, content= settings.MY_BASE_HOST, type = 'CNAME', domain = d)
@@ -688,8 +694,6 @@ def send_email(req):
     site = _get_current_site(req)
     now = datetime.datetime.now()
     
-    #if 'email_succeeded' not in req.session:
-    #    req.session[] = {}
     er = req.session.setdefault('email_succeeded', {}).get(site['_id'],[])
     
     if er is None:
@@ -707,6 +711,12 @@ def send_email(req):
         else:
             sender = 'info@be-web.ru'
         recv = req.POST.get('to')
+        m = e_re.match(recv)
+        # print m,recv
+        if not m:
+            recv = _get_role_email(req, site, recv)
+
+
         email = EmailMessage(subj, body, sender, [recv] )
         email.content_subtype = "html" 
         try:
@@ -771,7 +781,10 @@ def site_cacher(req):
         key = i[2:]
         cache[key] = html
     cur_acc['cache'] = cache
-    req.storage.safe_update(accounts, cur_acc)
+    full_object = req.storage.findOne(accounts, {'_id': site['_id'] })
+    full_object.update(cur_acc) # Вставляем новые данные
+
+    req.storage.safe_update(accounts, full_object)
     return HttpResponse("")
     
 urlpatterns = patterns('',

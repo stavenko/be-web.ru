@@ -34,9 +34,10 @@ scaleImage = (img, maxWidth, maxHeight, useMax = false) ->
 if window.location.port is '8000'
 		BASE_SITE = "test.be-test.com:8000"
 else
-		BASE_SITE = 'main.be-we.ru'
+		BASE_SITE = 'www.be-web.ru'
 
 DEBUG = true;
+
 
 
 
@@ -115,6 +116,7 @@ rgb2hsv=		`function rgb2hsv () {
 		}
     `
 
+
 hsvToRgb = 	(o, as_array = false ) ->
 
   # h = o.h, s=o.s, v = o.v
@@ -180,10 +182,24 @@ hsvToRgb = 	(o, as_array = false ) ->
       a = 1
     "rgba(" + rr + "," + gg + "," + bb + "," + a + ")"
 
+hsvToHex = (o) ->
+  componentToHex = (c) ->
+    hex = c.toString(16);
+    if hex.length == 1
+      "0" + hex
+    else
+      hex
+  a = hsvToRgb(o, true)
+  "#" + componentToHex(a[0]) + componentToHex(a[1]) + componentToHex(a[2])
+
+
+
+
 window.hsvToRgb = hsvToRgb
+window.hsvToHex = hsvToHex
 
 default_site =
-  _Apps : ['generic.'  + BASE_SITE, 'theshop.' + BASE_SITE]
+  _Apps : ['generic.'  + BASE_SITE]
   layout:
     cols:12
     fixed: true
@@ -216,12 +232,12 @@ default_site =
         layout: "same"
         title: "Main"
         show_in_menu: true
-        is_removable: true
+        removable: true
 
       "about":
           layout:'same'
           title:"About"
-          is_removable: true
+          removable: true
           show_in_menu: true
 
 
@@ -299,8 +315,6 @@ back_icons_urls=[
 		'/static/images/back_constr/fg/icons_81.png'
 
 		];
-
-
 
 class Constructor
   constructor: ->

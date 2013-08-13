@@ -179,6 +179,7 @@ var o = {
 			return o; 
 		  }
         }, // конец галереи
+
 									
 		"menubar" : {title:"Меню сайта", 
 					default_size: [3,1],
@@ -202,7 +203,7 @@ var o = {
 						this._jq = $("<ul>")
 									.appendTo(this.my_cont)
 									.css('font-family', font )
-									.css('font-size', my_cont.width() / 40)
+									// .css('font-size', my_cont.width() / 40)
 									.css('padding',0).css('margin', 0)
 
 
@@ -212,8 +213,8 @@ var o = {
 						for(i in constructor_inst.Site.pages){
 							pages+=1
 						}
-						var width = my_cont.width();
-						var item_width = width / pages;
+						//var width = my_cont.width();
+						//var item_width = width / pages;
 
 						var pages = $.extend(true, {}, constructor_inst.Site.pages)
 						var pa = [];
@@ -228,8 +229,8 @@ var o = {
 							var i = p.slug
 							if( p.show_in_menu ){
 								var li = $("<li>").appendTo(self._jq)
-													 .css('float', 'left').width(item_width)
-													 .css('padding',0).css('margin', 0)
+													 .css('float', 'left') //.width(item_width)
+													 .css('padding',0).css('margin-left', '2em')
 													 .css('list-style-type','none')
 								if (i == current_page){
 									li.append(p.title)
@@ -313,45 +314,137 @@ var o = {
 					save :function(){
 						if (this.constr){
 				
-							this.constr.setWidgetData(this.pos,this._jq.html()) 
+							this.constr.setWidgetData(this.pos,this._jq.html())
+                            this._d_remover();
+
+
 				
 						}
 					},
 					cancel: function(){
-						// this.cp.remove()
-						// this.color_chooser.remove();
+                        this._d_remover();
+
 					},
 					_change_text: function(command,val){
 						r = document.execCommand(command, false, val)
-						//console.log(command, val, r)
-			
+
 			
 					},																				
 					settings: function(controls){
 						var self =this;
+                        var d;
+
+                        this._d_remover=function(){
+                            if (d != null){d.remove()}
+
+                        }
+                        function saveSelection() {
+                            if (window.getSelection) {
+                                sel = window.getSelection();
+                                if (sel.getRangeAt && sel.rangeCount) {
+                                    return sel.getRangeAt(0);
+                                }
+                            } else if (document.selection && document.selection.createRange) {
+                                return document.selection.createRange();
+                            }
+                            return null;
+                        }
+
+                        function restoreSelection(range) {
+                            if (range) {
+                                if (window.getSelection) {
+                                    sel = window.getSelection();
+                                    sel.removeAllRanges();
+                                    sel.addRange(range);
+                                } else if (document.selection && range.select) {
+                                    range.select();
+                                }
+                            }
+                        }
+
 						if(this.constr){
-							//var eid = "my-" + this._rand_id();
-							//var tbid = "tb" + this._rand_id();
 							this._jq.prop('contentEditable', 'true') //.prop('id', eid)
-				
-										// .prop("id", tbid)
-				
+                            var initer = function(){
+                                var closer = function(){
+                                    if(d != null){
+                                        d.remove();
+                                        d = null;
+                                    }
+                                    setTimeout(initer, 500)
+                                }
+                                $(document).one('mouseup', function(evt){
+
+                                    var sel = window.getSelection()
+                                    // console.log(sel);
+                                    if ( (sel.focusOffset - sel.anchorOffset)  !=  0){
+                                        if (d != null){
+                                            d.remove();
+                                        }
+
+                                        d = $('<div></div>').css({
+                                            'position':'absolute',
+                                            'background-color':'white'
+                                            }).appendTo($('#controls'))
+                                            .position({of:evt, my:'right top', at:'left top'})
+                                        $('<button>').html('<b>B</b>').appendTo(d).click(function(){self._change_text("bold"); closer()})
+                                        $('<button>').html('<i>i</i>').appendTo(d).click(function(){self._change_text("italic");closer() })
+                                        $('<button>').html('<u>U</u>').appendTo(d).click(function(){self._change_text("underline");closer() })
+                                        $('<button>').html('<s>S</s>').appendTo(d).click(function(){self._change_text("StrikeThrough");closer() })
+                                        $('<button>').text('color').appendTo(d).click(function(){
+                                            cb = function(col,ix,hsba) {
+                                                var hex = hsvToHex(hsba)
+                                                self._change_text('forecolor', hex);closer()
+                                            };
+                                            self.color_chooser = self.constr.draw_color_chooser(cb);
+                                            self.color_chooser.appendTo($('#controls')).position({of:$(this), my:'left top', at:'right bottom'})
+                                        })
+                                        $('<button>').html('Link').appendTo(d).click(function(){
+                                            var di = $('<div></div>').appendTo($('#controls'));
+                                            var link_choice = $("<ul>").appendTo(di)
+                                            var namer = function(pname, page){
+                                                var _ret = function(){
+                                                    var a;
+                                                    if (pname == null){
+
+                                                        a = page;
+                                                    }else{
+                                                        a = "#!" + pname;
+                                                    }
+                                                    document.execCommand('createLink', false, a);
+                                                    di.dialog('close');
+                                                    ;closer();
+                                                }
+                                                return _ret;
+                                            }
+                                            $.each(constructor_inst.Site.pages, function(pname, page){
+                                                var li = $('<li></li>').appendTo(link_choice)
+                                                $('<button></button>').text(page.title).appendTo(li)
+                                                    .click(namer(pname, page))
+                                            })
+                                            var li = $('<li>Ссылка не на мой сайт:</li>').appendTo(link_choice)
+                                            // var link = '';
+                                            var sel;
+                                            var inp =$('<input type="text">').appendTo(li)
+                                                .on('mousedown',function (){ sel = saveSelection()} );
+                                            $('<button>').text("Создать").appendTo(li).mousedown(function(e){
+                                                var link = inp.val();
+                                                var r = namer(null, link)
+                                                restoreSelection(sel);
+                                                r(e);
+                                            })
+                                            di.dialog({title: "Вставить ссылку"})
+                                        })
+                                        setTimeout(initer, 3000)
+                                    }else{
+                                        if (d != null){
+                                            d.remove();
+                                        }
+                                        initer();
+                                    }
+                                })
+                            }
+                            initer()
 							var cp = $("<div>").appendTo(controls )
-				
-							//console.log(controls)
-							$('<button>').html('<b>B</b>').appendTo(cp).click(function(){self._change_text("bold") })
-							$('<button>').html('<i>i</i>').appendTo(cp).click(function(){self._change_text("italic") })
-							$('<button>').html('<u>U</u>').appendTo(cp).click(function(){self._change_text("underline") })
-							$('<button>').html('<s>S</s>').appendTo(cp).click(function(){self._change_text("StrikeThrough") })
-							$('<button>').text('color').appendTo(cp).click(function(){
-								cb = function(col) {self._change_text('forecolor', col)}; 
-								self.color_chooser = self.constr.draw_color_chooser(cb);
-								self.color_chooser.appendTo($('#controls')).position({of:$(this), my:'left top', at:'right bottom'})
-					
-					
-				
-							})
-				
 						}
 						controls.show();
 					},
@@ -467,6 +560,7 @@ init: function(my_cont, constructor_inst, pos, cp){
 		var o = {
 			my_cont:my_cont,
 			constr :constructor_inst,
+            depends_on_settings: true,
 			// data : data,
 
 			disobey:['padding_top','padding_left_right'],
@@ -477,7 +571,8 @@ init: function(my_cont, constructor_inst, pos, cp){
 		
 
 
-			draw: function(){
+			draw: function(settings){
+                this._settings = settings
 				// console.log("Exactly after initing", this)
 				var data = this.constr.getWidgetData(pos, false)
 				if (data){
@@ -535,17 +630,34 @@ init: function(my_cont, constructor_inst, pos, cp){
 				if (this._jq){
 					 this._jq.remove()
 				}
-				this._jq = $("<canvas>").appendTo(this.my_cont)
-				this.c = this._jq[0];
+                if (this._settings == null){
+                    var set = constructor_inst.getBlockSettings(pos)
+
+                    this.border_radius = Math.min (set.border_radius, my_cont.width()/2, my_cont.height()/2)
+
+                }else{
+                    this.border_radius = Math.min (this._settings.border_radius, my_cont.width()/2, my_cont.height()/2)
+
+
+                }
+                this.canv = $("<canvas>").css('border-radius', this.border_radius * 0.94) // .appendTo(this.my_cont)
+
+				this.c = this.canv[0];
+                this._jq = $('<div></div>').appendTo(this.my_cont)
+                d = $('<div>')
+                    //.css('border-radius','50px')
+                    .css('position','static')
+                    .css('overflow','hidden')
+                    .width( my_cont.width())
+                    .height(my_cont.height())
+                    .appendTo(this._jq).append(this.canv)
+
+
 			
-				this.c.width = this.my_cont.width()
-				this.c.height = this.my_cont.height()
-			
-			
-				// console.log("reinit");
-			
-				// paper.install(window)
-				// paper.setup(c);
+				this.c.width =  this.my_cont.width()
+				this.c.height =  this.my_cont.height()
+
+
 				this.img = new Image();
 				if (this.data.image.blob){
 					this.img.src = DB.get_blob_url(this.data.image)
@@ -554,21 +666,62 @@ init: function(my_cont, constructor_inst, pos, cp){
 				}
 				this.ctx = this.c.getContext('2d')
 				this.img.onload=function(){
-					//console.log("this whould be image widget", self.data.position);
 					self.redraw_ctx()
+
+                    self._jq.appendTo(self.my_cont)
+
+
 				}
 			},
 				redraw_ctx: function(){
-					
-					
-						this.ctx.clearRect(0,0,this.my_cont.width(),this.my_cont.height())
-						this.ctx.save()
+                    // cr2 = cornerRadius *2;
+
+                    var W=this.my_cont.width(),
+                        H = this.my_cont.height();
+                    this.ctx.clearRect(0,0, W , H)
+
+                    // Баг в гуглохроме -
+                        //console.log(navigator.userAgent)
+                        var is_webkit = /WebKit/.test( navigator.userAgent )
+                        if (is_webkit && W*H >60000 ){
+                            rectWidth = this.my_cont.width()
+                            rectHeight = this.my_cont.height()
+                            cr = this.border_radius * 0.9
+
+                            context = this.ctx
+
+                            context.beginPath();
+                               // line
+                            context.moveTo(cr, 0);
+                            context.lineTo(rectWidth - cr, 0);
+                                //arc
+                            //context.arcTo( rectWidth , 0,  rectWidth  , cr,  cr);
+                            context.arc(rectWidth-cr, cr, cr, 1.5 * Math.PI, 0, false)
+
+                                // more line
+                            context.lineTo(rectWidth , rectHeight-cr);
+
+                            context.arc( rectWidth-cr, rectHeight -cr, cr,  0, 0.5 * Math.PI, false);
+
+                            context.lineTo(cr , rectHeight );
+                            context.arc( cr, rectHeight -cr, cr,   0.5 * Math.PI, Math.PI,false);
+
+                            context.lineTo(0 , cr );
+                            context.arc( cr, cr, cr,     Math.PI, 1.5 * Math.PI,false);
+
+                            context.clip();
+
+                        }
+
+
+                        this.ctx.save()
 						this.ctx.scale(this.data.zoom, this.data.zoom)
 						this.ctx.translate(this.data.position.left, this.data.position.top)
 						this.ctx.drawImage(this.img ,0,0)
 						this.ctx.restore();
-					
-				
+
+
+
 				},
 				
 				save :function(){
@@ -586,12 +739,9 @@ init: function(my_cont, constructor_inst, pos, cp){
 					
 				},	
 				cancel: function(){
-					// this.constr.redraw();
-				},																	 
+				},
 				settings: function(controls){
 
-							
-							
 					this.my_cont.unbind('mousemove')
 					this.my_cont.unbind('mouseup')
 					this.my_cont.unbind('mousedown')
@@ -601,19 +751,19 @@ init: function(my_cont, constructor_inst, pos, cp){
 					var start_pos, 
 						is_drag, 
 						old_pos;
-					//console.log('okey');
 					function zoom(zf, px, py){
 						var z = self.data.zoom;
 						var x = self.data.position.left;
 						var y = self.data.position.top;
 						
-						
-						if (z < 0.2) zf /=10;
+						if (z < 0.4) zf /=10;
+                        if (z < 0.2) zf /=2;
+
 						if (z > 1.5) zf *= 5;
 						
 						
 						var nz = z + zf;
-						if (nz > 0.02 && nz <10){ 
+						if (nz > 0.02 && nz <10){
 								var K = (z*z + z*zf)
 								
 								var nx = x - ( (px*zf) / K );
@@ -624,44 +774,56 @@ init: function(my_cont, constructor_inst, pos, cp){
 								self.data.zoom = nz;
 								self.redraw_ctx();
 						}
-						
-						
+
 						
 					}
 		
-				this.my_cont.bind('mousewheel DOMMouseScroll MozMousePixelScroll',function(evt, dt){
+				this.my_cont.bind('mousewheel DOMMouseScroll MozMousePixelScroll',function(evt){
 					evt.stopImmediatePropagation();
 					evt.preventDefault();
-					if(evt.type == 'DOMMouseScroll' || evt.type == 'MozMousePixelScroll'){
-						
+                    // console.log(navigator.userAgent)
+                    var is_webkit = /WebKit/.test( navigator.userAgent )
+                    var is_firefox = /Firefox/.test( navigator.userAgent )
+                    var handle_event = function(){
+                        var dt;
+                        if (evt.originalEvent.type != 'mousewheel' ){
+                            dt = evt.originalEvent.detail;
+                        }else {
+                            console.log('w')
+                            dt = evt.originalEvent.wheelDelta;
+                        }
+                        console.log(evt, dt);
+                        var a = dt / Math.abs(dt)
+						zoom(0.1 *a, evt.originalEvent.pageX - off.left, evt.originalEvent.pageY - off.top)
+
+                    }
+					if(evt.type == 'DOMMouseScroll') {
+                        //Handle in firefox
+                    }else if( evt.type == 'MozMousePixelScroll'){
+                        if( is_firefox ){
+                            handle_event()
+                        }
+						// Do not Handle
 					}else{
-						var a = dt / Math.abs(dt)
-						zoom(0.1 *a, evt.pageX - off.left, evt.pageY - off.top)
-						// console.log(evt,dt);
-						
+                        if(!is_firefox){
+                            handle_event();
+                        }
+
 					}
 					
 					return true
 				})
 					this.my_cont.mousemove(function(evt){
-						console.log(evt)
 						if (is_drag){
 							var cur_pos = {x: evt.pageX - off.left,
 										y: evt.pageY - off.top}
-							// console.log(cur_pos)			
 							var diff = {x: cur_pos.x - old_pos.x,
 										y: cur_pos.y - old_pos.y}
-										
-										
+
 							self.data.position.left += (diff.x / self.data.zoom);
 							self.data.position.top += (diff.y / self.data.zoom);
-							
-							//self.data.position.left /= self.data.zoom;
-							//self.data.position.top /= self.data.zoom ;																		 
-									 
 							old_pos = cur_pos;
 							self.redraw_ctx();
-							/// console.log(evt);
 						}
 						
 						
@@ -672,7 +834,6 @@ init: function(my_cont, constructor_inst, pos, cp){
 					this.my_cont.mousedown(function(evt){
 						old_pos = {x: evt.pageX - off.left,
 									 y: evt.pageY - off.top}
-						//console.log(start_pos)
 						is_drag = true;
 						
 					})
@@ -691,65 +852,3 @@ init: function(my_cont, constructor_inst, pos, cp){
 	
 	
 	
-/*	
- 
-},
-	getter: function(){
-	return this.Main()
-},
-junk : function(){*/
-	/*
-	 * _rect_path:function(r, strokeWidth, strokeColor, dash){
-													var p = new Point(r.x, r.y)
-													var s = new Size(r.w, r.h)
-													var path =	new Path.Rectangle(p, s)
-													if (strokeWidth) {path.strokeWidth = strokeWidth}
-													if (strokeColor) {path.strokeColor = strokeColor}
-													if (dash) {path.dashArray = strokeColor}
-													
-													
-												},
-												_make_geom:function(r){
-												rs = this._choosing_rect(r)
-												res = {}
-												for (i in rs){
-													var r = rs[i];
-													p = new Point(r.x,r.y);
-													s = new Size(r.w, r.h);
-													rect = new Path.Rectangle(p,s)
-													res[i] = {geom:r, path:rect}
-												}	 
-												return res;
-												},
-												_choosing_rect: function(r){
-													var marker_size = 8;
-													var ms2 = marker_size / 2;
-													var o = {
-														main:	r,
-														left_top :	{x: r.x - ms2, y:r.y - ms2,		 w:marker_size, h:marker_size},
-														left_bottom :{x: r.x - ms2, y:r.y - r.h - ms2, w:marker_size, h:marker_size},
-														right_top :	{x: r.x -r.w- ms2, y:r.y - ms2,		 w:marker_size, h:marker_size},
-														right_bottom : {x: r.x -r.w- ms2, y:r.y -r.h - ms2, w:marker_size, h:marker_size},
-														
-													}
-													return o
-												},
-												_is_within_rect: function(rs, point){
-													var a = [];
-													var is_within = function(r,point){
-														var within_x = r.x <= point.x && (r.x + r.w) >= point.x
-														var within_y = r.y <= point.y && (r.y + r.h) >= point.y; 
-														return within_x && within_y
-													}
-													for (i in rs ){
-														r = rs[i].geom
-														if (is_within(r, point)){
-															a.push(i)
-														 }
-													}
-													return a;
-												},
-	 */
-	//}
-	
-	//}

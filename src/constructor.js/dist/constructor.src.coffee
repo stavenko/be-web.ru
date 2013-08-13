@@ -34,9 +34,10 @@ scaleImage = (img, maxWidth, maxHeight, useMax = false) ->
 if window.location.port is '8000'
 		BASE_SITE = "test.be-test.com:8000"
 else
-		BASE_SITE = 'main.be-we.ru'
+		BASE_SITE = 'www.be-web.ru'
 
 DEBUG = true;
+
 
 
 
@@ -115,6 +116,7 @@ rgb2hsv=		`function rgb2hsv () {
 		}
     `
 
+
 hsvToRgb = 	(o, as_array = false ) ->
 
   # h = o.h, s=o.s, v = o.v
@@ -180,10 +182,24 @@ hsvToRgb = 	(o, as_array = false ) ->
       a = 1
     "rgba(" + rr + "," + gg + "," + bb + "," + a + ")"
 
+hsvToHex = (o) ->
+  componentToHex = (c) ->
+    hex = c.toString(16);
+    if hex.length == 1
+      "0" + hex
+    else
+      hex
+  a = hsvToRgb(o, true)
+  "#" + componentToHex(a[0]) + componentToHex(a[1]) + componentToHex(a[2])
+
+
+
+
 window.hsvToRgb = hsvToRgb
+window.hsvToHex = hsvToHex
 
 default_site =
-  _Apps : ['generic.'  + BASE_SITE, 'theshop.' + BASE_SITE]
+  _Apps : ['generic.'  + BASE_SITE]
   layout:
     cols:12
     fixed: true
@@ -216,12 +232,12 @@ default_site =
         layout: "same"
         title: "Main"
         show_in_menu: true
-        is_removable: true
+        removable: true
 
       "about":
           layout:'same'
           title:"About"
-          is_removable: true
+          removable: true
           show_in_menu: true
 
 
@@ -300,8 +316,6 @@ back_icons_urls=[
 
 		];
 
-
-
 class Constructor
   constructor: ->
     @init = (do_constr=false, site_id) ->
@@ -336,7 +350,7 @@ window.Constructor.clear = ->
         $("#controls>.widget-control").remove()
 
 window.Constructor.draw= (custom_cont = @page_cont, custom_head=$('head'), custom_hash) -> #Done
-      log("CH", custom_hash)
+      #log("CH", custom_hash)
       if custom_hash
         @_init_page custom_hash.slice(1), custom_head
       else
@@ -355,7 +369,7 @@ window.Constructor._init_page = (hash_ = window.location.hash.slice(1).split('?'
   if  pdata.params
     for p, val of pdata.params
       do (p, val) =>
-        log(@, p, val)
+        #log(@, p, val)
         @page_vars[p] = val
 
   #log('c')
@@ -367,13 +381,13 @@ window.Constructor._init_page = (hash_ = window.location.hash.slice(1).split('?'
   @_set_description  pdata.description
   @_set_keywords pdata.keywords
   t.text (pdata.title + '|' + @Site.seo.title)
-  head.append(@Site.seo.metas.yandex) if @Site.seo.metas.yandex
-  head.append(@Site.seo.metas.google) if @Site.seo.metas.google
+  head.append(@Site.seo.metas.yandex) if @Site.seo.metas? and @Site.seo.metas.yandex?
+  head.append(@Site.seo.metas.google) if @Site.seo.metas? and @Site.seo.metas.google?
   if params
     a = params.split('&')
     for p in a
       do (p) =>
-        log(p)
+        #log(p)
         _p = p.split('=')
         name = _p[0]
         val =  _p[1]
@@ -394,7 +408,7 @@ window.Constructor.getPageData = ( page_name ) -> # DOne
 
 
 window.Constructor.load_site = (do_reload = false ) -> #done
-  log( not @Site? or  do_reload )
+  #log( not @Site? or  do_reload )
 
   if   not @Site? or do_reload
     S = DB.get_objects("generic." + BASE_SITE, this._site_type, {} )
@@ -428,10 +442,13 @@ window.Constructor.load_site = (do_reload = false ) -> #done
 
 window.Constructor.getAppJson = (name) ->
     xhr = $.ajax({url: window.get_application_url + name + "/",async: false})
-    log(xhr.status)
+    #log(xhr.status)
     if xhr.status is 200
       JSON.parse(xhr.responseText)
-    else false
+    else
+      ix = @Site._Apps.indexOf(name)
+      @Site._Apps.splice ix, 1
+      false
 
 
 
@@ -596,7 +613,6 @@ window.Constructor._get_page_var = _get_page_var
 
 get_color = `function (c){
 				this._make_pallette()
-				console.log(this.Site.colors, c)
 				if (c.v == 'C') {// color from custom palette
 					return this.Site.colors.custom_pallette[c.ix]
 
@@ -606,182 +622,27 @@ get_color = `function (c){
 
 
 			}`
-window.Constructor.get_color = get_color
-
-
-
-###
-    set_colors = (c) =>
-    s = "<style id='a_stylo'>
-  {{#link_color}}a:link {color: {{link_color}} }  {{/link_color}}
-  {{#text_color}}body   {color: {{text_color}} }  {{/text_color}}
-  {{#visited_color}}a:visited {color: {{visited_color}} }  {{/visited_color}}
-  {{#active_color}}a:active {color: {{active_color}} }  {{/active_color}}
-  {{#hover_color}}a:hover {color: {{hover_color}} }  {{/hover_color}}
-
-    </style>"
-    lc = {}
-    for k in ["text_color", "link_color", "visited_color", "active_color", 'hover_color']
-      if c[k]?
-        lc[k] = hsvToRgb(@get_color(c[k]))
+window.Constructor.get_color = (c) ->
+  @_make_pallette()
+  if c.v is 'C'
+    @Site.colors.custom_pallette[c.ix]
+  else
+    v = @Site.colors.pallette[c.v]
+    if v
+      v[c.ix]
+    else
+      v = @Site.colors.pallette[c.v - 1]
+      if v
+        v[c.ix]
       else
-        lc[k] = defaults[k]
-    #$('head').find('#a_stylo')
-
-    $('head').html(Mustache.render(s,lc))
-###
-
-
-###
-
-init_grid = `function ( to, head ){
-        // log(to,head);
-				var block_width = this._block_width();
-				var base_height = this.layout.base_height;
-				var self = this;
-
-				if (this.layout.fixed){
-					var e = "px"
-				}else{
-					var e = '%'
-				}
-
-				$('body').css('margin', 0)
-
-				var total_height = this.Site.layout.drawen_lines * (this.Site.layout.base_height + 2*(this.Site.layout.grid.ver)) ,
-					window_width = window.innerWidth,
-					width = this.Site.layout.width,
-					w_left = window_width - width,
-					left = w_left / 2;
-
-				log("TOTAL", this.Site)
-				this.layout_cont = $("<div>")
-					.css('position', 'absolute')
-
-					.css('width', this.layout.width + e)
-					// .css('margin-left','auto')
-					.css('top', this.Site.layout.padding.top)
-					.css('left', left )
-					.css('height', total_height)
-					// .css('margin-right','auto')
-					.appendTo(to)
-				c_off = this.layout_cont.offset();
-				to.css('top', '0px');
+        v = @Site.colors.pallette[c.v - 2]
+        if v
+          v[c.ix]
+        else
+          @Site.colors.pallette[c.v - 3][c.ix]
 
 
 
-
-
-				// console.log("OFFSET", c_off)
-				this._main_offset = c_off;
-
-				this.redraw_background();
-				this._busy_regions = [];
-				this._moved_block_ = [] ;
-
-
-				//console.log(this.Site.blocks)
-				var bw = self._block_width(1);
-				var bh = self._block_height(1);
-				var bhp = self.Site.layout.grid.hor;
-				var bvp = self.Site.layout.grid.ver;
-				var gw = bw + (bhp * 2);
-				var gh = bh + (bvp * 2);
-				var gp = self.Site.layout.padding.left;
-				//var gvvp = self.Site.layout.padding.t
-				var gmp =  (gp - ( bhp * 2 ))
-				if(this.is_constructor){
-					var gridd = $('<div>')
-					.addClass('empty-block')
-					.appendTo(this.layout_cont)
-					.css('position', 'absolute')
-					// .css('border-radius', '10px')
-					.css('background-color','white')
-					.css('background','linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px),'+
-				 					  'linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px),'+
-
-									  'linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px),' +
-									  'linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px),'+
-									  // now verticals
-									  'linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px),'+
-									  'linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px),'+
-
-									  'linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px),'+
-									  'linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)'
-
-								  )
-					.css('background-size',gw +'px 1px,  '+gw+'px 1px,  '+gw+'px 1px,  '+gw+'px 1px, 1px '+gh+'px, 1px '+gh+'px, 1px '+gh+'px, 1px '+gh+'px  ')
-					.css('background-position', gp + 'px 0px, '+ (gp + 1) +'px 0px, '+gmp+'px 0px, '+(gmp + 1)+'px 0px, 0px 0px,0px 1px, 0px -'+(bvp*2)+'px,0px -'+((bvp*2)-1)+'px' )
-					//.css('opacity','0.7')
-					.css('left',0)
-					.css('top',0)
-					// .css('border', '1px solid black')
-					.css('width', this.Site.layout.width )
-					.css('height', total_height )
-					//.zIndex(-100)
-				}
-
-
-				$.each(this.Site.blocks, function(ix, block){
-					if(block.display_on == 'all'){
-						//console.log(block.dont_display_on , self.current_page)
-						if (block.dont_display_on.indexOf(self.current_page) != -1 ){
-							//console.log('do not display it', ix)
-							return
-						}
-					}else if(block.display_on != self.current_page)
-					{
-						return
-					}
-
-
-					var set = self.getBlockSettings(ix)
-					//console.log("IG",set)
-
-					var bw = set ? set.border_width : 0
-					var x = block.x; //Number(koords.split(':')[0]);
-					var y = block.y; // Number(koords.split(':')[1]);
-					if(!(set.unsnap_to_grid)){
-						//console.log('orig', x,y)
-						var xx = self._calc_left(x+1) - bw;
-						var yy = self._calc_top(y)	- bw;
-					}else{
-						//self.move_block(ix, 0, 0)
-						//consmoveole.log('my', x,y)
-						var xx = x;
-						var yy = y;
-
-					}
-					//console.log("XX", xx,yy, self._calc_left(2), self._calc_top(5) )
-
-					var w = block.width;
-					var h = block.height;
-					if(!(set.unsnap_to_grid))
-					{
-						var W = self._calc_width(w);
-						var H = self._calc_height(h);
-
-					}else{
-
-						var W = w;
-						var H = h;
-						// console.log(W,H)
-
-					}
-					// console.log(block_list);
-					var gp = { jq : $("<div>")
-										.appendTo(self.layout_cont)
-										.css('position','absolute')
-										.css('left', xx ).css('top',yy)
-										.width(W).css('height',H)
-										.css('overflow','hidden'),
-
-							 pos: ix
-						}
-					self.init_block(block, gp)
-				})
-			}`
-###
 window.Constructor.getTextColors = ->
   colors = if not @Site.textColors? then {} else @Site.textColors
   defaults =
@@ -798,7 +659,7 @@ window.Constructor.getTextColors = ->
       lc[k] = hsvToRgb(@get_color(colors[k].index))
     else
       lc[k] = defaults[k]
-  log("FINAL", lc)
+  #log("FINAL", lc)
   lc
 
 window.Constructor.init_grid = (to, head) ->
@@ -839,44 +700,26 @@ window.Constructor.init_grid = (to, head) ->
   bvp = self.Site.layout.grid.ver
   gw = bw + (bhp * 2)
   gh = bh + (bvp * 2)
-  gp = self.Site.layout.padding.left
+  gp = self.Site.layout.padding.left + self.Site.layout.grid.hor
 
-  #var gvvp = self.Site.layout.padding.t
   gmp = (gp - (bhp * 2))
+  # log(bw, gw, bhp )
 
-  # .css('border-radius', '10px')
-
-
-  #log head.find('#a_stylo').length
-  ###
-
-  if head.find('#a_stylo').length is 0
-    colors = @getTextColors()
-    s = """<style id='a_stylo'>
-    {{#link_color}}A:link {color: {{link_color}}; };  {{/link_color}}
-    {{#text_color}}#id-top-cont *  {color: {{text_color}} !important; };  {{/text_color}}
-    {{#visited_color}}A:visited {color: {{visited_color}}; };  {{/visited_color}}
-    {{#active_color}}A:active {color: {{active_color}}; };  {{/active_color}}
-    {{#hover_color}}A:hover {color: {{hover_color}}; };  {{/hover_color}}
-
-      </style>"""
-
-    s = Mustache.render(s,colors)
-    #log("STYLE", s)
-    head.append(s)
-  ###
-
-
-
-  # now verticals
-
-  #.css('opacity','0.7')
-
-  # .css('border', '1px solid black')
-  gridd = $("<div>").addClass("empty-block").appendTo(@layout_cont).css("position", "absolute").css("background-color", "white").css("background", "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)").css("background-size", gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px  ").css("background-position", gp + "px 0px, " + (gp + 1) + "px 0px, " + gmp + "px 0px, " + (gmp + 1) + "px 0px, 0px 0px,0px 1px, 0px -" + (bvp * 2) + "px,0px -" + ((bvp * 2) - 1) + "px").css("left", 0).css("top", 0).css("width", @Site.layout.width).css("height", total_height)  if @is_constructor
+  gridd = $("<div>").addClass("empty-block").appendTo(@layout_cont)
+  .css("position", "absolute")
+  .css("background-color", "white")
+  .css("background", "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)")
+  .css("background-size", gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px  ")
+  .css("background-position", gp + "px 0px, " + (gp + 1) + "px 0px, " + gmp + "px 0px, " + (gmp + 1) + "px 0px, 0px 0px,0px 1px, 0px -" + (bvp * 2) + "px,0px -" + ((bvp * 2) - 1) + "px")
+  .css("left", 0)
+  .css("top", 0).css("width", @Site.layout.width)
+  .css("height", total_height)  if @is_constructor
 
   #.zIndex(-100)
-  $.each @Site.blocks, (ix, block) ->
+  @inited_blocks = [] # Предназначение - последующий анбинд события клик после даблклика - включения панели управления
+  @settings_over_block = false;
+
+  $.each @Site.blocks, (ix, block) =>
     if block.display_on is "all"
 
       #console.log(block.dont_display_on , self.current_page)
@@ -916,10 +759,12 @@ window.Constructor.init_grid = (to, head) ->
 
     # console.log(block_list);
     gp =
-      jq: $("<div>").appendTo(self.layout_cont).css("position", "absolute").css("left", xx).css("top", yy).width(W).css("height", H).css("overflow", "hidden")
+      jq: $("<div>").appendTo(self.layout_cont).css("position", "absolute").css("left", xx).css("top", yy).width(W).css("height", H)
+      .css("overflow", "visible")
       pos: ix
 
-    self.init_block block, gp
+    bl = self.init_block block, gp
+    @inited_blocks.push bl;
 
 
 
@@ -927,7 +772,6 @@ window.Constructor.init_grid = (to, head) ->
 
 
 apply_block_settings = `function (obj, settings, widget){
-				//console.log("HHHHH", obj)
 				var w = obj.jq,
 				bl = this.get_block(obj.pos);
 				if(widget.disobey.indexOf('border_color') == -1){
@@ -937,7 +781,6 @@ apply_block_settings = `function (obj, settings, widget){
 						if (typeof settings.border_color == 'undefined'){
 							settings.border_color = {v:0, ix:0}
 						}
-						// console.log('border-color', settings.border_color)
 						var color = this.get_color(settings.border_color)
 						var c = hsvToRgb(color);
 						w.css('border-color', c);
@@ -999,7 +842,79 @@ apply_block_settings = `function (obj, settings, widget){
 				}
 
 			}`
-window.Constructor.apply_block_settings = apply_block_settings
+
+
+window.Constructor.reapply_block_settings = (obj, widget)->
+  sett = @getBlockSettings(obj.pos)
+  @apply_block_settings(obj, sett, widget)
+
+window.Constructor.apply_block_settings = (obj, settings, widget) ->
+
+  #console.log("HHHHH", obj)
+  w = obj.jq#.children(":first")
+  bl = @get_block(obj.pos)
+  if widget.disobey.indexOf("border_color") is -1
+    if typeof settings.border_color is "string"
+      w.css "border-color", settings.border_color
+    else
+      if typeof settings.border_color is "undefined"
+        settings.border_color =
+          v: 0
+          ix: 0
+
+      # console.log('border-color', settings.border_color)
+      color = @get_color(settings.border_color)
+      c = hsvToRgb(color)
+      w.css "border-color", c
+  w.css "opacity", settings.bg_opacity  if widget.disobey.indexOf("bg_opacity") is -1
+  #log( widget.disobey)
+  if "border_radius" not  in widget.disobey
+    #log('Broder radius')
+    w.css "-moz-border-radius" , settings.border_radius + "px"
+    w.css "-webkit-border-radius" , settings.border_radius + "px"
+    w.css "border-radius" , settings.border_radius + "px"
+
+  #if widget.disobey.indexOf("border_radius") is -1
+
+  if widget.disobey.indexOf("border_width") is -1
+    unless settings.unsnap_to_grid
+      xx = @_calc_left(bl.x + 1) - settings.border_width
+      yy = @_calc_top(bl.y) - settings.border_width
+    else
+      xx = bl.x
+      yy = bl.y
+    w.css "border-width", settings.border_width + "px"
+    w.css "left", xx
+    w.css "top", yy
+    w.css "border-style", "solid"
+  w.css "line-height", settings.line_height + "px"  if widget.disobey.indexOf("line_height") is -1
+  w.css "font-size", settings.font_size + "px"  if widget.disobey.indexOf("font_size") is -1
+  if widget.disobey.indexOf("padding_left_right") is -1
+    C = w.children().eq(0)
+    W = w.width()
+    C.css "margin-left", settings.padding_left_right + "px"
+    C.css "margin-right", settings.padding_left_right + "px"
+    C.width W - settings.padding_left_right * 2
+  C.css "padding-top", settings.padding_top + "px"  if widget.disobey.indexOf("padding_top") is -1
+  if settings.background.type is "color"
+    if widget.disobey.indexOf("background_color") is -1
+      if typeof settings.background.color is "string"
+        w.css "background", settings.background.color
+      else
+        color = @get_color(settings.background.color)
+        c = hsvToRgb(color)
+        w.css "background", c
+  else if settings.background.type is "none"
+    w.css "background", ""
+  else if settings.background.type is "pattern"
+    patt = settings.background.pattern
+    unless ["image", "constructor"].indexOf(patt.type) is -1
+      w.css "background", "url(" + patt.image + " ) repeat"
+    else
+      @_draw_css_background w, patt.image
+  if widget.depends_on_settings?
+    #log( "WIDGET", widget )
+    widget.draw(settings)
 
 
 
@@ -1029,7 +944,7 @@ window.Constructor.init_block = (bl, to) ->
   widget_str.splice 0, 1
   app_name = widget_str.join(".")
   wdata = bl.widget.data
-  w = $("<div>").css("width", to.jq.width()).css("height", to.jq.height()).appendTo(to.jq).addClass("draggable-module")
+  w = $("<div>").css('overflow','hidden').css("width", to.jq.width()).css("height", to.jq.height()).appendTo(to.jq).addClass("draggable-module")
   draga = undefined
   Widget = newWidget(w, this, to.pos)
   #log( widget_name, app_name)
@@ -1043,7 +958,7 @@ window.Constructor.init_block = (bl, to) ->
     H = bl.height
 
   # console.log("WH", W,H)
-  if @is_constructor
+  make_draggable = (to)=>
     to.jq.draggable
       scroll: false
       zIndex: 100
@@ -1087,58 +1002,71 @@ window.Constructor.init_block = (bl, to) ->
         self.move_block to.pos, draga.left, draga.top
         self.redraw()
 
+  if @is_constructor
+    make_draggable(to);
+
 
   #console.log("A", w.width() )
+
   if @is_constructor
-    to.jq.dblclick ->
-      for blix of self.inited_blocks
-        bl = self.inited_blocks[blix]
-        bl.unbind "click"
-
-      #bl.mouseleave();
-      #bl.unbind("mouseleave")
-      $("#controls>.widget-control").hide()
-      to.jq.draggable "destroy"
-
-      # console.log("CLICK UNBIND")
+    to.jq.dblclick =>
       control_panel = $("<div>").appendTo($("#controls"))
-
-      # console.log(w)
-      control_panel.css("position", "absolute").position(
-        of: w
-        my: "left top"
-        at: "right top"
-        collision: "none none"
-      ).css("border", "2px solid black").css("background-color", "white").draggable(scroll: false).css "padding", "10"
       wco = self.init_block_cp(to, control_panel, Widget)
-      Widget.settings control_panel  if Widget.settings
-      $("<div>").css("background-color", "orange").appendTo(to.jq).css("position", "absolute").position(
-        of: to.jq
-        my: "left top"
-        at: "right top"
-        collision: "none"
-      ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height 20
-      $("<div>").css("background-color", "green").appendTo(to.jq.parent()).css("position", "absolute").position(
-        of: to.jq
-        my: "left top"
-        at: "left-20 top"
-        collision: "none none"
-      ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click ->
+      saving_data = (evt) =>
         Widget.save()  if Widget.save
         wco.save()
-        self._save_site()
-        self.redraw.apply self, []
-        control_panel.remove()
 
-      $("<div>").css("background-color", "red").appendTo(to.jq.parent()).css("position", "absolute").position(
-        of: to.jq
-        my: "left top"
-        at: "left-20 top+30"
-        collision: "none none"
-      ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click ->
-        Widget.cancel()  if Widget.cancel
+        @settings_over_block = false
         control_panel.remove()
-        self.redraw.apply self, []
+        @redraw.apply self, []
+
+      if   @settings_over_block isnt false
+
+        @settings_over_block.saving()
+      else
+        @settings_over_block = {to:to, Widget:Widget, saving: saving_data }
+
+        for bl in @inited_blocks
+          bl.unbind "click dblclick"
+          bl.draggable('destroy')
+        log("after loop",  to.jq.attr('class'))
+
+        $("#controls>.widget-control").hide()
+        control_panel.css("position", "absolute").position(
+          of: w
+          my: "left top"
+          at: "right top"
+          collision: "none none"
+        ).css("border", "2px solid black").css("background-color", "white").draggable(scroll: false).css "padding", "10"
+
+
+        Widget.settings control_panel  if Widget.settings
+        $("<div>").css("background-color", "orange").appendTo(to.jq).css("position", "absolute").position(
+          of: to.jq
+          my: "left top"
+          at: "right top"
+          collision: "none"
+        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height 20
+        $("<div>").css("background-color", "green").appendTo(to.jq.parent()).css("position", "absolute").position(
+          of: to.jq
+          my: "left top"
+          at: "left-20 top"
+          collision: "none none"
+        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click =>
+          saving_data()
+          @_save_site();
+
+        $("<div>").css("background-color", "red").appendTo(to.jq.parent()).css("position", "absolute").position(
+          of: to.jq
+          my: "left top"
+          at: "left-20 top+30"
+          collision: "none none"
+        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click ->
+          Widget.cancel()  if Widget.cancel
+
+          control_panel.remove()
+          @settings_over_block = false
+          self.redraw.apply self, []
 
 
     mouseWidth = W
@@ -1154,11 +1082,6 @@ window.Constructor.init_block = (bl, to) ->
       self.redraw.apply self, []
     )
 
-    # .position({of:to.jq, my:"right top", at:"right bottom", collision:'none none'})
-
-    # .css('padding', '')
-
-    #console.log("FALSE")
     resize_marker = $("<div>").appendTo($("#controls")).css("position", "absolute").addClass("ui-icon ui-icon-grip-diagonal-se").width("32px").height("32px").hide().addClass("resize-marker widget-control").css("background-color", "blue").css("cursor", "se-resize").css("border-radius", "5px").css("border", "1px solid black").mouseenter(->
     ).mouseup((evt) ->
       self.resize_frame = false
@@ -1225,31 +1148,26 @@ window.Constructor.init_block = (bl, to) ->
     to.jq.click (e) ->
       $("#controls>.widget-control").hide()
 
-      #$('#controls>.resize-marker').hide()
       delete_marker.show().zIndex 1000
       resize_marker.show().zIndex 1000
 
-
-  # var left = p.left + o.left
-  # var top= p.top + o.top
-  # var within_x = e.pageX >= left+15 && e.pageX <= left + w;
-  # var within_y = e.pageY >= top+15 && e.pageY <= top + h;
-  #console.log(e.pageX >= left , e.pageX , left + w, within_y)
-  #if( within_x && within_y){
-  #	 resize_marker.show()
-
-  #	 resize_marker
-  #	delete_marker
-  #	delete_marker.show()
-
-  #	}else{
-  #	resize_marker.hide();
-  #		delete_marker.hide();
-  #	}
   to.jq
 
 
+window.Constructor.registerEvent = (e, f)->
+  if @events?
+    if @events[e]
+      @events[e].push(f)
+    else:
+      @events[e] = [f]
+  else
+    @events = {}
+    @events[e] = [f]
 
+window.Constructor.fireEvent = (e)->
+  if @events? and @events[e]
+    for f in @events[e]
+      do f
 
 
 
@@ -1426,48 +1344,93 @@ _make_pallette = `function (){
 					}
 				}
 			}`
-window.Constructor._make_pallette = _make_pallette
-###
+window.Constructor._make_pallette =->
+  h = @Site.colors.base
+  lights = @Site.colors.lights
+  shadows = @Site.colors.shadows
+  brightness = @Site.colors.brightness
+  saturation = @Site.colors.saturation
+  i = @Site.colors.type
+  @Site.colors.pallette = []
+  s = undefined
+  a = undefined
+  A = undefined
 
-_draw_css_background = `function (to, css_pattern) {
-				// var preview = to
-				var sizes = [];
-				var poss  = [];
-				var grads = [];
-				$.each(css_pattern.gradients, function(ix, grad){
-					var stops = [];
+  # // // // console.log(i,h,s,a,A, this.Site.colors)
+  switch i
+    when "mono"
+      s = a = A = false
+    when "complement"
+      s = (h + 180) % 360
+      a = A = false
 
-					if(grad.stops.length <2){
-						// need two color stops at least
-						return;
-					}
-					$.each(grad.stops, function(ix, st){
-						var rgba = hsvToRgb(st.col)
-						var s = rgba + ' ' + st.size.v + st.size.m;
-						stops.push(s);
+    #return hsvToRgb(a,100,100)
+    when "triada"
+      s = (h + 120) % 360
+      a = (h + (360 - 120)) % 360
+      A = false
+    when "split-trio"
+      s = (h + 150) % 360
+      a = (h + (360 - 150)) % 360
+      A = false
+    # return hsvToRgb(a,100,100)
+    when "analogous"
+      s = (h + 30) % 360
+      a = (h + (360 - 30)) % 360
+      A = false
+    # return hsvToRgb(a,100,100)
+    when "accent"
+      s = (h + 30) % 360
+      a = (h + (360 - 30)) % 360
+      A = (h + 180) % 360
+  # return hsvToRgb(a,100,100)
+  sat_koef = [0.89, 0.5, 0.5, 0.01]
+  br_koef = [0.05, 0.05, 0.45, 0.3]
+  colors = [h, s, a, A]
+  greys = new Array()
+  am = 5
+  c = 0
+  while c <= am
+    _c =
+      h: 0
+      s: 0
+      b: c * (100 / am)
+      a: 1
 
-					})
+    greys.push _c
+    c++
+  @Site.colors.pallette[0] = greys
+  #log("LOGGIN COLOR", colors)
 
-					if(grad.type == 'linear'){
-						var gr = 'linear-gradient('+grad.deg+'deg, ' + stops.join(', ') +')'
-					}else{
-						var position = grad.rad_w.v + grad.rad_w.m + ' ' + grad.rad_h.v + grad.rad_h.m;
-						var size = 'circle at '+grad.rad_l.v + grad.rad_l.m + ' ' + grad.rad_t.v + grad.rad_t.m;
-						var gr = 'radial-gradient('+ size+', '+ stops.join(', ') +') 	' + position
-					}
-					grads.push(gr)
-					poss.push(grad.pos[0].v + grad.pos[0].m +' ' + grad.pos[1].v + grad.pos[1].m)
-					sizes.push(grad.size[0].v + grad.size[0].m +' ' + grad.size[1].v + grad.size[1].m)
-				})
+  for col of colors
+    color = colors[col]
+    vars = [
+      h: color
+      s: saturation
+      b: brightness
+    ]
 
-				to.css({
-					'background-image': grads.join(',') ,
-					'background-size': sizes.join(', '),
-					'background-position':poss.join(', ')
+    if color
+      for i of sat_koef
+        ds = saturation * sat_koef[i]
+        db = brightness * br_koef[i]
+        if i < 2 # lights
+          dsat = ds * lights / 100
+          dbri = db * lights / 100
+        else # shadows
+          dsat = ds * shadows / 100
+          dbri = db * shadows / 100
+        sat = saturation - dsat
+        bri = brightness - dbri
+        vars[Number(i) + 1] =
+          h: color
+          s: sat
+          b: bri
+          a: 1
+      @Site.colors.pallette.push vars
+    else
+      @Site.colors.pallette.push false
 
-				})
-			 }`
-###
 window.Constructor._draw_css_background =(to, css_pattern) ->
 
   # var preview = to
@@ -1501,47 +1464,11 @@ window.Constructor._draw_css_background =(to, css_pattern) ->
 
 
 
-###
-redraw_background = `function (){
-				var self = this;
-				$.each(this.Site.backgrounds, function(name, imgo){
-					if (name == 'body'){
-						var C = $('body')
-						c = C[0];
-
-
-					}else if (name == 'content'){
-						var C = self.layout_cont;
-					}
-					if (imgo.type == 'pattern'){
-						if( typeof imgo.pattern  == 'undefined'){
-							C.css('background-image', '' );
-							return
-						}
-						if (['image','constructor'].indexOf(imgo.pattern.type) != -1){
-							var pat = imgo.pattern.image;
-							C.css('background', 'url("' + pat +'") repeat' );
-						}
-						else{
-							var pat = imgo.pattern.image
-							self._draw_css_background(C, pat);
-						}
-					}else if(imgo.type == 'color'){
-						var c = self.get_color(imgo.color);
-						C.css('background', hsvToRgb(c))
-
-					}else if(imgo.type == 'none'){
-						C.css('background', '' );
-					}
-
-				})
-			}`
-###
 window.Constructor.redraw_background = ->
 
-  log( "BGs", @Site.backgrounds )
+  #log( "BGs", @Site.backgrounds )
   if @Site.backgrounds?
-    log("DOne")
+    #log("DOne")
     $.each @Site.backgrounds, (name, imgo) =>
       if name is "body"
         C = $("body")
@@ -1563,138 +1490,23 @@ window.Constructor.redraw_background = ->
       else C.css "background", ""  if imgo.type is "none"
 
 
-###
-
-draw_color_chooser = `function (onSelectColor){
-				color_chooser = $('<div>')
-				.css('position','absolute')
-				.css('background-color','white')
-				.css('border', '1px solid black')
-				.css('padding', '10px')
-				.width(400)
-				.zIndex(10000)
-				.draggable({scroll:false})
-				var self = this;
-
-
-				this._make_pallette();
-				$.each(this.Site.colors.pallette , function(l, vars){
-					var b, main
-					if (l == 0){
-						//console.log(l, vars)
-						$.each ( vars, function(i, col_){
-							if(typeof col_.a  == 'undefined'){col_.a = 1}
-							var col = hsvToRgb(col_);
-
-							 if(i == 0){
-
-								b = $('<div>').css('float','left').width(100).height(100).appendTo(color_chooser)
-							}
-
-							$('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(100).height(100/6).appendTo(b)
-							.click(function(evt){
-								onSelectColor(col, {v:l, ix:i}, col_ )
-								evt.preventDefault(), evt.stopPropagation()
-								color_chooser.remove();
-							})
-
-						})
-					}
-					else{
-						// console.log(l, vars)
-						 $.each ( vars, function(i, col_){
- 							if(typeof col_.a  == 'undefined'){col_.a = 1}
-
-							var col = hsvToRgb(col_);
-							if(i == 0){
-								b = $('<div>').css('float','left').width(100).height(100).appendTo(color_chooser)
-								main = $('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(100).height(50)
-								.click(function(evt){
-									onSelectColor(col, {v:l, ix:i}, col_ )
-									color_chooser.remove();
-									evt.preventDefault(), evt.stopPropagation()})
-							 }else{
-								if(i == 3){
-									main.appendTo(b);
-								}
-								$('<button>').css('padding','0').css('border','0').css('display','block').css('background-color', col).css('float','left').width(50).height(25).appendTo(b)
-								.click(function(evt){	// console.log(col);
-									onSelectColor(col,{v:l, ix:i}, col_);
-									evt.preventDefault(), evt.stopPropagation()
-									color_chooser.remove();
-								})
-							}
-						})
-					}
-				})
-				var customs = $('<div>').css('float','left').width(200).height(200).appendTo(color_chooser);
-				$('<div>').text('Custom colors').width(200).height(25).appendTo(customs)
-				$.each(this.Site.colors.custom_pallette , function(l, vars){
-					if(typeof vars.a  == 'undefined'){vars.a = 1}
-
-					var col = hsvToRgb(vars);
-					var tr = $("<div>").css('background', "url(/static/images/bar-opacity.png) repeat" )
-					.width(25).height(25).css('float','left').appendTo(customs)
-
-					$('<button>').css('padding','0').css('border','0')
-					.css('display','block')
-					.css('background-color', col)
-					.width(25).height(25).appendTo(tr)
-					.click(function(evt){	// console.log(col);
-						onSelectColor(col, {v:'C', ix:l }, vars );
-						evt.preventDefault(), evt.stopPropagation()
-						color_chooser.remove();
-					})
-				})
-
-				$('<div>').css('clear','both').appendTo(color_chooser)
-				var butts = $('<div>').appendTo(color_chooser).css('border-top', '1px solid black')
-				.css('margin-top', '20px')
-				$('<input>').attr('value','Закрыть').button().appendTo(butts).click(function(){
-					color_chooser.remove()
-				})
-
-				//$('<input>').attr('value','Прозрачный').button().appendTo(butts).click(function(){
-				//	onSelectColor("clear");
-				//	color_chooser.remove()
-
-				//})
-				$('<input>').button().text('Другой цвет').appendTo(butts).attr('value','Выбрать другой цвет').button()
-					.colorpicker({inline:false, alpha:true, colorFormat:'RGBA', ok: function(evt, color){
-						var hsv = color.hsv
-						hsv.s = hsv.s * 100;
-						hsv.b = hsv.v * 100;
-						hsv.h = hsv.h * 360;
-						hsv.a = color.a
-						delete hsv.v
-						console.log(hsv)
-						self.Site.colors.custom_pallette.push(hsv)
-						var ix = self.Site.colors.custom_pallette.length - 1
-						color_chooser.remove()
-						onSelectColor(color.formatted, {v:'C', ix: ix }, hsv)
-
-					}})
-				return color_chooser;
-			}`
-
-
-###
 
 window.Constructor.draw_color_chooser = (onSelectColor) ->
-  color_chooser = $("<div>").css("position", "absolute").css("background-color", "white").css("border", "1px solid black").css("padding", "10px").width(400).zIndex(10000).draggable(scroll: false)
+  color_chooser = $("<div>").css("position", "absolute").css("background-color", "white").css("border", "1px solid black")
+  .css("padding", "10px")
+  .width(500).zIndex(10000).draggable(scroll: false)
   self = this
   @_make_pallette()
   $.each @Site.colors.pallette, (l, vars) ->
     b = undefined
-    main = undefined
     if l is 0
 
-      #console.log(l, vars)
+      # Сначала серые - 6 градаций черный - (4 серых) - белый
       $.each vars, (i, col_) ->
         col_.a = 1  if typeof col_.a is "undefined"
         col = hsvToRgb(col_)
-        b = $("<div>").css("float", "left").width(100).height(100).appendTo(color_chooser)  if i is 0
-        $("<button>").css("padding", "0").css("border", "0").css("display", "block").css("background-color", col).css("float", "left").width(100).height(100 / 6).appendTo(b).click (evt) ->
+        self.__b = $("<div>").css("float", "left").width(100).height(100).appendTo(color_chooser)  if i is 0
+        $("<button>").css("padding", "0").css("border", "0").css("display", "block").css("background-color", col).css("float", "left").width(100).height(100 / 6).appendTo(self.__b).click (evt) ->
           color_chooser.remove()
           onSelectColor col,
             v: l
@@ -1706,28 +1518,24 @@ window.Constructor.draw_color_chooser = (onSelectColor) ->
 
 
     else
-
-      # console.log(l, vars)
       $.each vars, (i, col_) ->
         col_.a = 1  if typeof col_.a is "undefined"
         col = hsvToRgb(col_)
         if i is 0
-          b = $("<div>").css("float", "left").width(100).height(100).appendTo(color_chooser)
-          main = $("<button>").css("padding", "0").css("border", "0").css("display", "block").css("background-color", col).css("float", "left").width(100).height(50).click((evt) ->
+          self.__b = $("<div>").css("float", "left").width(100).height(100).appendTo(color_chooser)
+          self.__main = $("<button>").css("padding", "0").css("border", "0").css("display", "block").css("background-color", col).css("float", "left").width(100).height(50).click((evt) ->
             color_chooser.remove()
             onSelectColor col,
               v: l
               ix: i
             , col_
-            log("HERE", color_chooser )
-
 
             evt.preventDefault()
             evt.stopPropagation()
           )
         else
-          main.appendTo b  if i is 3
-          $("<button>").css("padding", "0").css("border", "0").css("display", "block").css("background-color", col).css("float", "left").width(50).height(25).appendTo(b).click (evt) -> # console.log(col);
+          self.__main.appendTo self.__b  if i is 3
+          $("<button>").css("padding", "0").css("border", "0").css("display", "block").css("background-color", col).css("float", "left").width(50).height(25).appendTo(self.__b).click (evt) -> # console.log(col);
             onSelectColor col,
               v: l
               ix: i
@@ -1737,8 +1545,7 @@ window.Constructor.draw_color_chooser = (onSelectColor) ->
 
             color_chooser.remove()
 
-
-
+  $('<div>').css('clear','both').css('display','block').appendTo color_chooser
   customs = $("<div>").css("float", "left").width(200).height(200).appendTo(color_chooser)
   $("<div>").text("Custom colors").width(200).height(25).appendTo customs
   if @Site.colors.custom_pallette?
@@ -1774,7 +1581,7 @@ window.Constructor.draw_color_chooser = (onSelectColor) ->
       hsv.a = color.a
       delete hsv.v
 
-      console.log hsv
+      #console.log hsv
       self.Site.colors.custom_pallette.push hsv
       ix = self.Site.colors.custom_pallette.length - 1
       color_chooser.remove()
@@ -1867,11 +1674,11 @@ window.Constructor._stepping_width = _stepping_width
 
 
 _block_width = `function (){
-				var base_width = Math.round ((this.layout.width - (this.layout.padding.left) ) / this.layout.cols)
+				var base_width =  ((this.layout.width - ( 2 * this.layout.padding.left) ) / this.layout.cols)
 				var block_width = (base_width - ( 2 * this.layout.grid.hor ) )
-				// console.log(base_width, block_width)
+				//console.log(base_width, block_width)
 
-				return Math.round(block_width)
+				return block_width
 
 			}`
 window.Constructor._block_width = _block_width
@@ -1927,7 +1734,7 @@ window.Constructor._calc_top = _calc_top
 _calc_left = `function (l){
 				var w = (this._calc_width (l-1) )
 				if (l > 1){var P =2 }else{var P=0}
-				return (this.layout.padding.left + w + P*this.layout.grid.hor) // + this._main_offset.left;
+				return (this.layout.padding.left + this.layout.grid.hor  + w + P*this.layout.grid.hor) // + this._main_offset.left;
 
 				// console.log('LL', l)
 				//var w = this._calc_width( l-1 ) // Ширина блока учитывается при значениях больше 1 (0,1)
@@ -1957,15 +1764,8 @@ window.Constructor._calc_height = _calc_height
 
 _calc_width = `function (w){
 				if (w <= 0) return 0;
-				//if (this._c_bw){
-				//	cbw = this._c_bw
-				//}
-				//else{
-					this._c_bw = this._block_width()
-					cbw = this._c_bw
-					// }
-
-				// console.log( "CALC WIDTH", this._c_bw,cbw , w , (this.layout.grid.hor *2 * (w-1)) )
+				this._c_bw = this._block_width()
+				cbw = this._c_bw
 				return (cbw * w) + (this.layout.grid.hor *2 * (w-1) )
 
 
@@ -2002,19 +1802,6 @@ window.Constructor.addCustomColor = addCustomColor
 
 
 
-
-###
-add_block = `function (x,y, type, ds){
-
-				this.Site.blocks.push(	{width:ds[0],height:ds[1],
-									x:x, y:y,
-									widget:{name:type, data: ''	 },
-									display_on : this.current_page,
-									dont_display_on :[]
-								});
-			}`
-
-###
 
 window.Constructor.add_block = (x, y, type, ds) ->
   @Site.blocks.push
@@ -2136,244 +1923,6 @@ _save_site = `function ( do_cache ){
 			}`
 window.Constructor._save_site = _save_site
 
-###
-
-init_block_cp = `function (obj,to, widget){
-
-				var m = $('<div>').appendTo(to);
-				var self = this;
-				var w = obj;
-				var settings = self.getBlockSettings(obj.pos);
-				var old_settings = $.extend(true, {}, settings)
-
-				//console.log ("HAHAHA", obj, w, to)
-
-				var onPatternChoice = function (pattern){
-				  settings.background = {type:'pattern', pattern: pattern}
-				  self.apply_block_settings(w, settings, widget)
-
-				}
-				var onColorChoice = function (color, pal_ix, hsba ) {
-					if(col == 'clear') {
-						settings.background = { type:'none'}
-					}else{
-						settings.background = { type:'color', color: pal_ix }
-					}
-					self.apply_block_settings( w, settings, widget)
-					$(this).dialog('close')
-
-				}
-
-				var onCancel = function () {
-				 settings = old_settings;
-				 self.apply_block_settings( w, old_settings, widget)
-				 $(this).dialog('close')
-
-				}
-				var onSave = function () {
-   				 $(this).dialog('close')
-
-				}
-
-
-
-
-
-				if(widget.disobey.indexOf('background_color') == -1){
-					cl = $('<button>').button().text('Выбор фона').click(function(){
-
-						self.drawBackgroundSelectorDialog(onPatternChoice, onColorChoice, onCancel, onSave);
-
-
-
-					}).appendTo(m)
-				}
-
-				//console.log(widget.disobey.indexOf('border_color') == -1)
-				if(widget.disobey.indexOf('border_color') == -1){
-
-					cl = $('<button>').button().text('выбрать цвет рамки').click(function(){
-						cb = function(col, ix){
-							if(col != 'clear'){
-								settings.border_color = ix
-								self.apply_block_settings( w, settings, widget )
-							}
-
-						}
-						cc = self.draw_color_chooser( cb );
-						cc.appendTo( to ).position({of:this, my:'left top', at:'left top' } )
-
-					}).appendTo(m)
-				}
-
-
-
-
-				vf = function(a,d){
-
-					return typeof(a) == 'undefined'? d : a
-				}
-				var ul =$('<ul>').appendTo(m).addClass('cp-ul')
-
-				if(widget.disobey.indexOf('bg_opacity') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Прозрачность блока').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:100,value:vf(settings.bg_opacity,100)*100, slide:function(event, ui){
-						settings.bg_opacity = ui.value/100 ;
-						self.apply_block_settings( w, settings, widget )
-
-						// w.css('opacity', settings.bg_opacity);
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('border_radius') == -1){
-
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Радиус границы').appendTo(li)
-
-					$("<div>").width(250).slider({min:0, max:100,value:vf(settings.border_radius,0), slide:function(event, ui){
-						settings.border_radius = ui.value ;
-						self.apply_block_settings( w, settings, widget)
-
-						//w.css('border-radius', settings.border_radius +'px');
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('border_width') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Ширина границы').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:100,value: vf(settings.border_width,0)*10, slide:function(event, ui){
-						settings.border_width = ui.value/10 ;
-						self.apply_block_settings( w, settings, widget)
-
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('line_height') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Межстрочный интервал').appendTo(li)
-
-					def_lh =obj.jq.width() / settings.font_size *0.75;
-
-					var lhs = $("<div>").width(250).slider({min:0, max:300,value:vf(def_lh,0)*10, slide:function(event, ui){
-						settings.line_height = ui.value/10 ;
-						self.apply_block_settings( w, settings, widget)
-
-						// w.css('line-height', settings.line_height +'px');
-
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('font_size') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Размер шрифта').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:300,value:vf(settings.font_size,0)*10, slide:function(event, ui){
-						settings.font_size = ui.value/10 ;
-
-						settings.line_height	= obj.jq.width() / settings.font_size *0.75;
-						self.apply_block_settings( w, settings, widget)
-
-						//w.css('font-size', settings.font_size +'px');
-						//w.css('line-height', lh +'px');
-						lhs.slider('value', settings.line_height * 10)
-
-
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('padding_top') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('отступ сверху').appendTo(li)
-					var pt = settings.padding_top ? settings.padding_top*10 : 0
-
-					$("<div>").width(250).slider({min:0, max:300,value:pt, slide:function(event, ui){
-						settings.padding_top = ui.value/10 ;
-						self.apply_block_settings( w, settings, widget)
-					}} ).appendTo(li)
-				}
-				if(widget.disobey.indexOf('padding_left_right') == -1){
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Отступ слева-справа').appendTo(li)
-					var plr = settings.padding_left_right ? settings.padding_left_right*10 : 0
-					$("<div>").width(250).slider({min:0, max:300,value:plr, slide:function(event, ui){
-						settings.padding_left_right = ui.value/10 ;
-						self.apply_block_settings( w, settings, widget)
-					}} ).appendTo(li)
-				}
-
-				$("<label for='available_all_pages'>").appendTo(m).append('Показывать на всех страницах')
-				cb = $("<input type='checkbox' id='available_all_pages'>").appendTo(m).click(function(){
-					// console.log(self.Site.blocks, to)
-					if(self.Site.blocks[obj.pos].display_on == 'all')
-					{
-						self.Site.blocks[obj.pos].display_on = self.current_page
-					}else{
-						self.Site.blocks[obj.pos].display_on = 'all'
-					}
-				})
-				cb.prop('checked', self.Site.blocks[obj.pos].display_on == 'all')
-				$("<br>").appendTo(m)
-				// ------
-				$("<label for='unsnap_to_grid'>").appendTo(m).append('Свободный блок')
-				cb = $("<input type='checkbox' id='unsnap_to_grid'>").appendTo(m).click(function(){
-					bl = self.get_block(obj.pos);
-					settings.unsnap_to_grid = this.checked
-					if (this.checked){
-						self.move_block(obj.pos, self._calc_left(bl.x + 1) + settings.border_width,
-												 self._calc_top(bl.y + 1) + settings.border_width,
-												 true)
- 						self.Site.blocks[obj.pos].width  = self._calc_width(bl.width);
- 						self.Site.blocks[obj.pos].height = self._calc_height(bl.height);
-
-					}else{
-						// x = obj.jq.css('left')
-						self.move_block(obj.pos, self._uncalc_left(bl.x ) + settings._border_width,
-												 self._uncalc_top(bl.y ) + settings._border_width,
-												 true)
-						self.Site.blocks[obj.pos].width  /= self._block_width();
-						self.Site.blocks[obj.pos].height /=  self._block_height();
-
-					}
-
-				})
-				cb.prop('checked', settings.unsnap_to_grid )
-				$("<br>").appendTo(m)
-				// ------
-
-				cl = $('<button>').button().text('Применить для всех новых блоков').click(function(){
-					self.Site.default_block_settings = settings;
-					self.redraw()
-					m.remove();
-
-				})
-				.css('display','block')
-				.css('padding','5px')
-				.css('margin-bottom', '10px')
-				.appendTo(m)
-
-				cl = $('<button>').button().text('Применить для всех имеющихся блоков').click(function(){
-					self.Site.default_block_settings = settings;
-					$.each(self.Site.blocks, function(i, bl){
-						delete bl['settings']
-
-						// console.log(bl)
-					})
-
-
-					self.redraw();
-					to.remove()
-
-				}).appendTo(m)
-				.css('display','block')
-				.css('padding','5px')
-				.css('margin-bottom', '10px')
-				var o = {
-					save: function(){
-						//console.log(settings)
-						self.setBlockSettings(obj.pos,settings)
-					},
-					cancel:function(){
-
-					}
-				}
-				return o;
-			}`
-###
 window.Constructor.init_block_cp = (obj, to, widget) ->
   m = $("<div>").appendTo(to)
   self = this
@@ -2381,7 +1930,6 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
   settings = self.getBlockSettings(obj.pos)
   old_settings = $.extend(true, {}, settings)
 
-  #console.log ("HAHAHA", obj, w, to)
   onPatternChoice = (pattern) ->
     settings.background =
       type: "pattern"
@@ -2390,14 +1938,15 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
     self.apply_block_settings w, settings, widget
 
   onColorChoice = (color, pal_ix, hsba) ->
-    if col is "clear"
+    log("DIAL", this)
+    if color is "clear"
       settings.background = type: "none"
     else
       settings.background =
         type: "color"
         color: pal_ix
     self.apply_block_settings w, settings, widget
-    $(this).dialog "close"
+    #$(this).dialog "close"
 
   onCancel = ->
     settings = old_settings
@@ -2471,13 +2020,13 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
   if widget.disobey.indexOf("line_height") is -1
     li = $("<li>").appendTo(ul)
     $("<span>").text("Межстрочный интервал").appendTo li
-    def_lh = obj.jq.width() / settings.font_size * 0.75
+    # def_lh = obj.jq.width() / settings.font_size * 0.75
 
     # w.css('line-height', settings.line_height +'px');
     lhs = $("<div>").width(250).slider(
       min: 0
       max: 300
-      value: vf(def_lh, 0) * 10
+      value: settings.line_height
       slide: (event, ui) ->
         settings.line_height = ui.value / 10
         self.apply_block_settings w, settings, widget
@@ -2491,12 +2040,12 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
     $("<div>").width(250).slider(
       min: 0
       max: 300
-      value: vf(settings.font_size, 0) * 10
+      value: settings.font_size
       slide: (event, ui) ->
         settings.font_size = ui.value / 10
-        settings.line_height = obj.jq.width() / settings.font_size * 0.75
+        #settings.line_height = obj.jq.width() / settings.font_size * 0.75
         self.apply_block_settings w, settings, widget
-        lhs.slider "value", settings.line_height * 10
+        #lhs.slider "value", settings.line_height * 10
     ).appendTo li
   if widget.disobey.indexOf("padding_top") is -1
     li = $("<li>").appendTo(ul)
@@ -2806,7 +2355,7 @@ showColorScheme = `function (){
 window.Constructor.showColorScheme = showColorScheme
 
 
-
+###
 showLayoutScheme = `function (){
 
 				var to = this._app_admin_contents;
@@ -2853,7 +2402,74 @@ showLayoutScheme = `function (){
 				}).appendTo(to)
 				this._app_admin_cont.show()
 			 }`
-window.Constructor.showLayoutScheme = showLayoutScheme
+###
+window.Constructor.showLayoutScheme = ->
+  to = @_app_admin_contents
+  to.find("*").remove()
+  to.width 500
+  self = this
+  lo = $.extend(true, {}, @Site.layout)
+  ul = $("<ul>").appendTo(to).width(500)
+  labels =
+    "drawen_lines":"Количество строк"
+    "cols":"Количество столбцов"
+    "padding":"Отступ"
+    "top":"Сверху"
+    "left":"Слева-справа"
+    "width":"Ширина"
+    "grid":"Расстояния"
+    "hor":"Между столбцами"
+    "ver":"между строками"
+    "base_height":"Высота строки"
+
+  s = undefined
+  recount = =>
+    s.text("Ширина блока: " + @_block_width(1) + "; Высота блока: " + @_block_height(1));
+  $.each lo, (i, val) =>
+    changer_1 = (event, ui) =>
+          @Site.layout[i] = ui.value
+          recount();
+    unless i is 'fixed'
+      l = $("<li>").text(labels[i]).appendTo(ul)
+      if i is "grid" or i is "padding"
+        inner = $("<ul>").appendTo(l)
+        $.each val, (j, val) =>
+          changer_2 = (event, ui) =>
+            @Site.layout[i][j] = ui.value
+            recount()
+
+          l = $("<li>").text(labels[j]).appendTo(inner)
+          sp = $("<input>").appendTo(l).spinner({spin: changer_2})
+          sp.spinner "value", val
+          sp.on('keyup', (e)=>
+            v = $(e.target).val();
+            @Site.layout[i][j] = parseInt(v)
+            recount()
+          )
+
+      else
+        sp = $("<input>").appendTo(l).spinner({spin: changer_1} )
+        sp.spinner "value", val
+        sp.on('keyup', (e)=>
+            v = $(e.target).val();
+            @Site.layout[i] = parseInt(v)
+            recount();
+          )
+
+  s = $('<div></div>').text("Ширина блока: " + @_block_width(1) + "; Высота блока: " + @_block_height(1)).appendTo to
+
+  $('<div></div>').text("Если оставить ширину или длину дробной - сайт может выглядеть криво из-за ограничений HTML - сложность отрисовки дробных пикселей").appendTo to
+  finaldiv = $('<div></div>').appendTo to
+  $("<button>").text("save").click(=>
+    @_save_site()
+  ).appendTo finaldiv
+  $("<button>").text("cancel").click(=>
+    @Site.layout = lo
+    @showLayoutScheme()
+    @redraw()
+  ).appendTo finaldiv
+
+  @_app_admin_cont.show()
 
 
 
@@ -2867,14 +2483,18 @@ showFontsScheme = `function (){
 				var to = this._app_admin_contents;
 					to.find('*').remove()
 					// head sans
-					D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
-					.text("Here's fonts scheme with Sans in headers, Serifs in texts").appendTo(to)
+
+					$("<h3>").text("Here's fonts scheme with Sans in headers, Serifs in texts").appendTo(to);
+
+					// D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
+
+					$('<div>').appendTo(to).css('clear', 'both').css('display','none')
 					// console.log(hsvToRgb({h:0, s: 50, b:100 } ) )
 					$.each(available_fonts_sans, function(i, h){
 						$.each(available_fonts_serif, function(i, c){
-							D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
+							var D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
 							.mouseenter(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 10, b:100 } ) ) })
-							.mouseleave(function(){ sho$(this).css('background-color', hsvToRgb({h:0, s: 0, b:100 } ) ) })
+							.mouseleave(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 0, b:100 } ) ) })
 							$("<h3></h3>").css('font-family', h).appendTo(D).text("Header with font " + h)
 							$("<p>").css('font-family', c).text(c).appendTo(D)
 							$("<p>").css('font-family', c).appendTo(D)
@@ -2887,13 +2507,15 @@ showFontsScheme = `function (){
 							})
 						} )
 					})
-					D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
-					.text("Here's fonts scheme with Serifs in headers, Sans in texts").appendTo(to)
+					// $("<h3>").text("Here's fonts scheme with Sans in headers, Serifs in texts").appendTo(to);
+
+//					D = $("<div>").width(600).css('margin-left',150).css('float', 'left')
+//					.text("Here's fonts scheme with Serifs in headers, Sans in texts").appendTo(to)
 
 					// head serif
 					$.each(available_fonts_serif, function(i, h){
 						$.each(available_fonts_sans, function(i, c){
-							D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
+							var D = $("<div>").width(200).css('margin-left',150).css('float', 'left').height(200).css('overflow','hidden')
 							.mouseenter(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 10, b:100 } ) ) })
 							.mouseleave(function(){ $(this).css('background-color', hsvToRgb({h:0, s: 0, b:100 } ) ) })
 
@@ -3029,7 +2651,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('left').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							cenli = $('<input>').val(g_grad.rad_l.v).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.rad_l.v = v; cenls.slider('value',v);put_grad() })
+							cenli = $('<input>').val(g_grad.rad_l.v).appendTo(C).width(30).keyup(function(){
+							  //console.log($(this).val());
+							  var v = parseInt($(this).val());g_grad.rad_l.v = v; cenls.slider('value',v);put_grad() })
 							cenls = $("<div>").width(30).slider({min:0, max:360,value:g_grad.rad_l.v, slide:function(event, ui){ g_grad.rad_l.v = ui.value ;cenli.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 							$('<select>').appendTo(C).append($('<option>').text('%').val('%')).append( $('<option>').text('px').val('px')).change(function(){g_grad.rad_l.m = $(this).val();put_grad(); })
 
@@ -3037,7 +2661,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('top').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							centi = $('<input>').val(g_grad.rad_t.v).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.rad_t.v = v; cents.slider('value',v);put_grad() })
+							centi = $('<input>').val(g_grad.rad_t.v).appendTo(C).width(30).keyup(function(){
+							//console.log($(this).val());
+							var v = parseInt($(this).val());g_grad.rad_t.v = v; cents.slider('value',v);put_grad() })
 							cents = $("<div>").width(30).slider({min:0, max:360,value:grad.rad_t.v, slide:function(event, ui){ g_grad.rad_t.v = ui.value ;centi.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 							$('<select>').appendTo(C).append($('<option>').text('%').val('%')).append( $('<option>').text('px').val('px')).change(function(){g_grad.rad_t.m = $(this).val();put_grad(); })
 
@@ -3047,7 +2673,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('width').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							sizewi = $('<input>').val(g_grad.rad_w.v).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.rad_w.v = v; sizews.slider('value',v);put_grad() })
+							sizewi = $('<input>').val(g_grad.rad_w.v).appendTo(C).width(30).keyup(function(){
+							//console.log($(this).val());
+							var v = parseInt($(this).val());g_grad.rad_w.v = v; sizews.slider('value',v);put_grad() })
 							sizews = $("<div>").width(30).slider({min:0, max:360,value:grad.rad_w.v, slide:function(event, ui){ g_grad.rad_w.v = ui.value ;sizewi.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 							$('<select>').appendTo(C).append($('<option>').text('%').val('%')).append( $('<option>').text('px').val('px')).change(function(){g_grad.rad_w.m = $(this).val();put_grad(); })
 
@@ -3055,7 +2683,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('height').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							sizehi = $('<input>').val(g_grad.rad_h.v).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.rad_h.v = v; sizehs.slider('value',v);put_grad() })
+							sizehi = $('<input>').val(g_grad.rad_h.v).appendTo(C).width(30).keyup(function(){
+							//console.log($(this).val());
+							var v = parseInt($(this).val());g_grad.rad_h.v = v; sizehs.slider('value',v);put_grad() })
 							sizehs = $("<div>").width(30).slider({min:0, max:360,value:grad.rad_h.v, slide:function(event, ui){ g_grad.rad_h.v = ui.value ;sizehi.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 							$('<select>').appendTo(C).append($('<option>').text('%').val('%')).append( $('<option>').text('px').val('px')).change(function(){g_grad.rad_h.m = $(this).val();put_grad(); })
 
@@ -3063,7 +2693,8 @@ _show_css_pattern_editor = `function (to) {
 						}
 						var C = $('<div>').width(50).appendTo(grc).css('padding-left','20px').css('padding-right','20px');
 						var sel =$('<select>').appendTo(C)
-						$.each(['linear','radial'], function(_,t){$('<option>').text(t).val(t).appendTo(sel) })
+						// Exclude radial gradients for now
+						$.each(['linear'], function(_,t){$('<option>').text(t).val(t).appendTo(sel) })
 						sel.val(grad.type).change(function(){
 							g_grad.type = $(this).val();
 							if (g_grad.type =='radial'){
@@ -4118,7 +3749,7 @@ window.Constructor.showUserScheme = ->
     width: 600
     height: 500
   )
-  log "SITE ROLES", @Site.Roles
+  #log "SITE ROLES", @Site.Roles
   if not  @Site.Roles?
     $("<div>").appendTo(dialog).text("Чтобы управлять пользователями надо сначала сохранить сайт хотя бы один раз")
   else
@@ -4135,7 +3766,7 @@ window.Constructor.showUserScheme = ->
           $(this).parent().find("inactive ul.-stops").remove()
           ul = $("<ul>").appendTo($(this)).addClass("-stops")
           add_group_controls = (_ix, app) ->
-            log "check app_name", _ix, app
+            #log "check app_name", _ix, app
             i = 0
 
             while i < app.roles.length
@@ -4164,80 +3795,6 @@ window.Constructor.showUserScheme = ->
       user_control.on "click", expand
 
 
-###
-
-
-showSEOScheme = `function () {
-				var self = this;
-				var meta_yandex, meta_google, sname;
-
-				var save_metas = function () {
-					// console.log('>');
-					var my = meta_yandex.val();
-					var mg = meta_google.val();
-					var sname_ = sname.val();
-					if ('seo' in self.Site){
-						self.Site['seo']['metas'] = { yandex:my, google:mg };
-					}else{
-						self.Site['seo'] = {'metas': { yandex:my, google:mg } };
-					}
-					self.Site['seo']['title'] = sname_
-				}
-
-				var seod = $('<div>').dialog({title:"Оптимизация для поисковых систем",width:500, height:400,
-					buttons:{'Сохранить': function(){
-						save_metas();
-						self._save_site()
-						self.redraw();
-
-					}
-
-					}
-				})
-
-				var ul = $('<ul>').appendTo(seod)
-
-				var li = $('<li>').appendTo(ul)
-				$('<span>').text('Наименование сайта (отображается в title)').appendTo(li);
-				sname = $('<input>').appendTo(li).change(function(){
-					save_metas()
-				})
-				if ('seo' in self.Site){
-					sname.val(self.Site['seo']['title'] )
-				}
-
-				var li = $('<li>').appendTo(ul)
-				$('<span>').text('Яндекс').appendTo(li);
-				meta_yandex = $('<input>').appendTo(li).change(function(){
-					save_metas()
-				})
-				if ('seo' in self.Site){
-					meta_yandex.val(self.Site['seo']['metas']['yandex'] )
-				}
-				var li = $('<li>').appendTo(ul)
-				$('<span>').text('Google').appendTo(li);
-				meta_google = $('<input>').appendTo(li).change(function(){
-					save_metas()
-				})
-				if ('seo' in self.Site){
-					meta_google.val(self.Site['seo']['metas']['google'] )
-				}
-
-
-				var li = $('<li>').appendTo(ul)
-				$('<span>').text('Кеширование содержимого - обязательно').appendTo(li);
-				$('<input type="button">').val('Запустить').button()
-				.appendTo(li).click(function(){
-					$(this).hide();
-					self.caching();
-					$(this).show();
-
-				})
-
-
-
-			}`
-###
 window.Constructor.showSEOScheme = ->
   self = this
   meta_yandex = undefined
@@ -4342,14 +3899,14 @@ window.Constructor.showTextColorScheme = ->
     height: 400
     buttons:
       "Сохранить и перезагрузить": =>
-        log(@)
+        #log(@)
         @Site.textColors = hsbas
         @_save_site()
 
         cold.dialog('close')
         window.location.reload()
       "Сохранить без перезагрузки": =>
-        log(@)
+        #log(@)
         @Site.textColors = hsbas
         @_save_site()
         @redraw()
@@ -4421,7 +3978,7 @@ Main: function(constr, appid ){
   app.name = app.app_name.split('.')[0]
 
   result = Mustache.render(T, app)
-  log(result)
+  #log(result)
   result
 
 
@@ -4540,12 +4097,18 @@ window.Constructor.show_CP = (active_tab) ->
     li.append($("<button>").button(icons:
       primary: "ui-icon-pencil"
     ).width(32).height(32).css("margin-left", "20px").css("background-size", "120% 120%").click(->
+      page_slug = $("<input>").appendTo(li).val(i).keyup ->
+
       diag = $("<div>").dialog(
         title: "Опции страницы"
         width: 600
         height: 300
         buttons:
           "Сохранить": ->
+            np = $.extend(true, {}, self.Site.pages[i])
+            delete self.Site.pages[i]
+            ix = page_slug.val()
+            self.Site.pages[ix] = np
             self._save_site false
             self.redraw()
             self.redraw_cp 1
@@ -4559,25 +4122,24 @@ window.Constructor.show_CP = (active_tab) ->
       li = $("<li>").appendTo(ul)
       $("<span>").appendTo(li).text "slug(англ)"
       if i isnt ""
-        $("<input>").appendTo(li).val(i).keyup ->
-          np = $.extend(true, {}, self.Site.pages[i])
-          delete self.Site.pages[i]
-
-          ix = $(this).val()
-          self.Site.pages[ix] = np
+        page_slug.appendTo(li);
 
       else
         $("<span>").css("color", "red").appendTo(li).text "Не изменяется для главной страницы"
+
       li = $("<li>").appendTo(ul)
       $("<span>").appendTo(li).text "Ключевые слова через запятую"
       kw = $("<input>").appendTo(li).val(self.Site.pages[i].keywords).keyup(->
         self.Site.pages[i].keywords = $(this).val()
+        log self.Site.pages[i]
+
+
       )
       li = $("<li>").appendTo(ul)
       $("<span>").appendTo(li).text "Описание страницы"
       descr = $("<textarea>").appendTo(li).val(self.Site.pages[i].description).keyup(->
         self.Site.pages[i].description = $(this).val()
-        #log self.Site.pages[i]
+        log self.Site.pages[i]
       )
     )).css "padding-bottom", "10px"
     if self.Site.pages[i].removable
@@ -4594,7 +4156,7 @@ window.Constructor.show_CP = (active_tab) ->
 <div>
   <ul id="id_app_list">
     {{#apps}}
-      <li> <a id="id_open_admin" href="#" app_name={{val.app_name}}>{{ val.title }} </a>{{#val.is_own}}<a id="id_edit_app" href="#" app_name="{{ val.app_name }}" >edit</a>{{/val.is_own}}</li>
+      <li> <a id="id_open_admin" href="#" app_name={{val.app_name}}>{{ val.title }} </a>{{#val.is_own}} <a class="remove" style="color:red;" href="#" app_name="{{ val.app_name }}" >remove</a> <a class="edit" href="#" app_name="{{ val.app_name }}" >edit</a>{{/val.is_own}}</li>
     {{/apps}}
   </ul>
 </div>'
@@ -4636,7 +4198,6 @@ window.Constructor.show_CP = (active_tab) ->
   E = (evt) =>
 
     app = $(evt.target).attr 'app_name'
-    #log "FFFuuu", app
 
     if app?
         source = @getAppSource app
@@ -4669,14 +4230,29 @@ window.Constructor.show_CP = (active_tab) ->
       syntax: "js"
       start_highlight: true
       replace_tab_by_spaces: 4
+  R = (evt) =>
 
+    app = $(evt.target).attr 'app_name'
+    if app isnt "generic." + BASE_SITE
+      log(@Site.Applications[app])
+      if @Site.Applications[app].remove?
+        @Site.Applications[app].remove()
+      delete @Site.Applications[app]
+      ix = @Site._Apps.indexOf(app)
+      @Site._Apps.splice(ix,1)
+      @_save_site();
+      @redraw();
+      #log(@Site._Apps)
+    #else
+    #  log('no delete')
 
   $("<h3>").text("Приложения").appendTo @cp_acc
   app_menu = $( Mustache.render(app_menu_template, {'apps':({key:k,val:v } for k,v of @Site.Applications )}) )
   @cp_acc.append app_menu
   ul = app_menu.find('#id_app_list')
-  app_menu.find('a#id_edit_app').click E
-  #log("LINKS WHERE", app_menu.find('a#id_open_admin').bind)
+  app_menu.find('a.edit').click E
+  app_menu.find('a.remove').click R
+
   app_menu.find('a#id_open_admin').css('cursor','pointer').bind 'click', (e)=>
     app_name = $(e.target).attr('app_name')
     app = @Site.Applications[app_name]
@@ -4729,7 +4305,7 @@ window.Constructor.show_CP = (active_tab) ->
               res_cont.html reshtml
               res_cont.find('._add_button').click adder
 
-          # TODO: отобразить диалог
+
 
   $("<li>").appendTo(ul).append( $("<a>").prop("href", "#").text("Создать").click (E) )
   $("<li>").appendTo(ul).append( $("<a>").prop("href", "#").text("Найти и добавить").click (SF) )
@@ -4777,26 +4353,3 @@ window.Constructor.show_CP = (active_tab) ->
     @cp_acc.accordion()
 
 
-
-###
-
-    #  buttons:
-    #    save: ->
-    #      t = editAreaLoader.getValue("id_source_textarea")
-    #      res = eval_("(" + t + ")")
-    #      res = JSON.stringify(res, (key, val) ->
-    #        if typeof val is "function"
-    #          fstr = val.toString()
-    #          startBody = fstr.indexOf("{") + 1
-    #          endBody = fstr.lastIndexOf("}")
-    #          body = fstr.substring(startBody, endBody)
-    #          fobj =
-    #            is_function: true
-    #            body: body
-    #
-    #            return fobj
-    #        val
-    #      )
-    #      DB.save_application res  if "Main" of res and "getter" of res and "roles" of res and "data" of res
-    #)
-###

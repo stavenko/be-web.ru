@@ -7,7 +7,7 @@ window.Constructor.clear = ->
         $("#controls>.widget-control").remove()
 
 window.Constructor.draw= (custom_cont = @page_cont, custom_head=$('head'), custom_hash) -> #Done
-      log("CH", custom_hash)
+      #log("CH", custom_hash)
       if custom_hash
         @_init_page custom_hash.slice(1), custom_head
       else
@@ -26,7 +26,7 @@ window.Constructor._init_page = (hash_ = window.location.hash.slice(1).split('?'
   if  pdata.params
     for p, val of pdata.params
       do (p, val) =>
-        log(@, p, val)
+        #log(@, p, val)
         @page_vars[p] = val
 
   #log('c')
@@ -38,13 +38,13 @@ window.Constructor._init_page = (hash_ = window.location.hash.slice(1).split('?'
   @_set_description  pdata.description
   @_set_keywords pdata.keywords
   t.text (pdata.title + '|' + @Site.seo.title)
-  head.append(@Site.seo.metas.yandex) if @Site.seo.metas.yandex
-  head.append(@Site.seo.metas.google) if @Site.seo.metas.google
+  head.append(@Site.seo.metas.yandex) if @Site.seo.metas? and @Site.seo.metas.yandex?
+  head.append(@Site.seo.metas.google) if @Site.seo.metas? and @Site.seo.metas.google?
   if params
     a = params.split('&')
     for p in a
       do (p) =>
-        log(p)
+        #log(p)
         _p = p.split('=')
         name = _p[0]
         val =  _p[1]
@@ -65,7 +65,7 @@ window.Constructor.getPageData = ( page_name ) -> # DOne
 
 
 window.Constructor.load_site = (do_reload = false ) -> #done
-  log( not @Site? or  do_reload )
+  #log( not @Site? or  do_reload )
 
   if   not @Site? or do_reload
     S = DB.get_objects("generic." + BASE_SITE, this._site_type, {} )
@@ -99,10 +99,13 @@ window.Constructor.load_site = (do_reload = false ) -> #done
 
 window.Constructor.getAppJson = (name) ->
     xhr = $.ajax({url: window.get_application_url + name + "/",async: false})
-    log(xhr.status)
+    #log(xhr.status)
     if xhr.status is 200
       JSON.parse(xhr.responseText)
-    else false
+    else
+      ix = @Site._Apps.indexOf(name)
+      @Site._Apps.splice ix, 1
+      false
 
 
 
@@ -267,7 +270,6 @@ window.Constructor._get_page_var = _get_page_var
 
 get_color = `function (c){
 				this._make_pallette()
-				console.log(this.Site.colors, c)
 				if (c.v == 'C') {// color from custom palette
 					return this.Site.colors.custom_pallette[c.ix]
 
@@ -277,182 +279,27 @@ get_color = `function (c){
 
 
 			}`
-window.Constructor.get_color = get_color
-
-
-
-###
-    set_colors = (c) =>
-    s = "<style id='a_stylo'>
-  {{#link_color}}a:link {color: {{link_color}} }  {{/link_color}}
-  {{#text_color}}body   {color: {{text_color}} }  {{/text_color}}
-  {{#visited_color}}a:visited {color: {{visited_color}} }  {{/visited_color}}
-  {{#active_color}}a:active {color: {{active_color}} }  {{/active_color}}
-  {{#hover_color}}a:hover {color: {{hover_color}} }  {{/hover_color}}
-
-    </style>"
-    lc = {}
-    for k in ["text_color", "link_color", "visited_color", "active_color", 'hover_color']
-      if c[k]?
-        lc[k] = hsvToRgb(@get_color(c[k]))
+window.Constructor.get_color = (c) ->
+  @_make_pallette()
+  if c.v is 'C'
+    @Site.colors.custom_pallette[c.ix]
+  else
+    v = @Site.colors.pallette[c.v]
+    if v
+      v[c.ix]
+    else
+      v = @Site.colors.pallette[c.v - 1]
+      if v
+        v[c.ix]
       else
-        lc[k] = defaults[k]
-    #$('head').find('#a_stylo')
-
-    $('head').html(Mustache.render(s,lc))
-###
-
-
-###
-
-init_grid = `function ( to, head ){
-        // log(to,head);
-				var block_width = this._block_width();
-				var base_height = this.layout.base_height;
-				var self = this;
-
-				if (this.layout.fixed){
-					var e = "px"
-				}else{
-					var e = '%'
-				}
-
-				$('body').css('margin', 0)
-
-				var total_height = this.Site.layout.drawen_lines * (this.Site.layout.base_height + 2*(this.Site.layout.grid.ver)) ,
-					window_width = window.innerWidth,
-					width = this.Site.layout.width,
-					w_left = window_width - width,
-					left = w_left / 2;
-
-				log("TOTAL", this.Site)
-				this.layout_cont = $("<div>")
-					.css('position', 'absolute')
-
-					.css('width', this.layout.width + e)
-					// .css('margin-left','auto')
-					.css('top', this.Site.layout.padding.top)
-					.css('left', left )
-					.css('height', total_height)
-					// .css('margin-right','auto')
-					.appendTo(to)
-				c_off = this.layout_cont.offset();
-				to.css('top', '0px');
+        v = @Site.colors.pallette[c.v - 2]
+        if v
+          v[c.ix]
+        else
+          @Site.colors.pallette[c.v - 3][c.ix]
 
 
 
-
-
-				// console.log("OFFSET", c_off)
-				this._main_offset = c_off;
-
-				this.redraw_background();
-				this._busy_regions = [];
-				this._moved_block_ = [] ;
-
-
-				//console.log(this.Site.blocks)
-				var bw = self._block_width(1);
-				var bh = self._block_height(1);
-				var bhp = self.Site.layout.grid.hor;
-				var bvp = self.Site.layout.grid.ver;
-				var gw = bw + (bhp * 2);
-				var gh = bh + (bvp * 2);
-				var gp = self.Site.layout.padding.left;
-				//var gvvp = self.Site.layout.padding.t
-				var gmp =  (gp - ( bhp * 2 ))
-				if(this.is_constructor){
-					var gridd = $('<div>')
-					.addClass('empty-block')
-					.appendTo(this.layout_cont)
-					.css('position', 'absolute')
-					// .css('border-radius', '10px')
-					.css('background-color','white')
-					.css('background','linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px),'+
-				 					  'linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px),'+
-
-									  'linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px),' +
-									  'linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px),'+
-									  // now verticals
-									  'linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px),'+
-									  'linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px),'+
-
-									  'linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px),'+
-									  'linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)'
-
-								  )
-					.css('background-size',gw +'px 1px,  '+gw+'px 1px,  '+gw+'px 1px,  '+gw+'px 1px, 1px '+gh+'px, 1px '+gh+'px, 1px '+gh+'px, 1px '+gh+'px  ')
-					.css('background-position', gp + 'px 0px, '+ (gp + 1) +'px 0px, '+gmp+'px 0px, '+(gmp + 1)+'px 0px, 0px 0px,0px 1px, 0px -'+(bvp*2)+'px,0px -'+((bvp*2)-1)+'px' )
-					//.css('opacity','0.7')
-					.css('left',0)
-					.css('top',0)
-					// .css('border', '1px solid black')
-					.css('width', this.Site.layout.width )
-					.css('height', total_height )
-					//.zIndex(-100)
-				}
-
-
-				$.each(this.Site.blocks, function(ix, block){
-					if(block.display_on == 'all'){
-						//console.log(block.dont_display_on , self.current_page)
-						if (block.dont_display_on.indexOf(self.current_page) != -1 ){
-							//console.log('do not display it', ix)
-							return
-						}
-					}else if(block.display_on != self.current_page)
-					{
-						return
-					}
-
-
-					var set = self.getBlockSettings(ix)
-					//console.log("IG",set)
-
-					var bw = set ? set.border_width : 0
-					var x = block.x; //Number(koords.split(':')[0]);
-					var y = block.y; // Number(koords.split(':')[1]);
-					if(!(set.unsnap_to_grid)){
-						//console.log('orig', x,y)
-						var xx = self._calc_left(x+1) - bw;
-						var yy = self._calc_top(y)	- bw;
-					}else{
-						//self.move_block(ix, 0, 0)
-						//consmoveole.log('my', x,y)
-						var xx = x;
-						var yy = y;
-
-					}
-					//console.log("XX", xx,yy, self._calc_left(2), self._calc_top(5) )
-
-					var w = block.width;
-					var h = block.height;
-					if(!(set.unsnap_to_grid))
-					{
-						var W = self._calc_width(w);
-						var H = self._calc_height(h);
-
-					}else{
-
-						var W = w;
-						var H = h;
-						// console.log(W,H)
-
-					}
-					// console.log(block_list);
-					var gp = { jq : $("<div>")
-										.appendTo(self.layout_cont)
-										.css('position','absolute')
-										.css('left', xx ).css('top',yy)
-										.width(W).css('height',H)
-										.css('overflow','hidden'),
-
-							 pos: ix
-						}
-					self.init_block(block, gp)
-				})
-			}`
-###
 window.Constructor.getTextColors = ->
   colors = if not @Site.textColors? then {} else @Site.textColors
   defaults =
@@ -469,7 +316,7 @@ window.Constructor.getTextColors = ->
       lc[k] = hsvToRgb(@get_color(colors[k].index))
     else
       lc[k] = defaults[k]
-  log("FINAL", lc)
+  #log("FINAL", lc)
   lc
 
 window.Constructor.init_grid = (to, head) ->
@@ -510,44 +357,26 @@ window.Constructor.init_grid = (to, head) ->
   bvp = self.Site.layout.grid.ver
   gw = bw + (bhp * 2)
   gh = bh + (bvp * 2)
-  gp = self.Site.layout.padding.left
+  gp = self.Site.layout.padding.left + self.Site.layout.grid.hor
 
-  #var gvvp = self.Site.layout.padding.t
   gmp = (gp - (bhp * 2))
+  # log(bw, gw, bhp )
 
-  # .css('border-radius', '10px')
-
-
-  #log head.find('#a_stylo').length
-  ###
-
-  if head.find('#a_stylo').length is 0
-    colors = @getTextColors()
-    s = """<style id='a_stylo'>
-    {{#link_color}}A:link {color: {{link_color}}; };  {{/link_color}}
-    {{#text_color}}#id-top-cont *  {color: {{text_color}} !important; };  {{/text_color}}
-    {{#visited_color}}A:visited {color: {{visited_color}}; };  {{/visited_color}}
-    {{#active_color}}A:active {color: {{active_color}}; };  {{/active_color}}
-    {{#hover_color}}A:hover {color: {{hover_color}}; };  {{/hover_color}}
-
-      </style>"""
-
-    s = Mustache.render(s,colors)
-    #log("STYLE", s)
-    head.append(s)
-  ###
-
-
-
-  # now verticals
-
-  #.css('opacity','0.7')
-
-  # .css('border', '1px solid black')
-  gridd = $("<div>").addClass("empty-block").appendTo(@layout_cont).css("position", "absolute").css("background-color", "white").css("background", "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)").css("background-size", gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px  ").css("background-position", gp + "px 0px, " + (gp + 1) + "px 0px, " + gmp + "px 0px, " + (gmp + 1) + "px 0px, 0px 0px,0px 1px, 0px -" + (bvp * 2) + "px,0px -" + ((bvp * 2) - 1) + "px").css("left", 0).css("top", 0).css("width", @Site.layout.width).css("height", total_height)  if @is_constructor
+  gridd = $("<div>").addClass("empty-block").appendTo(@layout_cont)
+  .css("position", "absolute")
+  .css("background-color", "white")
+  .css("background", "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(90deg, rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(255,255,255,.5) 2px, transparent 1px)," + "linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px)")
+  .css("background-size", gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px,  " + gw + "px 1px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px, 1px " + gh + "px  ")
+  .css("background-position", gp + "px 0px, " + (gp + 1) + "px 0px, " + gmp + "px 0px, " + (gmp + 1) + "px 0px, 0px 0px,0px 1px, 0px -" + (bvp * 2) + "px,0px -" + ((bvp * 2) - 1) + "px")
+  .css("left", 0)
+  .css("top", 0).css("width", @Site.layout.width)
+  .css("height", total_height)  if @is_constructor
 
   #.zIndex(-100)
-  $.each @Site.blocks, (ix, block) ->
+  @inited_blocks = [] # Предназначение - последующий анбинд события клик после даблклика - включения панели управления
+  @settings_over_block = false;
+
+  $.each @Site.blocks, (ix, block) =>
     if block.display_on is "all"
 
       #console.log(block.dont_display_on , self.current_page)
@@ -587,10 +416,12 @@ window.Constructor.init_grid = (to, head) ->
 
     # console.log(block_list);
     gp =
-      jq: $("<div>").appendTo(self.layout_cont).css("position", "absolute").css("left", xx).css("top", yy).width(W).css("height", H).css("overflow", "hidden")
+      jq: $("<div>").appendTo(self.layout_cont).css("position", "absolute").css("left", xx).css("top", yy).width(W).css("height", H)
+      .css("overflow", "visible")
       pos: ix
 
-    self.init_block block, gp
+    bl = self.init_block block, gp
+    @inited_blocks.push bl;
 
 
 
@@ -598,7 +429,6 @@ window.Constructor.init_grid = (to, head) ->
 
 
 apply_block_settings = `function (obj, settings, widget){
-				//console.log("HHHHH", obj)
 				var w = obj.jq,
 				bl = this.get_block(obj.pos);
 				if(widget.disobey.indexOf('border_color') == -1){
@@ -608,7 +438,6 @@ apply_block_settings = `function (obj, settings, widget){
 						if (typeof settings.border_color == 'undefined'){
 							settings.border_color = {v:0, ix:0}
 						}
-						// console.log('border-color', settings.border_color)
 						var color = this.get_color(settings.border_color)
 						var c = hsvToRgb(color);
 						w.css('border-color', c);
@@ -670,7 +499,79 @@ apply_block_settings = `function (obj, settings, widget){
 				}
 
 			}`
-window.Constructor.apply_block_settings = apply_block_settings
+
+
+window.Constructor.reapply_block_settings = (obj, widget)->
+  sett = @getBlockSettings(obj.pos)
+  @apply_block_settings(obj, sett, widget)
+
+window.Constructor.apply_block_settings = (obj, settings, widget) ->
+
+  #console.log("HHHHH", obj)
+  w = obj.jq#.children(":first")
+  bl = @get_block(obj.pos)
+  if widget.disobey.indexOf("border_color") is -1
+    if typeof settings.border_color is "string"
+      w.css "border-color", settings.border_color
+    else
+      if typeof settings.border_color is "undefined"
+        settings.border_color =
+          v: 0
+          ix: 0
+
+      # console.log('border-color', settings.border_color)
+      color = @get_color(settings.border_color)
+      c = hsvToRgb(color)
+      w.css "border-color", c
+  w.css "opacity", settings.bg_opacity  if widget.disobey.indexOf("bg_opacity") is -1
+  #log( widget.disobey)
+  if "border_radius" not  in widget.disobey
+    #log('Broder radius')
+    w.css "-moz-border-radius" , settings.border_radius + "px"
+    w.css "-webkit-border-radius" , settings.border_radius + "px"
+    w.css "border-radius" , settings.border_radius + "px"
+
+  #if widget.disobey.indexOf("border_radius") is -1
+
+  if widget.disobey.indexOf("border_width") is -1
+    unless settings.unsnap_to_grid
+      xx = @_calc_left(bl.x + 1) - settings.border_width
+      yy = @_calc_top(bl.y) - settings.border_width
+    else
+      xx = bl.x
+      yy = bl.y
+    w.css "border-width", settings.border_width + "px"
+    w.css "left", xx
+    w.css "top", yy
+    w.css "border-style", "solid"
+  w.css "line-height", settings.line_height + "px"  if widget.disobey.indexOf("line_height") is -1
+  w.css "font-size", settings.font_size + "px"  if widget.disobey.indexOf("font_size") is -1
+  if widget.disobey.indexOf("padding_left_right") is -1
+    C = w.children().eq(0)
+    W = w.width()
+    C.css "margin-left", settings.padding_left_right + "px"
+    C.css "margin-right", settings.padding_left_right + "px"
+    C.width W - settings.padding_left_right * 2
+  C.css "padding-top", settings.padding_top + "px"  if widget.disobey.indexOf("padding_top") is -1
+  if settings.background.type is "color"
+    if widget.disobey.indexOf("background_color") is -1
+      if typeof settings.background.color is "string"
+        w.css "background", settings.background.color
+      else
+        color = @get_color(settings.background.color)
+        c = hsvToRgb(color)
+        w.css "background", c
+  else if settings.background.type is "none"
+    w.css "background", ""
+  else if settings.background.type is "pattern"
+    patt = settings.background.pattern
+    unless ["image", "constructor"].indexOf(patt.type) is -1
+      w.css "background", "url(" + patt.image + " ) repeat"
+    else
+      @_draw_css_background w, patt.image
+  if widget.depends_on_settings?
+    #log( "WIDGET", widget )
+    widget.draw(settings)
 
 
 
@@ -700,7 +601,7 @@ window.Constructor.init_block = (bl, to) ->
   widget_str.splice 0, 1
   app_name = widget_str.join(".")
   wdata = bl.widget.data
-  w = $("<div>").css("width", to.jq.width()).css("height", to.jq.height()).appendTo(to.jq).addClass("draggable-module")
+  w = $("<div>").css('overflow','hidden').css("width", to.jq.width()).css("height", to.jq.height()).appendTo(to.jq).addClass("draggable-module")
   draga = undefined
   Widget = newWidget(w, this, to.pos)
   #log( widget_name, app_name)
@@ -714,7 +615,7 @@ window.Constructor.init_block = (bl, to) ->
     H = bl.height
 
   # console.log("WH", W,H)
-  if @is_constructor
+  make_draggable = (to)=>
     to.jq.draggable
       scroll: false
       zIndex: 100
@@ -758,58 +659,71 @@ window.Constructor.init_block = (bl, to) ->
         self.move_block to.pos, draga.left, draga.top
         self.redraw()
 
+  if @is_constructor
+    make_draggable(to);
+
 
   #console.log("A", w.width() )
+
   if @is_constructor
-    to.jq.dblclick ->
-      for blix of self.inited_blocks
-        bl = self.inited_blocks[blix]
-        bl.unbind "click"
-
-      #bl.mouseleave();
-      #bl.unbind("mouseleave")
-      $("#controls>.widget-control").hide()
-      to.jq.draggable "destroy"
-
-      # console.log("CLICK UNBIND")
+    to.jq.dblclick =>
       control_panel = $("<div>").appendTo($("#controls"))
-
-      # console.log(w)
-      control_panel.css("position", "absolute").position(
-        of: w
-        my: "left top"
-        at: "right top"
-        collision: "none none"
-      ).css("border", "2px solid black").css("background-color", "white").draggable(scroll: false).css "padding", "10"
       wco = self.init_block_cp(to, control_panel, Widget)
-      Widget.settings control_panel  if Widget.settings
-      $("<div>").css("background-color", "orange").appendTo(to.jq).css("position", "absolute").position(
-        of: to.jq
-        my: "left top"
-        at: "right top"
-        collision: "none"
-      ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height 20
-      $("<div>").css("background-color", "green").appendTo(to.jq.parent()).css("position", "absolute").position(
-        of: to.jq
-        my: "left top"
-        at: "left-20 top"
-        collision: "none none"
-      ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click ->
+      saving_data = (evt) =>
         Widget.save()  if Widget.save
         wco.save()
-        self._save_site()
-        self.redraw.apply self, []
-        control_panel.remove()
 
-      $("<div>").css("background-color", "red").appendTo(to.jq.parent()).css("position", "absolute").position(
-        of: to.jq
-        my: "left top"
-        at: "left-20 top+30"
-        collision: "none none"
-      ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click ->
-        Widget.cancel()  if Widget.cancel
+        @settings_over_block = false
         control_panel.remove()
-        self.redraw.apply self, []
+        @redraw.apply self, []
+
+      if   @settings_over_block isnt false
+
+        @settings_over_block.saving()
+      else
+        @settings_over_block = {to:to, Widget:Widget, saving: saving_data }
+
+        for bl in @inited_blocks
+          bl.unbind "click dblclick"
+          bl.draggable('destroy')
+        log("after loop",  to.jq.attr('class'))
+
+        $("#controls>.widget-control").hide()
+        control_panel.css("position", "absolute").position(
+          of: w
+          my: "left top"
+          at: "right top"
+          collision: "none none"
+        ).css("border", "2px solid black").css("background-color", "white").draggable(scroll: false).css "padding", "10"
+
+
+        Widget.settings control_panel  if Widget.settings
+        $("<div>").css("background-color", "orange").appendTo(to.jq).css("position", "absolute").position(
+          of: to.jq
+          my: "left top"
+          at: "right top"
+          collision: "none"
+        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height 20
+        $("<div>").css("background-color", "green").appendTo(to.jq.parent()).css("position", "absolute").position(
+          of: to.jq
+          my: "left top"
+          at: "left-20 top"
+          collision: "none none"
+        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click =>
+          saving_data()
+          @_save_site();
+
+        $("<div>").css("background-color", "red").appendTo(to.jq.parent()).css("position", "absolute").position(
+          of: to.jq
+          my: "left top"
+          at: "left-20 top+30"
+          collision: "none none"
+        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click ->
+          Widget.cancel()  if Widget.cancel
+
+          control_panel.remove()
+          @settings_over_block = false
+          self.redraw.apply self, []
 
 
     mouseWidth = W
@@ -825,11 +739,6 @@ window.Constructor.init_block = (bl, to) ->
       self.redraw.apply self, []
     )
 
-    # .position({of:to.jq, my:"right top", at:"right bottom", collision:'none none'})
-
-    # .css('padding', '')
-
-    #console.log("FALSE")
     resize_marker = $("<div>").appendTo($("#controls")).css("position", "absolute").addClass("ui-icon ui-icon-grip-diagonal-se").width("32px").height("32px").hide().addClass("resize-marker widget-control").css("background-color", "blue").css("cursor", "se-resize").css("border-radius", "5px").css("border", "1px solid black").mouseenter(->
     ).mouseup((evt) ->
       self.resize_frame = false
@@ -896,27 +805,23 @@ window.Constructor.init_block = (bl, to) ->
     to.jq.click (e) ->
       $("#controls>.widget-control").hide()
 
-      #$('#controls>.resize-marker').hide()
       delete_marker.show().zIndex 1000
       resize_marker.show().zIndex 1000
 
-
-  # var left = p.left + o.left
-  # var top= p.top + o.top
-  # var within_x = e.pageX >= left+15 && e.pageX <= left + w;
-  # var within_y = e.pageY >= top+15 && e.pageY <= top + h;
-  #console.log(e.pageX >= left , e.pageX , left + w, within_y)
-  #if( within_x && within_y){
-  #	 resize_marker.show()
-
-  #	 resize_marker
-  #	delete_marker
-  #	delete_marker.show()
-
-  #	}else{
-  #	resize_marker.hide();
-  #		delete_marker.hide();
-  #	}
   to.jq
 
 
+window.Constructor.registerEvent = (e, f)->
+  if @events?
+    if @events[e]
+      @events[e].push(f)
+    else:
+      @events[e] = [f]
+  else
+    @events = {}
+    @events[e] = [f]
+
+window.Constructor.fireEvent = (e)->
+  if @events? and @events[e]
+    for f in @events[e]
+      do f

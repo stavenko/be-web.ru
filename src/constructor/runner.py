@@ -15,7 +15,7 @@ js = "return this.Main(constr,appid)"
 import hashlib
 
 username = "stavenko@gmail.com"
-LOCAL = True
+LOCAL = False
 MAKE_IT_GLOBAL = True;
 
 if LOCAL:
@@ -25,8 +25,8 @@ if LOCAL:
     
 else:
     key_hash = '50360e1f4c3ee726b87f387b53c57c3b' # globalhost
-    cookie_url = 'http://main.be-web.ru/'
-    post_url   = 'http://main.be-web.ru/app/add/'
+    cookie_url = 'http://www.be-web.ru/'
+    post_url   = 'http://www.be-web.ru/app/add/'
     
 
 
@@ -48,6 +48,7 @@ for app in apps:
     appfname = directory + app + '.js'
     manifest_fp = open(fname,'rt')
     contents = unicode(manifest_fp.read(), 'utf-8')
+    # print contents;
     app_manifest = json.loads(contents)
     
     Main_contents = unicode(open(appfname, 'rt').read(), 'utf-8')
@@ -60,23 +61,15 @@ for app in apps:
     
     if not CSRF:
         resp = urllib2.urlopen(cookie_url)
-    #print resp.headers
         CSRF =  resp.headers['set-cookie'].split(';')[0].split('=')[1]
     print CSRF
-    #print dir(cookies)
-    
-    #print resp.read()
-    
+
     req = urllib2.Request(post_url)
     data = {'username':username, 'crypt': auth_token, 
             'make_it_global': MAKE_IT_GLOBAL,
             'csrfmiddlewaretoken': CSRF, 
-            'x-data': json.dumps(app_manifest) }
-    #print data
+            'x-data': json.dumps(app_manifest)
+    }
+
     req.add_data(urllib.urlencode(data))
     res = urllib2.urlopen(req)
-    # print res.read()
-    
-    
-    # print app_manifest.keys()
-    

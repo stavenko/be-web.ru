@@ -733,9 +733,7 @@ init: function(my_cont, constructor_inst, pos, cp){
 				
 					 // console.log("Do we savinf data?");
 					this.constr.setWidgetData(this.pos, data )
-					// this.constr.redraw();
-					
-					
+
 					
 				},	
 				cancel: function(){

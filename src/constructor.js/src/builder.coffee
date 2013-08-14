@@ -376,6 +376,7 @@ window.Constructor.init_grid = (to, head) ->
   @inited_blocks = [] # Предназначение - последующий анбинд события клик после даблклика - включения панели управления
   @settings_over_block = false;
 
+  hm = []
   $.each @Site.blocks, (ix, block) =>
     if block.display_on is "all"
 
@@ -420,8 +421,14 @@ window.Constructor.init_grid = (to, head) ->
       .css("overflow", "visible")
       pos: ix
 
+
     bl = self.init_block block, gp
+    offs = bl.offset()
+    h = bl.height()
+    hm.push(offs.top + h)
+    #log(hm)
     @inited_blocks.push bl;
+  @layout_cont.height(Math.max.apply(Math,hm))
 
 
 

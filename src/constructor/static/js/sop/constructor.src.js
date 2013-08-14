@@ -687,7 +687,7 @@
   };
 
   window.Constructor.init_grid = function(to, head) {
-    var base_height, bh, bhp, block_width, bvp, bw, c_off, e, gh, gmp, gp, gridd, gw, left, self, total_height, w_left, width, window_width,
+    var base_height, bh, bhp, block_width, bvp, bw, c_off, e, gh, gmp, gp, gridd, gw, hm, left, self, total_height, w_left, width, window_width,
       _this = this;
     block_width = this._block_width();
     base_height = this.layout.base_height;
@@ -723,8 +723,9 @@
     }
     this.inited_blocks = [];
     this.settings_over_block = false;
-    return $.each(this.Site.blocks, function(ix, block) {
-      var H, W, bl, h, set, w, x, xx, y, yy;
+    hm = [];
+    $.each(this.Site.blocks, function(ix, block) {
+      var H, W, bl, h, offs, set, w, x, xx, y, yy;
       if (block.display_on === "all") {
         if (block.dont_display_on.indexOf(self.current_page) !== -1) {
           return;
@@ -759,8 +760,12 @@
         pos: ix
       };
       bl = self.init_block(block, gp);
+      offs = bl.offset();
+      h = bl.height();
+      hm.push(offs.top + h);
       return _this.inited_blocks.push(bl);
     });
+    return this.layout_cont.height(Math.max.apply(Math, hm));
   };
 
   apply_block_settings = function (obj, settings, widget){

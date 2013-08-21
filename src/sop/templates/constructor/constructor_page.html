@@ -1,36 +1,36 @@
+<!DOCTYPE html>
 <html>
 	<head>
 		
-		<script  src="{{STATIC_URL}}js/jquery-1.9.0.js"></script>
+		<script  src="{{STATIC_URL}}js/jquery-1.10.2.min.js"></script>
 		<script src="{{STATIC_URL}}js/jquery-ui-1.10.0.custom.js"></script>
 		<script  src="{{STATIC_URL}}js/jquery.watermark.min.js"></script>
         <script  src="{{STATIC_URL}}js/mustache.js"></script>
+        <script  src="{{STATIC_URL}}js/underscore-min.js"></script>
+        <script  src="{{STATIC_URL}}js/md5.js"></script>
+
 
 		<script  src="{{STATIC_URL}}js/cp/jquery.colorpicker.js"></script>
 
 		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/editarea_0_8_2/edit_area/edit_area_full.js"></script>
 		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/sop/constructor.js"></script>
+        <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/json2.js"></script>
+
+		<script  src="{{STATIC_URL}}js/sop/Application.js"></script>
+
 
 		<link rel="stylesheet" href="{{STATIC_URL}}css/jquery-ui-1.10.0.custom.css" type="text/css" media="all">
-		
 		<link rel="stylesheet" href="{{STATIC_URL}}css/jquery.colorpicker.css" type="text/css" media="all">
 		
 		
 		
-		<!--
-		<link rel="stylesheet" href="{{STATIC_URL}}css/wysihtml5/editor.css" type="text/css" media="all">
-		<link rel="stylesheet" href="{{STATIC_URL}}css/wysihtml5/stylesheet.css" type="text/css" media="all">
-		
-		<script  src="{{STATIC_URL}}js/sop/common/wysihtml5.js"></script>
-		-->
 
-		<script  src="{{STATIC_URL}}js/sop/Application.js"></script>
-		
+
 		
 		
 		<script>
 		window.STATIC = "{{ STATIC_URL }}";
-		window.DB = init_db("{% csrf_token %}")
+        window.csrf = "{% csrf_token %}"
 		window.site_id = "{{site.id}}"
 		window.get_application_url = '/a/';
         window.is_constructor = true;

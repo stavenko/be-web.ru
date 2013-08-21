@@ -13,6 +13,8 @@ update-rc.d sop.sh defaults
 /etc/init.d/sop.sh restart
 cd /etc/nginx/sites-enabled
 ln -s ../sites-available/sop_nginx.conf
+rm ./default
+mv ./sop_nginx.conf default
 
 cd /var/www/src/constructor/static/
 sudo mkdir /var/www/uploaded_files

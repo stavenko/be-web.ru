@@ -83,7 +83,6 @@ window.Constructor._stepping_width = _stepping_width
 _block_width = `function (){
 				var base_width =  ((this.layout.width - ( 2 * this.layout.padding.left) ) / this.layout.cols)
 				var block_width = (base_width - ( 2 * this.layout.grid.hor ) )
-				//console.log(base_width, block_width)
 
 				return block_width
 

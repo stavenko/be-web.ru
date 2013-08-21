@@ -15,12 +15,15 @@ from django.forms.util import ErrorList
 from django.core.urlresolvers import reverse
 from django.core.mail import send_mail, EmailMessage
 from django.contrib.auth import authenticate, login
+from django.views.decorators.http import condition
 from django.conf import settings
-import json, gridfs, base64, hashlib, datetime
 from bson import json_util
 from bson import ObjectId
 from django import forms
 from powerdns import models as pmodels
+import dns.resolver
+import json, gridfs, base64, hashlib, datetime
+
 import bson,zlib
 
     
@@ -152,12 +155,15 @@ def profile_page(req, *k, **kw):
         else:
             c.update({'sites': False})
         c.update({} if not invites else {'invites': list(invites)})
+
+        c['user_app_key'] = hashlib.md5(req.user.password).hexdigest()
+
         c.update(csrf(req))
         return render_to_response("my_hosts.html", c)
     else:
         c = {}
         c.update(csrf(req))
-        return  HttpResponseRedirect('/register/') # render_to_response("main_page.html", c)
+        return  HttpResponseRedirect('/auth/login/') # render_to_response("main_page.html", c)
     
 def site_view(site, req, *k, **kw):
     escaped = req.GET.get('_escaped_fragment_', None)
@@ -178,19 +184,25 @@ def site_view(site, req, *k, **kw):
 def site_edit(site, req, *k, **kw):
     c = RequestContext(req)
     is_debug = settings.DEBUG
-    if  check_roles(req, sites + '@generic.'  + settings.MY_MAIN_SITE, 'add', site = site) :
+    print req.user
+    if  check_roles(req, sites + '@generic.'  + settings.MY_MAIN_SITE, 'add', site = site):
         site['id'] = site['_id']
         c['site'] = site
         return render_to_response("constructor/constructor_page.html", c)
     else:
-        return HttpResponseRedirect('/')
+        # Try to redirect at the base admin at first
+        base = site['hostname'][0]
+        current = req.META['HTTP_HOST']
+        if base != current:
+            return HttpResponseRedirect("http://" + base + "/admin/")
+        return HttpResponseRedirect('/auth/login/')
 
 def _get_current_site(req, with_cache = False):
     host = req.META['HTTP_HOST']
     if with_cache:
-        fields = {'site_id':1, 'hostname':1, 'django_user_id':1, 'cache' : 1}
+        fields = {'site_id':1, 'hostname':1, 'django_user_id':1, 'cache' : 1, 'favicon': 1}
     else:
-        fields = {'site_id':1, 'hostname':1, 'django_user_id':1}
+        fields = {'site_id':1, 'hostname':1, 'django_user_id':1, 'favicon': 1}
     if ':' in host:
         bh, port = host.split(':')
     else:
@@ -231,9 +243,9 @@ def base(req, *k, **kw):
         site = req.storage.findOne(accounts, {"hostname": host})
         if site:
             if kw.get('is_admin', False) :
-                return site_edit(site,req,*k,**kw)
+                return site_edit(site, req, *k, **kw)
             else:
-                return site_view(site,req, *k, **kw)
+                return site_view(site, req, *k, **kw)
         else:
             return HttpResponseRedirect("http://" + settings.MY_BASE_HOST  + "/profile/")
                 
@@ -264,7 +276,13 @@ def get_application(req, app_name):
     app = req.storage.findOne('application', {'app_name': app_name, "site_id": site['_id'] })
     if app:
         app['is_own'] = True
-        return HttpResponse(json.dumps(app, default = json_util.default))
+        resp = HttpResponse(json.dumps(app, default = json_util.default))
+        resp['Cache-Control'] = 'private'
+
+        exp = (datetime.datetime.now() + datetime.timedelta(seconds= (60 * 5)) )
+        resp['Expires'] = exp.strftime('%a %b %d %Y %H:%M:%S GMT+1200')
+        print resp['Expires']
+        return resp
     else:
         # search it in global index
         app_ix = req.storage.findOne('global_app_index', {'full_name': app_name} )
@@ -276,7 +294,13 @@ def get_application(req, app_name):
             #name = app_name.split('.',1)[0]
             app = req.storage.findOne('application', {'app_name': app_ix['full_name'], 'site_id': app_ix['site_id'] })
             app['is_own'] = False
-            return HttpResponse(json.dumps(app, default = json_util.default))
+            resp =  HttpResponse(json.dumps(app, default = json_util.default))
+            resp['Cache-Control'] = 'private'
+
+            exp = (datetime.datetime.now() + datetime.timedelta(seconds=60))
+            resp['Expires'] = exp.strftime('%a, %d %b %Y %H:%M:%S')
+            print resp['Expires']
+            return resp
         else:
             raise ValueError("no such application")
 
@@ -349,11 +373,12 @@ def adding_application(req):
         
     return HttpResponse(json.dumps({'success':True, "id": obj_id }, default = json_util.default ))
     
-def blob_storage(obj):
+def blob_storage(req, obj):
     if isinstance(obj, dict):
-        return dict([(k, blob_storage(v)) for (k,v) in obj.iteritems() ] )
+        return dict([(k, blob_storage(req, v)) for (k,v) in obj.iteritems() ] )
     elif isinstance(obj, list):
-        return [blob_storage(v) for v in obj ] 
+        return [blob_storage(req, v) for v in obj ]
+
     elif isinstance(obj, (str,unicode)):
         if len(obj) > MAX_NON_BLOB:
             obj_type = obj.split(',')[0]
@@ -372,8 +397,11 @@ def blob_storage(obj):
             else:
                 "This is just a long string"
                 res = obj.encode('utf-8')
+                mime_type = 'text/plain'
             gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
             fh = gf.new_file()
+            # print "CONTENT_TYPe", mime_type
+            fh.content_type = mime_type
             fh.write(res)
             fh.close()
             return {"blob":1, "_id":fh._id}
@@ -385,7 +413,7 @@ def blob_storage(obj):
 
 def setTriggers(req, site ,datatype, event_type, object):
     hostname =  req.META['HTTP_HOST']
-    print "TRIGGET",  unicode(datatype) == unicode(sites + u'@generic.' + settings.MY_MAIN_SITE)
+    # print "TRIGGET",  unicode(datatype) == unicode(sites + u'@generic.' + settings.MY_MAIN_SITE)
     if datatype == unicode(sites + '@generic.' + settings.MY_MAIN_SITE):
 
 
@@ -399,13 +427,29 @@ def setTriggers(req, site ,datatype, event_type, object):
                "active_color":"#id-top-cont A:active",
                "visited_color":"#id-top-cont A:visited"}
         colors = "\n".join(["%s{color:%s}\n"%(ass[k], textColors[k]['rgb']) for k in textColors if textColors[k].get('rgb', False)])
+        # print "colors", ass, colors, textColors
+
         site['textColors'] = colors
+
+        domains = object.get('domains', [])
+        doms = [ site['hostname'][0] ]
+        for d in domains:
+            if d not in doms:
+                doms.append(d)
+        if 'favicon' in object:
+            site['favicon'] = object['favicon']
+
+        site['hostname'] = doms
+        object['domains'] = doms
+
 
         # Необходимо доставать этот объект целиком перед сохранением, поскольку для оптимизации мы его
         # Достаем без кеша - только учетные данные
         full_object = req.storage.findOne(accounts, {'_id': site['_id'] })
         full_object.update(site) # Вставляем новые данные
         req.storage.safe_update(accounts, full_object)
+
+
 
 def data_deleter(req):
     site = _get_current_site(req)
@@ -442,7 +486,7 @@ def data_connector(req):
             is_unique = req.POST.get('is_unique', False)
             
             
-            to_store = blob_storage( obj['object'] )
+            to_store = blob_storage(req, obj['object'] )
             to_store['site_id'] = site['_id'] 
             type = obj['type'] 
             if ('@' in type):
@@ -455,18 +499,20 @@ def data_connector(req):
                     res = req.storage.find(mongo_db, to_store)
                     if res.count() > 0:
                         return HttpResponse(json.dumps({"success": False, "_id": res[0]['_id']} , default = json_util.default) )
+
+                setTriggers(req, site, type, 'save', to_store)
                 if "_id" in to_store:
                     req.storage.safe_update(mongo_db, to_store)
                 else:
                     req.storage.insert(mongo_db, to_store)
-                setTriggers(req, site, type, 'save', to_store)
-                    
+
                 return HttpResponse(json.dumps({"success": True, "_id": to_store['_id']} , default = json_util.default) )
             else:
                 raise ValueError('no permission to save')
         else:
             type = req.GET.get('type')
             r    = json.loads(req.GET.get('o','{}'), object_hook = json_util.object_hook )
+            print r
             q = {'site_id': site['_id']}
             if ('@' in type):
                 mongo_db, app = type.split('@')
@@ -476,6 +522,7 @@ def data_connector(req):
             if check_roles(req, type, 'view', site = site):
                 if 'q' in r:
                     q.update( r['q'] )
+                    print q
                     objs = req.storage.find(mongo_db, q)
                 else:
                     objs = req.storage.find(mongo_db, q)
@@ -495,7 +542,7 @@ def data_connector(req):
         
                 send = {'total_pages': total_pages,
                         'total_amount':total_amount,
-                        'objects' : lst}
+                        'objects' : lst }
                 return HttpResponse(json.dumps(send, default = json_util.default))
             else:
                 raise ValueError('no permission to retrieve object')
@@ -504,7 +551,17 @@ def blob_extruder(req, blob_id):
     
     gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
     f = gf.get( ObjectId(blob_id )) # Здесь надо узнать - есть ли файл, если нету - поискать в базе его путь
-    return HttpResponse( f )
+    mt =  f.content_type
+    if req.META.get('HTTP_IF_NONE_MATCH', '') != f.md5:
+        resp = HttpResponse( f , mimetype=mt if mt is not None else "text/plain")
+        resp['ETag'] = f.md5
+        return resp
+
+    else:
+        r = HttpResponse()
+        r.status_code = 304
+        return r
+
 class RegisterMixture(forms.Form):
     def __init__(self, *k, **kw):
         if not hasattr(self, 'request'):
@@ -635,7 +692,6 @@ class RegistrationView( FormView ):
         
         subj = 'Be-web registration confirmation'
         body = 'Please, click on the <a href="http://be-web.ru/activate/%s/">link</a> to activate account' % hash_ 
-        # sender = 'info@be-web.ru'
         recv  = [ email ]
         
         email = EmailMessage(subj, body, sender, recv )
@@ -646,7 +702,8 @@ class RegistrationView( FormView ):
         return redirect(reverse("registration_complete"))
     def form_invalid(self, form):
         return self.render_to_response(self.get_context_data(form=form))
-            
+
+
 class ActivationView( TemplateView ):
     template_name = 'registration/activate.html'
    
@@ -658,7 +715,67 @@ class ActivationView( TemplateView ):
         u.save()
         
         return super(ActivationView, self).get(req, *k, **kw)
- 
+
+def restore_password(req):
+    if req.POST.get('key', False):
+        key = req.POST.get('key', '')
+        u = User.objects.get(last_name = key)
+        pw1 = req.POST.get('password1','')
+        pw2 = req.POST.get('password2','!')
+        print pw1, pw2
+        if pw1 == pw2:
+            print "!!!"
+            u.set_password(pw1)
+            u.save()
+
+            return HttpResponseRedirect("/auth/login/")
+
+        if False:
+            return HttpResponseRedirect("/auth/login/")
+    else:
+        c = {'key': req.GET.get('key')}
+        c.update(csrf(req))
+
+        return render_to_response("registration/restore_password.html", c)
+
+
+
+def forgot_password(req):
+    if req.POST:
+        email = req.POST.get('username')
+        key = hashlib.sha256(str(datetime.datetime.now()) + email) .hexdigest() [:30]
+        u = User.objects.get(username = email)
+        u.last_name = key
+        u.save()
+        subj = "Запрос на восстановление пароля"
+        body = """
+        Восстановление пароля конструктора сайтов be-web.ru. Для продолжения процедуры восстановления нажмите на ссылку ниже
+        <a href='http://be-web.ru/auth/restore_password/?key=%s'>Восстановить пароль</a> """ % key
+        if settings.DEBUG:
+            sender = 'vg.stavenko@yandex.ru'
+        else:
+            sender = 'info@be-web.ru'
+        email = EmailMessage(subj, body, sender, [email] )
+        email.content_subtype = "html"
+        try:
+            email.send()
+        except Exception as e:
+            print e
+        return render_to_response("registration/forgot_password_sent.html")
+    else:
+        c = {}
+        c.update(csrf(req))
+
+        return render_to_response("registration/forgot_password.html", c)
+
+
+
+
+
+
+
+
+
 class NewHostView(TemplateView):
     def post(self, req, *k, **kw):
         if 'hostname' in req.POST:
@@ -781,12 +898,64 @@ def site_cacher(req):
         key = i[2:]
         cache[key] = html
     cur_acc['cache'] = cache
-    full_object = req.storage.findOne(accounts, {'_id': site['_id'] })
+    full_object = req.storage.findOne(accounts, {'_id': cur_acc['_id'] } )
     full_object.update(cur_acc) # Вставляем новые данные
 
     req.storage.safe_update(accounts, full_object)
     return HttpResponse("")
-    
+def check_domain(req):
+    domain = req.GET.get('domain','')
+    key = req.GET.get('key','')
+    try:
+
+        answers = dns.resolver.query('bewebconfirm.' + domain, 'TXT')
+        answer = answers[0].strings[0]
+        if answer == key:
+            print answer, key
+            return HttpResponse(json.dumps({'domain_confirm': True }))
+        else:
+            # print answer, key
+            return HttpResponse(json.dumps({'domain_confirm': False }))
+
+    except Exception as e:
+        #print e
+        return HttpResponse(json.dumps({'domain_confirm': False }))
+
+def robots_txt(req):
+    robots = """User-agent: *
+Disallow: /admin/
+Disallow: /static/
+Disallow: /a/
+Disallow: /data/
+Disallow: /site_cache/
+Disallow: /blob/
+Disallow: /app/
+Disallow: /email/
+Disallow: /check_domain/
+Disallow: /profile/
+Disallow: /register/
+Disallow: /auth/
+
+
+"""
+    return HttpResponse(robots, mimetype = "text/plain")
+
+def favicon(req):
+    s = _get_current_site(req)
+    if s is None:
+        return HttpResponse ('')
+    fvb64 = s.get('favicon', '')
+
+    if fvb64:
+        b64 = fvb64.split(',')[1]
+        res = base64.decodestring(b64)
+        #raise ValueError(res)
+
+        return HttpResponse(res, mimetype="image/vnd.microsoft.icon")
+    else:
+        return HttpResponse("")
+
+
 urlpatterns = patterns('',
     # Examples:
     # url(r'^$', 'sop.views.home', name='home'),
@@ -808,8 +977,11 @@ urlpatterns = patterns('',
 
     
     url(r'^email/', send_email),
+    url(r'^check_domain/', check_domain),
     url(r'^profile/', profile_page),
-    
+    url(r'robots.txt', robots_txt),
+    url(r'favicon.ico', favicon),
+
     
     url(r'^register/$', RegistrationView.as_view(), name='registration_register'),
     url(r'^register/no_site/$', RegistrationView.as_view( no_site = True ), name='registration_register', ),
@@ -825,8 +997,9 @@ urlpatterns = patterns('',
     url(r'^auth/login/', 'django.contrib.auth.views.login', {'template_name':'registration/auth.html'} , name='login'),
     url(r'^auth/logout/', 'django.contrib.auth.views.logout', {'template_name':'registration/logout.html'}, name ='logout' ),
 
-    #url(r'^auth/forgot_passwd/', )
-    
+    url(r'^auth/forgot_passwd/', forgot_password, name='forgot_password'),
+    url(r'^auth/restore_password/', restore_password, name='restore_password'),
+
     
     url(r'^$', base)
     

@@ -1,22 +1,75 @@
+<!DOCTYPE html>
 <html>
 	<head>
-		<meta name="google-site-verification" content="MmA8NMvE-7eDwFGU7OvsyTcr-ib1xnmuc00nN_EkvSE" />
-		
+        {% block title%}
+        <title> Unknown title</title>
+        {% endblock %}
+
+        <style>
+            html,body{
+
+            }
+            #id_center{
+                background-color: #dfd;
+                padding-top: 5em;
+                width: 50%;
+                margin-left:auto;
+                margin-right:auto;
+                border-radius:10px;
+                padding-bottom:10px;
+                padding-left:40px;
+                padding-right:40px;
+
+            }
+
+            #id_menu{
+                margin-left:40px;
+                width:70%;
+                padding-bottom:10px;
+                padding-left:20px;
+                border-bottom: 2px dotted grey;
+            }
+            #id_menu a{
+                padding-right: 15px;
+            }
+            h1{
+                font-family: Arial;
+                font-size:30px;
+
+            }
+
+            a.small_link{
+                font-size:10px;
+            }
+            ul{
+                list-style-type: none;
+                margin-left:10px;
+            }
+            ul li {
+                margin-bottom: 1em;
+            }
+
+        </style>
+
 	</head>
 	<body>
-		{% block content %}
-		
-		<form method="post" >
-			{% csrf_token %}
-			<ul>
-				<li> Название сайта: <input name="site_name" />.flyweb.ru </li>
-				<li> Ваш email: <input name="email" /> </li>
-				<li> <input type='submit' /></li>
 
-			</ul>
-		</form>
+
+
+    <div id="id_center">
+        <div id="id_menu">
+            <a href="/">Домой</a>
+            <a href="/profile/">Мой профиль</a>
+            <a href="/auth/logout/">Выход</a>
+
+        </div>
+        <h1>{% block page_title %} {% endblock %}</h1>
+
+        {% block content %}
+
 		{% endblock %}
-		
-		<a href='{%url 'login' %}'>login</a>
+
+
+    </div>
 	</body>
 </html>

@@ -22,6 +22,7 @@ caching = `function (){
 						is_d = !active_renderers[i]
 						is_done = is_done && is_d;
 					}
+					// log(is_done, active_renderers)
 					if( is_done ){ // все процессы отработали
 						DB.save_cache(hashes)
 						is_saved = true
@@ -32,6 +33,8 @@ caching = `function (){
 				}
 
 				var render_page = function(hash){
+				  // hash = hash.replace("#", "")
+
 					if(hash in hashes){ return }
 
 					active_renderers[hash] = true;
@@ -42,6 +45,26 @@ caching = `function (){
 						self.is_constructor = false;
 						self.draw(custom_cont, custom_head, hash)
 						self.is_constructor = true;
+
+						setTimeout(function(){
+              var content = custom_cont.html();
+              var head_content = custom_head.html();
+              var link_list = [];
+              var as = custom_cont.find('a');
+              $.each(as, function(ix, a){
+                 var h = "#" + $(a).prop('href').split('#')[1]
+                 if(h != null){
+                  render_page(h);
+                 }
+              })
+              custom_cont.remove();
+              var h = $('<html>')
+              var b = $('<body>')
+              .prop('style', body_style.cssText)
+              .html(content).appendTo(h)
+              hashes[hash] = {'body':h.html(), head:head_content}
+              active_renderers[hash] = false;
+            }, 5000)
 					}finally{
 						self.is_constructor = true
 						// throw
@@ -50,26 +73,7 @@ caching = `function (){
 
 
 
-					setTimeout(function(){
-						var content = custom_cont.html();
-						var head_content = custom_head.html();
-						var link_list = [];
-						var as = custom_cont.find('a');
-						$.each(as, function(ix, a){
-							 var h = "#" + $(a).prop('href').split('#')[1]
-							 if(typeof h == 'undefined' || h == 'undefined'){
-							 }
-							 render_page(h);
-						})
-						custom_cont.remove();
-						var h = $('<html>')
-						var b = $('<body>')
-						.prop('style', body_style.cssText)
-						.html(content).appendTo(h)
 
-						hashes[hash] = {'body':h.html(), head:head_content}
-						active_renderers[hash] = false;
-					}, 5000)
 				}
 
 				render_page("#!");
@@ -267,18 +271,29 @@ window.Constructor._draw_css_background =(to, css_pattern) ->
   sizes = []
   poss = []
   grads = []
-  $.each css_pattern.gradients, (ix, grad) ->
+  $.each css_pattern.gradients, (ix, grad) =>
     stops = []
 
     # need two color stops at least
     return  if grad.stops.length < 2
-    $.each grad.stops, (ix, st) ->
-      rgba = hsvToRgb(st.col)
+    $.each grad.stops, (ix, st) =>
+      # log(st)
+      rgba = hsvToRgb(st.col) unless st.col_ix?
+      if st.col_ix?
+        hsva = @get_color(st.col_ix)
+        hsva.a = st.a
+        rgba = hsvToRgb(hsva)
       s = rgba + " " + st.size.v + st.size.m
       stops.push s
 
     if grad.type is "linear"
-      gr = "linear-gradient(" + grad.deg + "deg, " + stops.join(", ") + ")"
+      is_safari = /Safari/.test( navigator.userAgent ) and not /Chrome/.test(navigator.userAgent)
+      is_mobile = /Mobile/.test(navigator.userAgent)
+      if is_safari or is_mobile
+        deg = (360 - (grad.deg - 90)) % 360
+        gr = "-webkit-linear-gradient(" + deg + "deg, " + stops.join(", ") + ")"
+      else
+        gr = "linear-gradient(" + grad.deg + "deg, " + stops.join(", ") + ")"
     else
       position = grad.rad_w.v + grad.rad_w.m + " " + grad.rad_h.v + grad.rad_h.m
       size = "circle at " + grad.rad_l.v + grad.rad_l.m + " " + grad.rad_t.v + grad.rad_t.m
@@ -288,7 +303,8 @@ window.Constructor._draw_css_background =(to, css_pattern) ->
     sizes.push grad.size[0].v + grad.size[0].m + " " + grad.size[1].v + grad.size[1].m
 
   to.css
-    "background-image": grads.join(",")
+
+    "background": grads.join(",")
     "background-size": sizes.join(", ")
     "background-position": poss.join(", ")
 
@@ -298,21 +314,24 @@ window.Constructor.redraw_background = ->
 
   #log( "BGs", @Site.backgrounds )
   if @Site.backgrounds?
-    #log("DOne")
     $.each @Site.backgrounds, (name, imgo) =>
       if name is "body"
         C = $("body")
-        #c = C[0]
       else C = @layout_cont  if name is "content"
       if imgo.type is "pattern"
-        if typeof imgo.pattern is "undefined"
+
+        patt = DB.get_objects('generic.' + BASE_SITE , 'pattern', {'_id': {'$oid':imgo.pattern }}).objects[0]
+        if typeof patt is "undefined"
           C.css "background-image", ""
           return
-        unless ["image", "constructor"].indexOf(imgo.pattern.type) is -1
-          pat = imgo.pattern.image
+        if patt.type is "image"
+          pat = patt.image
           C.css "background", "url(\"" + pat + "\") repeat"
+
+        else if patt.type is "constructor"
+          @renderPattern C, patt
         else
-          pat = imgo.pattern.image
+          pat = patt.image
           @_draw_css_background C, pat
       else if imgo.type is "color"
         c = @get_color(imgo.color)

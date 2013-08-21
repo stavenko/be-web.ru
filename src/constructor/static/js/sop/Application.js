@@ -4,22 +4,21 @@ var init_db = function(csrf_token){
     var a = {
         save_object: function(appid, type, obj, progress, complete){
             var data = {'object':obj,
-                            'type' : type+ "@" + appid,
-                        };
+                            'type' : type+ "@" + appid};
             //data[cs_name] = cs_val;
             var xhr = new XMLHttpRequest()
             var fd = new FormData();
             for (i in obj.images){
-                //console.log( obj.images[i].length )
             }
-            function loadend(){
+            function loadend() {
                 
-                complete(this)
-            }
-			if(obj.is_unique){
-				fd.append('is_unique', true)
-			}
-			
+                complete(this )
+            };
+
+            if (obj.is_unique){
+                fd.append('is_unique', true)
+            };
+
             fd.append('x-data', JSON.stringify(data))
             fd.append(cs_name, cs_val)
             xhr.open("POST", "/data/", true)
@@ -58,42 +57,22 @@ var init_db = function(csrf_token){
             xhr.send(fd)
 		},
 		save_application: function(app){
-            //var data = {'object':obj,
-            //           'type' : type };
-            //data[cs_name] = cs_val;
             var xhr = new XMLHttpRequest()
             var fd = new FormData();
-            //for (i in obj.images){
-                //console.log( obj.images[i].length )
-            //}
-            //function loadend(){
-                
-                // complete(this)
-            //}
             fd.append('x-data', app)
             fd.append(cs_name, cs_val)
             xhr.open("POST", "/app/add/", true)
-            // xhr.upload.progress = progress
-            // xhr.onloadend = loadend
-            
             xhr.send(fd)
 		},
-		
         save_object_sync:function(appid, type, obj, progress, complete){
             var data = {'object':obj,
-                'type' : type+ "@" + appid,
-            };
-			
-            // data[cs_name] = cs_val;
+                'type' : type+ "@" + appid };
             var xhr = new XMLHttpRequest()
             var fd = new FormData();
             for (i in obj.images){
-                // console.log( obj.images[i].length )
             }
             function loadend(){
-				if (complete)
-                
-                {complete(this)}
+				if (complete){complete(this)}
             }
             fd.append('x-data', JSON.stringify(data))
 			if(obj.is_unique){
@@ -151,9 +130,7 @@ var init_db = function(csrf_token){
                     async:false} 
                     )
             return data
-        },
-        
-        
+        }
     }
     return a;
 }

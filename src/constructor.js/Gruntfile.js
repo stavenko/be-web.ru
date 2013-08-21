@@ -32,7 +32,8 @@
             join: true
           },
           files: {
-            "dist/constructor.js": ["src/main.coffee", "src/builder.coffee", "src/utils.coffee", "src/geometry.coffee", "src/admin.coffee"]
+            "dist/constructor.js": ["src/main.coffee", "src/builder.coffee", "src/utils.coffee", "src/geometry.coffee", "src/admin.coffee"],
+            "dist/displayer.js": ["src/main.coffee", "src/builder.coffee", "src/utils.coffee", "src/geometry.coffee"]
           }
         }
       }

@@ -163,7 +163,7 @@ window.Constructor.init_block_cp = (obj, to, widget) ->
     self.apply_block_settings w, settings, widget
 
   onColorChoice = (color, pal_ix, hsba) ->
-    log("DIAL", this)
+    # log("DIAL", this)
     if color is "clear"
       settings.background = type: "none"
     else
@@ -392,6 +392,23 @@ drawBackgroundSelectorDialog = `function (onPatternChoice, onColorChoice, onCanc
 
 					})
 				}
+				var show_constructor_patt_choice = function(where){
+					$.each(DB.get_objects('generic.' + BASE_SITE, 'pattern', {type:'constructor'}).objects, function(ix, obj){
+						var prev = $('<div>').css('float','left')
+							  .width(32).height(32)
+							  .css('margin', '5px').appendTo(where)
+							  .css('cursor','pointer')
+							  .on('mouseenter', function(){})
+							  .on('click', function(){
+								  onPatternChoice.apply(patt_div, [obj] )
+							  })
+						self.renderPattern(prev, obj);
+						prev.css('background-size', '32px 32px')
+
+
+					})
+
+				}
 				var show_css_patt_choice = function(where){
 					//var inp = $('<div>').appendTo(where).width('100%').height('100%')
 
@@ -430,7 +447,7 @@ drawBackgroundSelectorDialog = `function (onPatternChoice, onColorChoice, onCanc
 				//.width('100%')
 				.height(300)
 				.prop('id',"constructor-pattern").appendTo(atabs)
-				show_img_patt_choice(my_patt,'constructor')
+				show_constructor_patt_choice(my_patt)
 
 				var css_patt = $("<div>")
 				//.width('100%')
@@ -532,7 +549,8 @@ showColorScheme = `function (){
 				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.lights, slide:function(event, ui){ self.Site.colors.lights = ui.value; self._pallete_drawer.apply(self,[c])	 } } ).appendTo(to)
 
 				$("<span>").text('shadows').appendTo(to)
-				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.shadows, slide:function(event, ui){ self.Site.colors.shadows = ui.value; self._pallete_drawer.apply(self,[c])} } ).appendTo(to)
+				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.shadows, slide:function(event, ui){ sel
+				f.Site.colors.shadows = ui.value; self._pallete_drawer.apply(self,[c])} } ).appendTo(to)
 
 				var C = $('<canvas>').appendTo(to)
 				.css('display','block')
@@ -545,8 +563,8 @@ showColorScheme = `function (){
 					context.beginPath()
 					context.moveTo(h*0.85,0)
 					context.lineWidth = 1;
-					context.strokeStyle = hsvToRgb({h:h,s:100,b:100});;
-					context.lineTo(h*0.85,300)
+					context.strokeStyle = hsvToRgb({h:h, s:100, b:100});;
+					context.lineTo(h*0.85, 300)
 					context.closePath()
 					context.stroke()
 				}
@@ -563,7 +581,20 @@ showColorScheme = `function (){
 					var off = C.offset();
 					self._set_base_hue(evt.clientX - off.left);
 					orig = false
-					self.redraw()
+					// TODO: insert textColors code here
+
+					self.redraw_background()
+          self.redraw()
+          for(var i in self.Site.textColors){
+            var ix = self.Site.textColors[i].index
+            var hsba = self.get_color(ix)
+            var hex =  hsvToHex( hsba )
+            self.Site.textColors[i].rgb = hex
+            //log(hex)
+
+
+          }
+          //log(self.Site.textColors)
 
 				}
 				var dragger=function(evt){
@@ -580,54 +611,6 @@ showColorScheme = `function (){
 window.Constructor.showColorScheme = showColorScheme
 
 
-###
-showLayoutScheme = `function (){
-
-				var to = this._app_admin_contents;
-					to.find('*').remove()
-					to.width(500)
-				var self = this
-
-					lo = $.extend(true, {}, this.Site.layout);
-				var ul = $("<ul>").appendTo(to).width(500)
-
-				$.each(lo, function(i, val){
-					var l = $("<li>").text(i).appendTo(ul)
-
-					if(i == 'grid' ||	i == 'padding' ){
-						var inner =$("<ul>").appendTo(l)
-						$.each(val, function(j, val){
-
-							var l = $("<li>").text(j).appendTo(inner)
-							var sp = $('<input>').appendTo(l).spinner({spin:function(event, ui){
-								//console.log("do");
-								self.Site.layout[i][j] = ui.value
-								self.redraw();
-							} }	)
-							sp.spinner('value', val)
-
-						})
-
-					}else{
-						var sp = $('<input>').appendTo(l).spinner({spin:function(event, ui){
-								//console.log("do");
-								self.Site.layout[i]= ui.value
-								self.redraw();
-							} }	)
-						sp.spinner('value', val)
-					}
-				})
-				$('<button>').text('save').click(function(){
-					self._save_site()
-				}).appendTo(to)
-				$('<button>').text('cancel').click(function(){
-					self.Site.layout = lo;
-					self.showLayoutScheme();
-					self.redraw()
-				}).appendTo(to)
-				this._app_admin_cont.show()
-			 }`
-###
 window.Constructor.showLayoutScheme = ->
   to = @_app_admin_contents
   to.find("*").remove()
@@ -820,11 +803,17 @@ _show_css_pattern_editor = `function (to) {
 								var pr = $('<div>').appendTo(ch).width('100%').height('100%')
 								self._draw_css_background(pr, obj.image)
 						})
-						console.log(icon, obj);
+						.on('dblclick', function(){
+						  // log(obj)
+						  control.find('*').remove()
+						  show_control( obj.image, obj._id )
+						})
+						// console.log(icon, obj);
 						self._draw_css_background(icon, obj.image);
 
  				})
-				function show_control(css_pattern){
+				function show_control(css_pattern, _id){
+				  // var _id = css_pattern._id
 					var put_grad = function(){
 						preview.find('*').remove()
 
@@ -864,7 +853,9 @@ _show_css_pattern_editor = `function (to) {
 												.appendTo(to).css('float','left')
 												.css('padding-left','20px') // .css('padding-right','20px');
 							$('<span>').text('deg').appendTo(C).css('font-size','10pt').css('margin-right','10px' )
-							di = $('<input>').val(g_grad.deg).appendTo(C).width(30).keyup(function(){ console.log($(this).val());var v = parseInt($(this).val());g_grad.deg = v; ds.slider('value',v);put_grad() })
+							di = $('<input>').val(g_grad.deg).appendTo(C).width(30).keyup(function(){
+							  // console.log($(this).val());
+							  var v = parseInt($(this).val());g_grad.deg = v; ds.slider('value',v);put_grad() })
 							ds = $("<div>").width(30).slider({min:0, max:360,value:grad.deg, slide:function(event, ui){ g_grad.deg = ui.value ;di.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(C)
 
 						}
@@ -1016,15 +1007,24 @@ _show_css_pattern_editor = `function (to) {
 									var li = $('<li>').appendTo(stops);
 									var ai,as;
 									var g_stop = g_grad.stops[i]
+									var color = stop.col
+									var color_ix = stop.col_ix
+									if (color_ix != null){
+									  var c = self.get_color(color_ix)
+									  c.a = stop.a
+									  color = hsvToRgb( c )
+									}
 									$('<div>').width(32).height(32).css('background', "url(/static/images/bar-opacity.png) repeat")
 									.css('border', '1px solid black').appendTo(li)
 									.css('display','inline-block')
-									.append($('<div>').width(32).height(32).css('background-color', hsvToRgb(g_stop.col) )
+									.append($('<div>').width(32).height(32)
+									.css( 'background-color', color )
 									.click(function(evt){
 										var butt = $(this);
 										var fc = function(col, smt, hsva ){
-											// console.log(col, smt, hsva)
-											g_stop.col = hsva;
+											g_stop.col = hsva
+											g_stop.a = hsva.a
+											g_stop.col_ix = smt
 											butt.css('background-color', hsvToRgb(hsva))
 											if(ai){ai.val(hsva.a*100)}
 											if(as){as.slider('value',hsva.a*100)}
@@ -1041,8 +1041,8 @@ _show_css_pattern_editor = `function (to) {
 
 									var ai,as;
 									$('<span>').text('A').appendTo(li).css('font-size','10pt').css('margin-right','10px' )
-									ai = $('<input>').val(stop.col.a*100).appendTo(li).width(30).keyup(function(){ var v = parseInt($(this).val());g_stop.col.a = v/100; as.slider('value',v);put_grad() })
-									as = $("<div>").width(30).slider({min:0, max:100,value:stop.col.a*100, slide:function(event, ui){ g_stop.col.a = ui.value/100 ;ai.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(li)
+									ai = $('<input>').val(stop.a*100).appendTo(li).width(30).keyup(function(){ var v = parseInt($(this).val());g_stop.a = v/100; as.slider('value',v);put_grad() })
+									as = $("<div>").width(30).slider({min:0, max:100,value:stop.col.a*100, slide:function(event, ui){ g_stop.a = ui.value/100 ;ai.val(ui.value) ;put_grad();}} ).css('display','inline-block' ).appendTo(li)
 
 									$('<button>').button().text('Remove color').appendTo(li).click(function(){
 										if(g_grad.stops.length <= 2){
@@ -1085,8 +1085,17 @@ _show_css_pattern_editor = `function (to) {
 					})).append($('<button>').text('Сохранить').click(function(){
 						// var ready_image = S[0].toDataURL("image/png")
 						var pattern = {image:css_pattern, type: 'css' }
-						DB.save_object('generic.'+BASE_SITE, 'pattern', pattern,function(){}, function(){})
-						self._show_css_pattern_editor(to)
+						if (_id != null) pattern._id = _id
+            //log("FFFF", pattern, _id)
+            DB.save_object('generic.' + BASE_SITE, 'pattern', pattern, function(){}, function(){
+              self._show_css_pattern_editor(to)
+
+
+
+
+              self.redraw_background()
+            })
+
 					})).append($('<button>').text('Отменить').click(function(){
 
 						self._show_css_pattern_editor(to)
@@ -1109,289 +1118,275 @@ _show_css_pattern_editor = `function (to) {
 window.Constructor._show_css_pattern_editor = _show_css_pattern_editor
 
 
+window.Constructor._show_pattern_editor = (to) ->
+  self = this
+  to.find("*").remove()
+  control = $("<div>").appendTo(to).width(400).height(400).css("float", "left")#.css("overflow", "auto")
+  to.height 400
+  preview = $("<div>").appendTo(to).width(610).height(400).css("float", "left")
+  $("<span>").text("Мои паттерны").appendTo control
+  pat_cont = $("<div>").width(400).height(300).css("float", "left").appendTo(control).css("overflow", "auto")
+  $.each DB.get_objects("generic." + BASE_SITE, "pattern",
+    type: "constructor"
+  ).objects, (ix, obj) =>
+
+    #log(ix, obj)
+    d = $("<div>").css("float", "left")
+    #.css("background", "url(" + obj.image + ")")
+    .css("background-size", "32px 32px")
+    .width(48).height(48).css("margin", "5px").appendTo(pat_cont).css("cursor", "pointer").on("mouseenter", ->
+    ).on "click", =>
+      preview.find("*").remove()
+      prev = $("<div>").width("100%").height("100%").appendTo(preview)
+      @renderPattern prev, obj #.css "background", "url(" + obj.image + ")"
+    .on "dblclick", =>
+        show_control( obj )
+    @renderPattern(d, obj)
+
+  show_control = (pattern = false) =>
+
+    redraw_ctx = =>
+      dr_im = (x, y, bx, by_) ->
+        ctx.save()
+        ctx.translate x, y
+        ctx.scale Z, Z
+        rad = A * (3.14 / 180)
+        ctx.rotate rad
+        ctx.globalAlpha = opacity / 100
+        ctx.drawImage image, -(iw / 2), -(ih / 2), iw, ih
+        ctx.restore()
+      Cjq.css("margin-left", (300 - base) / 2).css "margin-top", (300 - base) / 2
+      C.width = base
+      C.height = base
+      iw = image.width * Z
+      ih = image.height * Z
+      if BG
+        if "ix" of BG
+          c = self.get_color(BG)
+        else
+          c = BG
+        c.a = GA
+        ctx.fillStyle = hsvToRgb(c) # "rgba( 255,255, 255, 255)";
+      ctx.rect 0, 0, C.width, C.height
+      ctx.fill()
+      ctx.save()
+      ctx.clip()
+      dr_im base / 2, base / 2
+      dr_im 0, 0
+      dr_im 0, base
+      dr_im base, 0
+      dr_im base, base
+      ctx.closePath()
+      ctx.restore()
+      img = C.toDataURL()
+      prev.css "background", "url(" + img + ") repeat"
+    control.find("*").remove()
+    preview.find("*").remove()
+    my_patt = $("<div>").appendTo(control)
+    flright = $("<div>").appendTo(preview).css("float", "left").width(300).height(300).css("border", "1px solid black").css("background", "url(/static/images/bar-opacity.png) repeat")
+    prev = $("<div>").appendTo(preview).css("float", "left").width(300).height(300).css("border", "1px solid black").css("background", "url(/static/images/bar-opacity.png) repeat")
+    Cjq = $("<canvas>").appendTo(flright)
+    C = Cjq[0]
+    S = $("<canvas>")[0]
+    ctx = C.getContext("2d")
+    sctx = S.getContext("2d")
+    self._make_pallette()
+    result = undefined
+    image = undefined
+    buffData = undefined
+
+    if pattern
+      base = pattern.base
+      A = pattern.A
+      GA = pattern.GA
+      Z = pattern.Z
+      opacity = pattern.opacity
+      BG = pattern.BG
+      FG = pattern.FG
+      img_src = pattern.base_image
+      _i = $(new Image()).one('load', (e)=>
+          result = img_src
+          exc_color  e.target
+          redraw_ctx
+
+      ).prop('src', img_src)
+    else
+      base = 128
+      A = 0
+      GA = 1
+      Z = 0.25
+      opacity = 100
+      BG =
+        v: 1
+        ix: 3
+
+      FG =
+        v: 1
+        ix: 0
+
+    library_ix = false
+    make_image = ->
+      img = new Image()
+      img.onload = ->
+        exc_color img
+      img.src = result
+    exc_color = (img_) ->
+      S.width = img_.width
+      S.height = img_.height
+      sctx.drawImage img_, 0, 0
+      buffData = sctx.getImageData(0, 0, img_.width, img_.height)
+      if "ix" of FG
+        c = self.get_color(FG)
+      else
+        c = FG
+      FGA = hsvToRgb(c, true)
+      alphas = {}
+      x = 0
+      while x < buffData.width
+        y = 0
+        while y < buffData.height
+          ix = (x + (y * buffData.width)) * 4
+          buffData.data[ix] = FGA[0] #red
+          buffData.data[ix + 1] = FGA[1] #green
+          buffData.data[ix + 2] = FGA[2] #blue
+          y++
+        x++
+      # console.log alphas
+      sctx.putImageData buffData, 0, 0
+      du = S.toDataURL()
+      _I = new Image()
+      _I.onload = ->
+        image = _I
+        redraw_ctx()
+
+      _I.src = du
+
+    $("<span>").text("Элемент узора").appendTo my_patt
+    img_cont = $("<div>").width(290).height(100).css("overflow", "auto").appendTo(my_patt)
+
+    # console.log("ICONS", back_icons_urls);
+    $.each back_icons_urls, (i, url) ->
+      $(new Image()).one("load", ->
+        img_self = this
+        $("<div>").css("float", "left").width(64).height(64).css("border", "2px solid black").css("background", "url(" + @src + ") no-repeat").css("background-size", "64px 64px").css("margin", "5px").appendTo(img_cont).on("mouseenter", ->
+          $(this).css "border-color", "black"
+        ).on("mouseleave", ->
+          $(this).css "border-color", "grey"
+        ).on "click", ->
+          result = url
+          exc_color img_self
+
+      ).prop "src", url
+
+    $("<input>").prop("type", "file").change(->
+      fr = new FileReader()
+      fr.onload = ->
+        result = @result
+        make_image()
+
+      fr.readAsDataURL @files[0]
+    ).appendTo my_patt
+    choose_bg = (col, ix, hsva) ->
+      BG = ix # hsva
+      redraw_ctx()
+
+    choose_fg = (col, ix, hsva) ->
+      FG = ix # hsva
+      exc_color image
+      redraw_ctx()
+
+    ul = $("<li>").appendTo(my_patt)
+    $("<button>").click((e) ->
+      self.draw_color_chooser(choose_bg).appendTo my_patt
+    ).appendTo(my_patt).text "Background"
+    $("<button>").click((e) ->
+      self.draw_color_chooser(choose_fg).appendTo my_patt
+    ).appendTo(my_patt).text "Foreground"
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Угол поворота узора").appendTo li
+    $("<div>").width(250).slider(
+      min: 0
+      max: 360
+      value: 0
+      slide: (event, ui) ->
+        A = ui.value
+        redraw_ctx()
+    ).appendTo li
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Размер узора").appendTo li
+    $("<div>").width(250).slider(
+      min: 1
+      max: 100
+      value: Z * 100
+      slide: (event, ui) ->
+        Z = (ui.value) / 100
+        redraw_ctx()
+    ).appendTo li
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Размер тайла").appendTo li
+    $("<div>").width(250).slider(
+      min: 64
+      max: 300
+      value: base
+      slide: (event, ui) ->
+        base = ui.value
+        redraw_ctx()
+    ).appendTo li
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Прозрачность узора").appendTo li
+    $("<div>").width(250).slider(
+      min: 0
+      max: 100
+      value: 100
+      slide: (event, ui) ->
+        opacity = ui.value
+        redraw_ctx()
+    ).appendTo li
+    li = $("<li>").appendTo(ul)
+    $("<span>").text("Прозрачность фона").appendTo li
+    $("<div>").width(250).slider(
+      min: 0
+      max: 100
+      value: GA * 100
+      slide: (event, ui) ->
+        GA = ui.value / 100
+        redraw_ctx()
+    ).appendTo li
+    $("<div>").appendTo(control).append($("<button>").text("Сохранить").click(=>
+      ready_image = C.toDataURL("image/png")
+      if pattern
+          pattern.image = ready_image
+          pattern.FG = FG
+          pattern.BG = BG
+          pattern.opacity = opacity
+          pattern.GA = GA
+          pattern.A = A
+          pattern.Z = Z
+          pattern.base = base
+          pattern.base_image = result
+      else
+        pattern =
+          image: ready_image
+          type: "constructor"
+          FG: FG
+          BG: BG
+          opacity: opacity
+          GA: GA
+          A: A
+          Z: Z
+          base: base
+          base_image: result
+
+      DB.save_object "generic." + BASE_SITE, "pattern", pattern, (->), (=> @redraw_background(); @redraw() )
+      self._show_pattern_editor to
+    )).append $("<button>").text("Отменить").click(->
+      self._show_pattern_editor to
+    )
+  $("<button>").appendTo(control).text("Новый").click ->
+    control.find("*").remove()
+
+    show_control()
 
-_show_pattern_editor = `function (to){
-				var self = this;
-				to.find('*').remove();
-				var control = $('<div>').appendTo(to).width(290).height(400).css('float','left').css('overflow','auto')
-				to.height(400);
-				var preview = $('<div>').appendTo(to).width(605).height(400).css('float','left')
-
-				$('<span>').text('Мои паттерны').appendTo(control)
-				var pat_cont = $('<div>').width(400).height(300).appendTo(control).css('overflow','auto')
-				$.each(DB.get_objects('generic.' + BASE_SITE, 'pattern', {type:'constructor'}).objects, function(ix, obj){
-					// console.log(ix, obj)
-					$('<div>').css('float','left')
-							  .css('background', 'url(' + obj.image+')')
-							  .css('background-size', '32px 32px')
-							  .width(32).height(32)
-							  .css('margin', '5px').appendTo(pat_cont)
-							  .css('cursor','pointer')
-							  .on('mouseenter', function(){})
-							  .on('click', function(){
-								  preview.find('*').remove();
-								  var prev = $('<div>').width('100%').height('100%').appendTo(preview)
-								  prev.css('background', 'url(' + obj.image+')')
-							  })
-
-				})
-
-				var show_control = function (args) {
-					control.find('*').remove()
-					preview.find('*').remove()
-
-					var my_patt = $('<div>').appendTo(control);
-
-
-
-					var flright = $('<div>').appendTo(preview) .css('float','left')
-											// .css('padding', 10)
-											.width(300)
-											.height(300)
-											.css('border', '1px solid black')
-											.css('background',  "url(/static/images/bar-opacity.png) repeat")
-					var prev = $('<div>').appendTo(preview).css('float','left')
-											.width(300)
-											.height(300)
-											.css('border', '1px solid black')
-											.css('background',  "url(/static/images/bar-opacity.png) repeat")
-
-
-
-					var Cjq = $('<canvas>').appendTo(flright)
-					var C   = Cjq[0]
-					var S = $('<canvas>')[0] //.appendTo(flright)[0]
-					var ctx = C.getContext('2d')
-
-
-					var sctx = S.getContext('2d')
-					var base = 128;
-					// var WA = 0, HA = 0,
-					var A  = 0;
-					var GA = 1;
-					//  iWA = true, iHA = true;
-					var Z = 0.25 // 0.08;
-					var opacity;
-					self._make_pallette()
-
-					var BG = {v:1, ix:3},//this.Site.colors.pallette[0][3]
-						FG = {v:1, ix:0};// this.Site.colors.pallette[0][0]
-
-
-
-					var result, image, buffData, library_ix = false;
-
-					function redraw_ctx(){
-						Cjq .css('margin-left', (300 - base) / 2)
-							.css('margin-top', (300 - base) / 2 );
-						C.width = base
-						C.height = base
-
-						var iw = image.width * Z;
-						var ih = image.height * Z;
-
-						function dr_im(x,y,bx,by){
-
-
-							ctx.save()
-							ctx.translate(x, y)
-							ctx.scale(Z,Z)
-							rad = A* (3.14/180)
-							ctx.rotate(rad)
-							ctx.globalAlpha = opacity / 100;
-							ctx.drawImage(image, -(iw/2), -(ih/2), iw, ih)
-							ctx.restore()
-						}
-
-						if (BG){
-							//console.log(BG)
-							if ('ix' in BG){
-								c = self.get_color(BG)
-							}else{
-								c = BG
-							}
-							c.a = GA;
-							ctx.fillStyle =	 hsvToRgb(c)// "rgba( 255,255, 255, 255)";
-						}
-						ctx.rect(0,0, C.width, C.height)
-						ctx.fill()
-						ctx.save()
-						ctx.clip();
-
-						dr_im(base/2, base/2)
-
-						dr_im(0, 0)
-						dr_im(0, base)
-						dr_im(base, 0)
-						dr_im(base, base)
-						ctx.closePath();
-						ctx.restore()
-
-						var img = C.toDataURL()
-						prev.css('background', 'url(' + img + ') repeat' );
-
-					}
-					make_image = function(){
-
-						img = new Image()
-						img.onload = function(){
-							exc_color(img)
-
-						}
-						img.src = result
-					}
-					var exc_color = function (img_) {
-						S.width = img_.width
-						S.height = img_.height
-						sctx.drawImage(img_,0,0)
-						buffData = sctx.getImageData(0,0, img_.width, img_.height)
-						if( 'ix' in FG){
-							var c = self.get_color(FG)
-						}else { var c = FG}
-
-							//}
-						FGA = hsvToRgb(c, true)
-						alphas = {};
-						for(x =0; x<buffData.width; x++){
-							for(y=0; y <buffData.height; y++){
-								ix = (x+ ( y* buffData.width ))*4
-								buffData.data[ix] = FGA[0]; //red
-								buffData.data[ix+1] = FGA[1]; //green
-								buffData.data[ix+2] = FGA[2]; //blue
-							}
-
-						}
-						console.log(alphas)
-						sctx.putImageData(buffData, 0,0)
-						var du = S.toDataURL();
-						_I = new Image()
-						_I.onload = function(){
-							image = _I
-							redraw_ctx();
-						}
-						_I.src = du;
-					}
-
-
-					$('<span>').text('Элемент узора').appendTo(my_patt)
-					var img_cont = $('<div>').width(290).height(100).css('overflow','auto').appendTo(my_patt);
-
-					console.log("ICONS", back_icons_urls);
-					$.each(back_icons_urls, function(i,url){
-
-						$(new Image()).one('load', function(){
-							// console.log("fdfdf", this);
-							var img_self = this;
-							//var img = scaleImage(this, 64, 64);
-							$('<div>').css('float','left').width(64).height(64)
-							.css('border', '2px solid black')
-							.css('background', 'url(' + this.src + ') no-repeat' )
-							.css('background-size', '64px 64px')
-							.css('margin', '5px')
-							// .append($(img))
-							.appendTo(img_cont)
-							.on('mouseenter', function(){ $(this).css('border-color','black') })
-							.on('mouseleave', function(){ $(this).css('border-color','grey') })
-
-							// $(this)
-							.on('click', function(){
-								//console.log("CLICK", )
-								exc_color( img_self );
-								//redraw_ctx();
-								//make_image();
-							})
-
-						}).prop('src', url);
-
-					})
-
-
-					$('<input>').prop('type', 'file').change(function(){
-						fr = new FileReader()
-						fr.onload = function(){
-							result = this.result;
-							make_image();
-						}
-						fr.readAsDataURL(this.files[0]);
-					}).appendTo(my_patt);
-
-					choose_bg = function(col, ix, hsva ){
-						//if (col != 'clear'){
-						//	BG =
-						//}else{
-						//	BG = false
-						//}
-						BG = hsva
-						redraw_ctx()
-					}
-					choose_fg = function(col, ix, hsva ){
-						//if (col != 'clear'){
-						FG = hsva
-						exc_color(image);
-
-							//}else{
-							//FG = false
-							//}
-						redraw_ctx()
-					}
-					ul = $('<li>').appendTo(my_patt)
-
-					$('<button>').click(function(e){ self.draw_color_chooser( choose_bg ).appendTo(my_patt) }).appendTo(my_patt).text("Background")
-					$('<button>').click(function(e){ self.draw_color_chooser( choose_fg ).appendTo(my_patt) }).appendTo(my_patt).text("Foreground")
-
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Угол поворота узора').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:360,value:0, slide:function(event, ui){ A = ui.value ;redraw_ctx()}} ).appendTo(li)
-
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Размер узора').appendTo(li)
-					$("<div>").width(250).slider({min:1, max:100,value:Z*100, slide:function(event, ui){ Z = (ui.value)/100 ;redraw_ctx()}} ).appendTo(li)
-
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Размер тайла').appendTo(li)
-					$("<div>").width(250).slider({min:64, max:300,value:base, slide:function(event, ui){ base = ui.value ;redraw_ctx()}} ).appendTo(li)
-
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Прозрачность узора').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:100,value:100, slide:function(event, ui){ opacity = ui.value ;redraw_ctx()}} ).appendTo(li)
-
-					var li = $('<li>').appendTo(ul)
-					$('<span>').text('Прозрачность фона').appendTo(li)
-					$("<div>").width(250).slider({min:0, max:100,value:GA*100, slide:function(event, ui){ GA = ui.value/100 ;redraw_ctx()}} ).appendTo(li)
-
-
-
-
-
-
-				$("<div>").appendTo(control)//.append()
-				 .append($('<button>').text('Сохранить').click(function(){
-					var ready_image = C.toDataURL("image/png")
-					var pattern = {image:ready_image, type: 'constructor' }
-
-					DB.save_object('generic.'+BASE_SITE, 'pattern', pattern,function(){}, function(){})
-
-					self._show_pattern_editor(to)
-				})).append($('<button>').text('Отменить').click(function(){
-
-					self._show_pattern_editor(to)
-				}))
-			}
-
-
-			$('<button>').appendTo(control).text('Новый').click(function(){
-				control.find('*').remove()
-
-				//var css_pattern = {gradients:[]
-										  	// };
-				show_control()
-
-
-
-			})
-
-			}`
-window.Constructor._show_pattern_editor = _show_pattern_editor
 
 
 
@@ -1407,7 +1402,6 @@ _show_picture_based_background_list = `function (to){
 				$('<span>').text('Мои паттерны').appendTo(control)
 				var pat_cont = $('<div>').width(400).height(300).appendTo(control).css('overflow','auto')
 				$.each(DB.get_objects('generic.' + BASE_SITE,'pattern',{type:'image'}).objects, function(ix, obj){
-					// console.log(ix, obj)
 					if (obj.image.blob){
 						var url = DB.get_blob_url(obj.image)
 					}else{
@@ -1826,106 +1820,6 @@ upPage = `function (name) {
 window.Constructor.upPage = upPage
 
 
-###
-showUserScheme = `function () {
-				// Сначала, мы должны отобразить всех пользователей, который авторизованы для этого сайта
-				// Потом мы должны отобразить все роли, которыми располагают приложения
-				// Потом мы должны создать возможность давать приглашения пользователям чтобы редактировать наш сайт
-
-				// this._app_admin_contents = $('<div>').appendTo(this._app_admin_cont)
-
-				var self = this;
-				var dialog = $('<div>').appendTo('#controls')
-				.dialog({title:'Назначение ролей другим пользователям',
-						 buttons:{'Пригласить другого пользователя':function(){
-							 			var invited = $('<div>').appendTo($('#controls'));
-										$('<input>').addClass('email').appendTo(invited)
-							 			invited.dialog({width:400, height:200, buttons:{'Пригласить': function () {
-										var email = invited.find('input.email').val()
-										var my_hostname = window.location.host
-										var ID= DB.save_object_sync('generic.' + BASE_SITE, 'invite', {'email': email, 'to': my_hostname, is_unique:true})
-										// console.log(ID);
-										DB.send_email(email, 'invite to access ' + my_hostname,
-															"this is invite to take part in be-web.ru project http://" + my_hostname +
-															". You can create your account <a href='http://be-web.ru/register/'>here</a>" )
-
-															self.Site.Roles.push({user: email, roles: [] })
-															self._save_site()
-															invited.dialog('close')
-															self.showUserScheme();
-															invited.dialog('close')
-
-							 			}
-
-
-						 				}
-									})
-
-							 			console.log('inviting')
-									},
-									'Закрыть': function(){ dialog.dialog('close') },
-									'Применить': function(){
-										self._save_site();
-									}
-					 			},
-
-						 width:600, height:500})
-
-				$.each( this.Site.Roles , function(ix, obj){
-					var user= obj.user
-					var ROLES = obj.roles
-
-					// console.log(user, ROLES)
-					var user_control = $('<div>').appendTo(dialog).css('border','1px solid black').addClass('inactive users')
-					var expand = function(evt){
-						if ($(this).hasClass('inactive')){
-							$(this).parent().find('.users').addClass('inactive')
-							$(this).removeClass('inactive')
-							$(this).parent().find('inactive ul.-stops').remove()
-							var ul = $('<ul>').appendTo($(this)).addClass('-stops');
-							var add_group_controls=function(_ix, app ){
-								log("check app_name", _ix, app)
-								for (var i=0; i < app.roles.length; i++){
-									var role;
-									role = app.roles[i] + '#' + _ix
-									// log("INSERTING ROlES",app.roles[i], app.default_role)
-
-									if(app.roles[i] != app.default_role){
-										var li = $("<li>").appendTo(ul);
-										var ch = $('<input >').prop('id','id_ch_'+role)
-														  .prop('type','checkbox').appendTo(li)
-														  .click(function(evt){
-															  var is_on = $(this).prop('checked')
-															  if (is_on){
-																  self.Site.Roles[ix].roles.push(role)
-
-															  }else{
-																  var ixxx = self.Site.Roles[ix].roles.indexOf(role)
-																  self.Site.Roles[ix].user.splice(ixxx,1)
-															  }
-
-														  })
-										var lch = $('<label>').prop('for','id_ch_'+role)
-														  .prop('type','checkbox').appendTo(li).text(role)
-										log("WHAT ?,", role, ROLES);
-										if(ROLES.indexOf(role) != -1){
-											ch.prop('checked', true)
-										}
-
-									}
-								}
-							}
-							$.each( self.Site.Applications , add_group_controls)
-						}
-
-					}
-					user_control.text(user)
-					user_control.on('click', expand);
-
-				})
-
-			}`
-###
 window.Constructor.showUserScheme = ->
 
   # Сначала, мы должны отобразить всех пользователей, который авторизованы для этого сайта
@@ -2076,6 +1970,23 @@ window.Constructor.showSEOScheme = ->
     $(this).hide()
     self.caching()
     $(this).show()
+  li = $("<li>").appendTo(ul)
+  fv = $('<span>').appendTo(li)
+  li.append('Иконка')
+
+  if @Site.favicon?
+    $('<img>').prop('src', @Site.favicon).appendTo(fv)
+
+  $('<input>').attr('type','file').appendTo(li).change( (e) =>
+    files = e.target.files
+    fr = new FileReader()
+    fr.onload = (e)=>
+      @Site.favicon = e.target.result
+      fv.find('*').remove()
+      $('<img>').prop('src', @Site.favicon).appendTo(fv)
+    fr.readAsDataURL files[0]
+  )
+
 
 
 window.Constructor.showTextColorScheme = ->
@@ -2154,10 +2065,11 @@ window.Constructor.backgroundChooser =(type) ->
     @Site.backgrounds[type] = {}
 
   onPattern = (patt) =>
+    #log(patt)
     @Site.backgrounds[type] =
       type: "pattern"
-      pattern: patt
-
+      pattern: patt._id['$oid']
+    # log(@Site.backgrounds[type])
     @redraw_background()
 
   onColor = (color, pal_ix, hsba) ->
@@ -2178,6 +2090,77 @@ window.Constructor.backgroundChooser =(type) ->
     $(this).dialog "close"
 
   self.drawBackgroundSelectorDialog onPattern, onColor, onCancel, onSave
+
+window.Constructor.showDomainScheme = ()->
+  T = (t)-> $('<'+t+'>')
+  dialog = T('div').appendTo($('#controls'))
+  ul = undefined
+  addToList = ( dom, i) =>
+    li =T('li').appendTo(ul).text(dom)
+    T('button').text('X').appendTo(li).click =>
+      @Site.domains.splice(i+1,1) # i+1 потому что первый домен - это базовый домен - его ни в коем случае нельзя удалять
+      li.remove();
+      @_save_site()
+
+
+
+  if not @Site.domains?
+    @Site.domains = [window.location.host]
+  T('p').appendTo(dialog).text('Здесь вы можете добавить домены, на которых будет отображаться ваш сайт.')
+
+  T('span').appendTo(dialog).text('Основной домен: ')
+  T('b').appendTo(dialog).text(@Site.domains[0])
+  if @Site.domains.length > 1
+    T('h3').appendTo(dialog).text('Дополнительные домены')
+    ul = T('ul').appendTo(dialog);
+    # console.log(@Site.domains, @Site.domains[1..])
+    _.chain(@Site.domains[1..])
+    .each( addToList )
+  T('p').css('font-size','10px').appendTo(dialog).text("Внимание, добавление новых доменов на этот сайт не создает бесплатных доменов. Вам необходимо самостоятельно зарегистрировать домен и взять хостинг DNS. В его настройках укажите наш IP-адрес.")
+  T('p').css('font-size','10px').appendTo(dialog).text("Когда закончится тестовая эксплуатация вы сможете в этом меню создавать новые домены для себя по нашим тарифам.")
+  adder = T('div').appendTo(dialog)
+  dom_name = T('input').prop('name','domain_name').appendTo(adder)
+  T('input').prop('name','domain_name').val('Добавить домен').appendTo(adder).prop('type', 'button').click =>
+    val = dom_name.val()
+    key = md5((new Date()).toString())
+    console.log(val, key)
+    dconf = T('div').appendTo($('#controls'))
+    T('p').appendTo(dconf).text('для добавления домена вам нужно подтвердить его владение. Для этого создайте в вашем домене TXT-запись bewebconfirm.' + val + " со значением ")
+    T('b').appendTo(dconf).text(key)
+    mess = T('p').appendTo(dconf)
+    T('button').appendTo(dconf).text('Подтвердить').click(=>
+      $.ajax(
+        url:'/check_domain'
+        data: {domain:val, key: key}
+        failure: () ->
+          mess.text("Домен не подтвержден, Попробуйте еще!")
+        dataType:'json'
+        success: (js)=>
+          if js.domain_confirm
+            @Site.domains.push(val)
+            addToList(val, @Site.domains.length)
+            @_save_site()
+            dconf.dialog('close')
+          else
+            mess.text("Домен не подтвержден, Попробуйте еще!")
+      )
+
+
+    )
+
+
+    dconf.dialog(
+      title: "Подверждение владением домена"
+      width: 500
+    )
+
+  dialog.dialog(
+    title: "Добавление доменов"
+    width:400
+  )
+
+
+
 
 
 window.Constructor.getAppSource = (app_name) ->
@@ -2248,7 +2231,7 @@ window.Constructor.show_CP = (active_tab) ->
   $("<li>").append($("<a>").prop("href", "#").text("Управление Ролями и пользователями").click(->
     self.showUserScheme()
   )).appendTo ul
-  $("<li>").append($("<a>").prop("href", "#").text("Поисковые системы").click(->
+  $("<li>").append($("<a>").prop("href", "#").text("SEO и favicon").click(->
     self.showSEOScheme()
   )).appendTo ul
   $("<li>").append($("<a>").prop("href", "#").text("Сохранение сайта").css("color", "red").click(->
@@ -2356,7 +2339,7 @@ window.Constructor.show_CP = (active_tab) ->
       $("<span>").appendTo(li).text "Ключевые слова через запятую"
       kw = $("<input>").appendTo(li).val(self.Site.pages[i].keywords).keyup(->
         self.Site.pages[i].keywords = $(this).val()
-        log self.Site.pages[i]
+        # log self.Site.pages[i]
 
 
       )
@@ -2364,7 +2347,7 @@ window.Constructor.show_CP = (active_tab) ->
       $("<span>").appendTo(li).text "Описание страницы"
       descr = $("<textarea>").appendTo(li).val(self.Site.pages[i].description).keyup(->
         self.Site.pages[i].description = $(this).val()
-        log self.Site.pages[i]
+        # log self.Site.pages[i]
       )
     )).css "padding-bottom", "10px"
     if self.Site.pages[i].removable
@@ -2402,7 +2385,7 @@ window.Constructor.show_CP = (active_tab) ->
     <div id='id_search_dialog'>
       <ul id='my_apps'>
         {{# apps }}
-          <li> {{ title }} {{^in_app}} <input class='_add_button' type='button' app_name='{{ app_name }}' value='+'> {{/in_app}}</li>
+          <li> {{ title }} {{#in_app}}<span style='color:green;'>Уже добавлено</span> {{/in_app}} {{^in_app}} <input class='_add_button' type='button' app_name='{{ app_name }}' value='+'> {{/in_app}}</li>
         {{/apps }}
 
       </ul>
@@ -2414,7 +2397,7 @@ window.Constructor.show_CP = (active_tab) ->
   template_search_results = "
   <ul>
     {{#apps}}
-      <li> {{ title }} {{^in_app}}<input class='_add_button' type='button' app_name='{{app_name}}' value='+'>{{/in_app}} </li>
+      <li> {{ title }}  {{#in_app}}<span style='color:green;'>Уже добавлено</span> {{/in_app}} {{^in_app}}<input class='_add_button' type='button' app_name='{{app_name}}' value='+'>{{/in_app}} </li>
     {{/apps}}
   </ul>
   "
@@ -2459,7 +2442,7 @@ window.Constructor.show_CP = (active_tab) ->
 
     app = $(evt.target).attr 'app_name'
     if app isnt "generic." + BASE_SITE
-      log(@Site.Applications[app])
+      #log(@Site.Applications[app])
       if @Site.Applications[app].remove?
         @Site.Applications[app].remove()
       delete @Site.Applications[app]
@@ -2467,6 +2450,7 @@ window.Constructor.show_CP = (active_tab) ->
       @Site._Apps.splice(ix,1)
       @_save_site();
       @redraw();
+      self.redraw_cp 2
       #log(@Site._Apps)
     #else
     #  log('no delete')
@@ -2492,6 +2476,11 @@ window.Constructor.show_CP = (active_tab) ->
     if app_name not in @Site._Apps
       @Site._Apps.push app_name
       @_save_site();
+      #log('fffff')
+
+      @redraw(true)
+      @redraw_cp 2
+      $(e.target).remove()
 
 
 
@@ -2513,6 +2502,7 @@ window.Constructor.show_CP = (active_tab) ->
         dialog=@_app_admin_contents.find( "#id_search_dialog").dialog
           width:600
           height:600
+          title: "Поиск приложений и добавление их на сайт"
         dialog.find('#id_app_search_input').bind 'keyup', (e)=>
           val = $(e.target).val()
           $.ajax

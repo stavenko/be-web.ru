@@ -1,13 +1,30 @@
 {% extends "main_page.html" %}
 
+
+{% block title %}
+        <title> Авторизация </title>
+{%endblock %}
+
+{% block page_title %}
+        Вход в систему.
+{%endblock %}
+
 {% block content %}
 <form method='post'>
 	<ul>
-{{ form.as_ul }}
-<li> <input type='submit' value='Login'> </li>
+        <li> Ваш e-mail: {{ form.username }}</li>
+        <li> Ваш пароль: {{ form.password }}</li>
+    <li>
+    <input type='submit' value='Вход'> </li>
 </ul>
 {% csrf_token %}
 
 </form>
+
+        <p>
+
+            <center>    <a class='small_link' href= '{% url 'forgot_password' %}' > Забыл пароль?</a>
+        </center>
+        </p>
 
 {% endblock %}

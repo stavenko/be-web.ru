@@ -1,15 +1,20 @@
 
 log = `function(){
 			if (DEBUG){
+			  args =[];
 				var E = new Error();
-				var f = E.stack.split('\n')[1].split('@')[0];
-				var a = E.stack.split('\n')[1].split(':');
+				if (E.stack != null){
+          var f = E.stack.split('\n')[2].split('@')[0];
+          var a = E.stack.split('\n')[2].split(':');
 
-				var ln = parseInt(a[a.length-1])
-				args = ['[' +f +':'+ln +']'];
-				for (var i =0; i< arguments.length; i++){
-					args.push(arguments[i]);
+          var ln = parseInt(a[a.length-1])
+          args.push('[' +f +':'+ln +']');
 				}
+        for (var i =0; i< arguments.length; i++){
+          args.push(arguments[i]);
+        }
+
+
 				console.log.apply(console, args);
 			}
 
@@ -315,10 +320,16 @@ back_icons_urls=[
 		'/static/images/back_constr/fg/icons_81.png'
 
 		];
+is_safari = /Safari/.test( navigator.userAgent ) and not /Chrome/.test(navigator.userAgent)
+is_webkit = /WebKit/.test( navigator.userAgent )
+is_ie = /MSIE/.test( navigator.userAgent )
+
 
 class Constructor
   constructor: ->
     @init = (do_constr=false, site_id) ->
+      window.DB = init_db( window.csrf )
+
       @site_id = site_id
       @_site_type = "sites"
       @is_constructor = do_constr

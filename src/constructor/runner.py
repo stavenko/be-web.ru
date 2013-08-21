@@ -19,7 +19,7 @@ LOCAL = False
 MAKE_IT_GLOBAL = True;
 
 if LOCAL:
-    key_hash = 'ece2567c6348b81def04aa550c86a778' # localhost
+    key_hash = '2c0d4179689f6437b9eceb6c56b5442a' # localhost
     cookie_url = 'http://test.be-test.com:8000/'
     post_url   = 'http://test.be-test.com:8000/app/add/'
     

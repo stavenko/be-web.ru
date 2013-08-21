@@ -1,12 +1,29 @@
 {% extends "main_page.html" %}
+
+
+{% block title %}
+        <title> be-web.ru|Регистрация </title>
+{%endblock %}
+
+{% block page_title %}
+    Регистрация Нового пользователя
+{%endblock %}
 {% block content %}
-<h1>Регистрация</h1>
+        <p>Не используйте несуществующие почтовые адреса. Адреса служат для получения технической информации о вашем сайте</p>
 <form method="post" action="">
 <ul class="register">
 
-	{{ form.as_ul }}
+    <li>Домен третьего уровня: {{form.hostname}}.be-web.ru</li>
+    <li>Адрес элетронной почты: {{form.email}}</li>
+    <li> Пароль: {{form.password1}}</li>
+    <li>Еще раз пароль: {{form.password2}}</li>
+
 {% csrf_token %}
 </ul>
 <input type="submit" value="Зарегистрироваться" / class="clearfix">
 </form>
+
+        <p>
+            Вы уже создавали учетную запись у нас? Попробуйте        <a href='{%url 'login' %}'>Войти</a>
+        </p>
 {% endblock %}

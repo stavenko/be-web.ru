@@ -1,0 +1,6 @@
+HTTP/1.0 302 FOUND
+Date: Sun, 18 Aug 2013 23:42:18 GMT
+Server: WSGIServer/0.1 Python/2.7.2
+Content-Type: text/html; charset=utf-8
+Location: http://be-test.com:8000/profile/
+

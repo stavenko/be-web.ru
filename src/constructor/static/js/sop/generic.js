@@ -304,12 +304,17 @@ var o = {
 					cp : cp,
 					pos: pos,
 					_jq : false,
-
+                    redraw : function(){
+                        my_cont.find('*').remove()
+                        this.draw();
+                    },
 					draw: function(){
                         var self = this;
-                        this.data = constructor_inst.getWidgetData(pos, []);
+                        console.log( typeof this.data )
+                        if (this.data === undefined ){this.data = constructor_inst.getWidgetData(pos, [])};
                         // console.log("wdata", this.data)
                         if(this.data.length == 0  ){
+
                             var pages = $.extend(true, {}, constructor_inst.Site.pages)
                             var pa = []
                             $.each(pages,function(i, p){
@@ -346,25 +351,135 @@ var o = {
 						var pages = this.data; // $.extend(true, {}, this.data)
 
 						$.each(pages, function(ix,p){
-							var i = p.name
+                            var i = p.name
                             var li = $("<li>").appendTo(self._jq)
                                                  .css('float', 'left') //.width(item_width)
-                                                 .css('padding',0).css('margin-left', '2em')
+                                                 .css('padding',0).css('margin-right', '2em')
                                                  .css('list-style-type','none')
+                                .css('display','block')
+                                .css('position','relative')
 
                             if (i == current_page){
-                                li.append(p.title)
+                                var a = $("<span></span>").text(p.title)
+                                li.append(a)
                             }else{
-                                $("<a>").prop('href', "#!" + i).click(function(evt){
-                                    window.location.hash = "!" + i
-                                    evt.preventDefault();
-                                }).append(p.title).appendTo(li)
+                                var a = $("<a>").append(p.title).appendTo(li)
+
+                                if(i in constructor_inst.Site.pages ){
+                                    a.prop('href', "#!" + i).click(function(evt){
+                                        window.location.hash = "!" + i
+                                        evt.preventDefault();
+                                    })
+                                }else{
+                                    a.prop('href', i )
+                                }
+
+                            }
+                            if (self.is_settings){
+                               var t = 0
+                               if (ix != 0){
+                                    $("<button></button>").text("<").appendTo(li).css('position','absolute').css('top',t).css('left',-10)
+                                        .click(function(){
+                                           var item = self.data[ix-1];
+                                           self.data[ix-1]= self.data[ix]
+                                           self.data[ix] = item;
+                                           self.redraw();
+                                           })
+                               }
+                               var rmb = $("<button></button>").text("x").appendTo(li).css('position','absolute').css('top',t).css('background-color', 'red')
+                               rmb.css('left',(li.width() - rmb.width())/2 )
+                               rmb.click(function(e){ self.data.splice(ix,1); self.redraw(); })
+                               if(ix != pages.length -1){
+
+                                   var rb = $("<button></button>").text(">").appendTo(li).css('position','absolute').css('top',t)
+                                   rb.css('left',li.width() - rb.width() + 10)
+                                       .click(function(){
+                                            var item = self.data[ix+1];
+                                            self.data[ix+1]= self.data[ix]
+                                            self.data[ix] = item;
+                                            self.redraw();
+                                       })
+                               }
+                                /*
+                                a.on('mouseenter', function(e){
+                                    console.log("s")
+                                    l = $(e.target).parent().find('button').show()
+
+                                })
+                                a.on('mouseleave', function(e){
+                                    console.log("h")
+
+                                    l = $(e.target).parent().find('button').hide()
+
+                                })
+
+                                */
 
                             }
 
 						})
+                        if(self.is_settings ){
+                            $('<button></button>').appendTo($('<li></li>').css('float', 'left') //.width(item_width)
+                                    .css('padding',0).css('margin-right', '2em')
+                                    .css('list-style-type','none')
+                                    .css('display','block')
+                                    .css('position','relative')
+                                .appendTo(self._jq)
+                            ).text("++").click(function(){
+                                var di = $('<div></div>').appendTo($('#controls'));
+                                var link_choice = $("<ul>").appendTo(di)
+                                var namer = function(pname, title){
+                                    var _ret = function(){
+                                        var a;
+                                        console.log(self.data)
+                                        item = {name:pname, title:title}
+                                        self.data.push (item)
+                                        console.log(self.data)
+
+                                        di.dialog('close');
+                                        self.redraw();
+
+                                    }
+                                    return _ret;
+                                }
+                                $.each(constructor_inst.Site.pages, function(pname, page){
+                                    var li = $('<li></li>').appendTo(link_choice)
+                                    $('<button></button>').text(page.title).appendTo(li)
+                                        .click(namer(pname, page.title))
+                                })
+                                var li = $('<li>Ссылка не на мой сайт:</li>').appendTo(link_choice)
+                                var li = $('<li>URL</li>').appendTo(link_choice)
+
+                                // var link = '';
+                                var sel;
+                                var inp =$('<input type="text">').appendTo(li)
+                                    .on('mousedown',function (){ //sel = saveSelection()
+                                    } );
+                                var li = $('<li>Надпись в меню</li>').appendTo(link_choice)
+                                var inpl = $('<input type="text">').appendTo(li)
+
+                                $('<button>').text("Создать").appendTo(li).mousedown(function(e){
+                                    var link = inp.val();
+                                    var name = inpl.val();
+                                    var r = namer( link, name)
+                                    // restoreSelection(sel);
+                                    r(e);
+                                })
+                                di.dialog({title: "Вставить ссылку"})
+                            })
+                        }
 
 					},
+                    settings: function(c){
+                        this.is_settings = true
+                        this.redraw()
+
+                    },
+                    save: function(){
+
+                        console.log(pos, this.data)
+                        constructor_inst.setWidgetData( pos, this.data )
+                    },
 					jq: function(){ return this._jq } 
 				}
 				return o;
@@ -420,9 +535,9 @@ var o = {
 							font = 'Times New Roman'
 						} else{ font = this.constr.Site.fonts.content}
 						this._jq = $("<div>")
-												.addClass('text-data')
-												.html(this._data()).appendTo(this.my_cont) 
-												.css('font-family', font )
+                                        .addClass('text-data')
+                                        .html(this._data()).appendTo(this.my_cont)
+                                        .css('font-family', font )
 					},
 					_rand_id: function(){
 						var text = "";

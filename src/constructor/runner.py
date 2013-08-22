@@ -15,7 +15,7 @@ js = "return this.Main(constr,appid)"
 import hashlib
 
 username = "stavenko@gmail.com"
-LOCAL = False
+LOCAL = True
 MAKE_IT_GLOBAL = True;
 
 if LOCAL:

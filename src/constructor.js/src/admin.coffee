@@ -477,7 +477,7 @@ drawBackgroundSelectorDialog = `function (onPatternChoice, onColorChoice, onCanc
 			}`
 window.Constructor.drawBackgroundSelectorDialog = drawBackgroundSelectorDialog
 
-
+###
 
 showColorScheme = `function (){
 				var to = this._app_admin_contents;
@@ -608,8 +608,202 @@ showColorScheme = `function (){
 
 				C.mouseup(unpoint).mousedown(point).mousemove(dragger)
 			}`
-window.Constructor.showColorScheme = showColorScheme
 
+###
+window.Constructor.showColorScheme = ->
+  to = @_app_admin_contents
+  self = this
+  to.find("*").remove()
+  @_app_admin_cont.show()
+  pal_cont = $("<div>")
+  self._pallete_drawer = (C) =>
+    C.find("*").remove()
+    self._make_pallette()
+    # console.log("DRAWER", self.Site.colors.pallette)
+    for vars, k in self.Site.colors.pallette
+      #console.log k,vars
+      #vars = self.Site.colors.pallette[k]
+      main = undefined
+      b = undefined
+      for col, i in  vars
+        #console.log i, col
+        if i is 0
+          #console.log('a')
+          b = $("<div>").css("float", "left").width(100).height(1350).appendTo(C)
+          main = $("<div>").css("background-color", hsvToRgb(col)).css("float", "left").width(100).height(50)
+        else
+          #console.log('b')
+          main.appendTo b  if i is 3
+          $("<div>").css("background-color", hsvToRgb(col)).css("float", "left").width(50).height(25).appendTo b
+
+      ###
+      if vars
+        vars[5] =
+          h: 0
+          s: 0
+          b: 0
+
+        vars[6] =
+          h: 0
+          s: 0
+          b: 100
+
+        i = 0
+
+        while i < 7
+          j = 0
+
+          while j < 7
+
+            #// // // console.log;
+            $("<div>").text("Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventor").css("overflow", "hidden").css("float", "left").width(100).height(50).css("font-size", "10pt").css("background-color", hsvToRgb(vars[i])).css("color", hsvToRgb(vars[j])).appendTo b  unless (j is i) or (i is 5 and j is 6) or (i is 6 and j is 5)
+            j++
+  333        i++
+###
+
+
+  #$('<input>').prop('type','radio').prop('id','mono'),$('<label>').prop('for','mono').text('Mono'),
+  S = $("<div>").append($("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "mono").click(->
+    self._set_scheme_type "mono"
+    self.showColorScheme()
+  ), $("<label>").prop("for", "mono").text("Mono"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "complement").click(->
+    self._set_scheme_type "complement"
+    self.showColorScheme()
+  ), $("<label>").prop("for", "complement").text("Complement"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "triada").click(->
+    self._set_scheme_type "triada"
+    self.showColorScheme()
+  ), $("<label>").prop("for", "triada").text("Triada"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "split-trio").click(->
+    self._set_scheme_type "split-trio"
+    self.showColorScheme()
+  ), $("<label>").prop("for", "split-trio").text("Split-trio"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "analogous").click(->
+    self._set_scheme_type "analogous"
+    self.showColorScheme()
+  ), $("<label>").prop("for", "analogous").text("Analogoues"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "accent").click(->
+    self._set_scheme_type "accent"
+    self.showColorScheme()
+  ), $("<label>").prop("for", "accent").text("Accent")).buttonset().appendTo(to)
+
+
+  control = (name) =>
+    cont = $('<div> </div>').css('margin-bottom',20).css('margin-top',20).height(50).appendTo(to)
+    $("<span>").text(name).appendTo ($('<div></div>').css('float','left').css('margin-right',10).appendTo(cont) )
+    sl = undefined
+    inp = $('<input>').val(@Site.colors[name]).appendTo( $('<div>').css('margin-right',10).css('float','left').appendTo(cont) )
+    .on('keyup change' , (e)=>
+              @Site.colors[name] = parseInt($(e.target).val())
+              @_pallete_drawer pal_cont
+              sl.slider('value', parseInt($(e.target).val() ) )
+    )
+    sl = $("<div>").width(250).slider(
+      min: 0
+      max: 100
+      value: self.Site.colors[name]
+      slide: (event, ui) =>
+        @Site.colors[name] = ui.value
+        @_pallete_drawer pal_cont
+    ).appendTo ( $('<div>').css('float','left').width(260).appendTo(cont))
+
+  control("brightness")
+  control('saturation')
+  control('lights')
+  control('shadows')
+
+
+  cont = $('<div> </div>').css('margin-bottom',20).css('background-color','white').css('margin-top',20).height(50).appendTo(to)
+  inpt = $('<input>').appendTo($('<div>').appendTo(cont).css('float','left')).val( @Site.colors['base']).on('keyup change', (e)=>
+    v = $(e.target).val()
+    H = 0
+    if v
+      H =  parseInt($(e.target).val())
+      if H is NaN
+        H = 0
+    if H > 360
+      $(e.target).val(H % 360)
+
+    redraw ( H )
+    @Site.colors.base = H
+    @_pallete_drawer (pal_cont)
+  )
+  pal_cont.appendTo(to)
+
+
+  canvas = $("<canvas>").appendTo(cont).css('float','left')# .width(400).height(30)
+  canvas[0].width = 360
+  canvas[0].height = 30
+  context = canvas[0].getContext("2d")
+  draw_marker = (x)->
+    context.save()
+    context.translate(x,15)
+    context.beginPath()
+    context.arc(0, 0, 5, 0, 2*Math.PI, 0)
+    context.closePath()
+    context.lineWidth = 2
+    context.strokeStyle = "#000"
+    context.stroke()
+    context.restore()
+
+  redraw = (H = @Site.colors['base'])=>
+    h = 0
+    while h < 360
+
+      context.save()
+      context.beginPath()
+      context.translate h, 0
+
+      context.moveTo 0, 0
+      context.lineWidth = 1
+      context.strokeStyle = hsvToRgb(
+        h: h
+        s: 100
+        b: 100
+      )
+      context.lineTo 0, 30
+      context.closePath()
+      context.stroke()
+      context.restore();
+      h++
+    draw_marker(H)
+  redraw()
+  self._pallete_drawer pal_cont
+  orig = undefined
+  offset = undefined
+
+  point = (evt) ->
+
+    #// // console.log(evt.clientX),
+    orig = evt.clientX
+    self._pallete_drawer pal_cont
+
+  unpoint = (evt) ->
+    off_ = canvas.offset()
+    self._set_base_hue evt.clientX - off_.left
+    orig = false
+
+    self.redraw_background()
+    self.redraw()
+
+    for i of self.Site.textColors
+      ix = self.Site.textColors[i].index
+      hsba = self.get_color(ix)
+      hex = hsvToHex(hsba)
+      self.Site.textColors[i].rgb = hex
+  dragger = (evt) =>
+      evt.preventDefault()
+      evt.stopPropagation()
+      if orig
+        offset = canvas.offset()
+        h = evt.clientX - offset.left
+        if h > 360
+          h=360
+        if h < 0
+          h=0
+        inpt.val(h)
+        redraw(h)
+        @Site.colors.base = h
+        @_pallete_drawer (pal_cont)
+
+
+  canvas.mouseup(unpoint).mousedown(point).mousemove(dragger)
 
 window.Constructor.showLayoutScheme = ->
   to = @_app_admin_contents
@@ -1817,7 +2011,19 @@ upPage = `function (name) {
 				this.load_site()
 				this.redraw_cp(1);
 			}`
-window.Constructor.upPage = upPage
+window.Constructor.upPage = (name) ->
+  ix = 1
+  ix = @Site.pages[name].order if @Site.pages[name].order?
+
+  @Site.pages[name].order = ix - 1
+  subst = @page_order_index[ix - 1]
+
+  ix_s = @Site.pages[subst].order
+
+  @Site.pages[subst].order = ix_s + 1
+  @_save_site()
+  @load_site()
+  @redraw_cp 1
 
 
 window.Constructor.showUserScheme = ->

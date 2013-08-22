@@ -3,8 +3,9 @@ window.Constructor.redraw = (force_reload = false)-> # Done
         @clear();
         @draw(null,null,null,force_reload);
 window.Constructor.clear = ->
-        @page_cont.find( "*").remove()
-        $("#controls>.widget-control").remove()
+  # console.log('clear')
+  @page_cont.find( "*").remove()
+  $("#controls>.widget-control").remove()
 
 window.Constructor.draw= (custom_cont = @page_cont, custom_head=$('head'), custom_hash, force_reload=false) -> #Done
       #log("CH", custom_hash)

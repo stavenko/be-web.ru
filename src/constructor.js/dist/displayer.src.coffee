@@ -357,8 +357,9 @@ window.Constructor.redraw = (force_reload = false)-> # Done
         @clear();
         @draw(null,null,null,force_reload);
 window.Constructor.clear = ->
-        @page_cont.find( "*").remove()
-        $("#controls>.widget-control").remove()
+  # console.log('clear')
+  @page_cont.find( "*").remove()
+  $("#controls>.widget-control").remove()
 
 window.Constructor.draw= (custom_cont = @page_cont, custom_head=$('head'), custom_hash, force_reload=false) -> #Done
       #log("CH", custom_hash)
@@ -1336,7 +1337,7 @@ caching = `function (){
               var b = $('<body>')
               .prop('style', body_style.cssText)
               .html(content).appendTo(h)
-              hashes[hash] = {'body':h.html(), head:head_content}
+              hashes[hash] = {'cont':b.html(), head:head_content}
               active_renderers[hash] = false;
             }, 5000)
 					}finally{
@@ -1364,6 +1365,7 @@ window.Constructor.caching = caching
 
 
 _make_pallette = `function (){
+
 				var h =	 this.Site.colors.base,
 					lights = this.Site.colors.lights,
 					shadows = this.Site.colors.shadows,
@@ -1413,7 +1415,7 @@ _make_pallette = `function (){
 				br_koef	 = [0.05, 0.05, 0.45 ,0.3];
 
 				colors = [h,a,s,A];
-
+        console.log("Hues", colors)
 				var greys = new Array();
 				am = 5
 				for(c =0; c <= am; c++){
@@ -1495,6 +1497,7 @@ window.Constructor._make_pallette =->
   sat_koef = [0.89, 0.5, 0.5, 0.01]
   br_koef = [0.05, 0.05, 0.45, 0.3]
   colors = [h, s, a, A]
+  # console.log("COLORS", colors)
   greys = new Array()
   am = 5
   c = 0

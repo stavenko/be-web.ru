@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
 	<head>
-        <title> </title>
+
 		
 		<meta name="fragment" content="!">
 		
 		{{ site.metas|safe }}
-		
+
 		<script  src="{{STATIC_URL}}js/jquery-1.10.2.min.js"></script>
         <script  src="{{STATIC_URL}}js/underscore-min.js"></script>
         <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/json2.js"></script>
 		<script  src="{{STATIC_URL}}js/sop/Application.js"></script>
 		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/sop/displayer.js"></script>
 
-
+        {{ main_page.head|safe }}
 		<script>
 		window.STATIC = "{{ STATIC_URL }}";
         window.csrf = "{% csrf_token %}";
@@ -55,9 +55,12 @@
 				height:100%;
 
 			}
+
             {{ site.textColors|safe }}
 
 		</style>
+
+
 	</head>
 	
 	
@@ -65,11 +68,13 @@
 				
 		<div id="id-top-cont">
 			<div class="hidden-links">
+                <a href="#!"> Main page </a>
 				{{ site.cached_urls|safe }}
 			</div>
-			
+        {{ main_page.cont|safe }}
+
 		</div>
-		
+
 		<div id="controls"></div>
 		
 		

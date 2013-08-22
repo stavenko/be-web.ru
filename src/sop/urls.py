@@ -34,7 +34,7 @@ except ImportError as e:
     from BeautifulSoup import BeautifulSOAP as bs
 
 
-
+last_modified_dateformat = '%a %b %d %Y %H:%M:%S GMT'
 
 Site_json = """{"_Apps":["generic","theshop"],"layout":{"cols":12,"fixed":true,"padding":{"hor":10,"ver":3},"width":960,"drawen_lines":30,"base_height":50},"colors":{"type":"mono","base":120,"brightness":100,"lights":50,"saturation":100,"shadows":50},"backgrounds":{},"pages":{"":{"layout":"same","title":"Main page of my project","blocks":{"0:0":{"width":3,"height":3,"widget":{"name":"generic.text","data":"Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, quia voluptas sit, aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos, qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui dolorem ipsum, quia dolor sit, amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt, ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus, qui blanditiis praesentium voluptatum deleniti atque corrupti, quos dolores et quas molestias excepturi sint, obcaecati cupiditate non provident, similique sunt in culpa, qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat."}},"8:0":{"width":4,"height":2,"widget":{"name":"generic.text","data":"Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, quia voluptas sit, aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos, qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui dolorem ipsum, quia dolor sit, amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt, ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus, qui blanditiis praesentium voluptatum deleniti atque corrupti, quos dolores et quas molestias excepturi sint, obcaecati cupiditate non provident, similique sunt in culpa, qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat."}},"3:0":{"width":5,"height":5,"widget":{"name":"generic.image","data":{}}}}},"about":{"layout":"same","title":"Page about project","blocks":{"0:0":{"width":12,"height":3,"widget":{"name":"generic.text","data":"Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, quia voluptas sit, aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos, qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui dolorem ipsum, quia dolor sit, amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt, ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus, qui blanditiis praesentium voluptatum deleniti atque corrupti, quos dolores et quas molestias excepturi sint, obcaecati cupiditate non provident, similique sunt in culpa, qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat."}},"0:3":{"width":12,"height":2,"widget":{"name":"generic.text","data":"Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, quia voluptas sit, aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos, qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui dolorem ipsum, quia dolor sit, amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt, ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus, qui blanditiis praesentium voluptatum deleniti atque corrupti, quos dolores et quas molestias excepturi sint, obcaecati cupiditate non provident, similique sunt in culpa, qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat."}},"0:5":{"width":5,"height":5,"widget":{"name":"generic.text","data":"Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, quia voluptas sit, aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos, qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui dolorem ipsum, quia dolor sit, amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt, ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus, qui blanditiis praesentium voluptatum deleniti atque corrupti, quos dolores et quas molestias excepturi sint, obcaecati cupiditate non provident, similique sunt in culpa, qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat."}}}}},"Applications":{"generic":{"types":{"image":{"tip":"text","name":"text","binary":"binary","id":"id"},"text":{"id":"id","content":"html"}},"title":"Basic Site","widgets":{"text":{"title":"Текстовое поле"},"image":{"title":"Картинка"}}},"theshop":{"title":"The shop","_common_per_page":5,"_product_list_current_page":0,"widgets":{}}}} """ 
 Site = json.loads(Site_json)
@@ -167,18 +167,19 @@ def profile_page(req, *k, **kw):
     
 def site_view(site, req, *k, **kw):
     escaped = req.GET.get('_escaped_fragment_', None)
+    site = _get_current_site(req, with_cache = True)
+    print "FUCK"
     if escaped is not None:
         # send cached data to google or yandex
-        site = _get_current_site(req, with_cache = True)
-        
-        html = site.get('cache',{}).get(escaped, '')
-        # soup=bs(html)                #make BeautifulSoup
-        # prettyHTML=soup.prettify()
+
+        html = site.get('cache',{}).get(escaped, {}).get("html", "")
         return HttpResponse(html)
         
     site['id'] = site['_id']
     c = RequestContext(req)
     c['site'] = site
+    c['main_page'] = site.get('cache',{}).get('',{})
+    print "WTF", c
     return render_to_response("constructor/displayer_page.html", c)
     
 def site_edit(site, req, *k, **kw):
@@ -200,7 +201,7 @@ def site_edit(site, req, *k, **kw):
 def _get_current_site(req, with_cache = False):
     host = req.META['HTTP_HOST']
     if with_cache:
-        fields = {'site_id':1, 'hostname':1, 'django_user_id':1, 'cache' : 1, 'favicon': 1}
+        fields = {'site_id':1, 'hostname':1, 'django_user_id':1, 'cache' : 1, 'favicon': 1, 'cached_urls':1, 'textColors':1}
     else:
         fields = {'site_id':1, 'hostname':1, 'django_user_id':1, 'favicon': 1}
     if ':' in host:
@@ -236,15 +237,17 @@ def _get_current_site_inst(req, site=None):
 def base(req, *k, **kw):
     
     host = req.META['HTTP_HOST']
-
     if host == settings.MY_BASE_HOST:
         return _my_base(req,*k,**kw)
     else:
         site = req.storage.findOne(accounts, {"hostname": host})
+
         if site:
+            print kw
             if kw.get('is_admin', False) :
                 return site_edit(site, req, *k, **kw)
             else:
+                print ">>>>"
                 return site_view(site, req, *k, **kw)
         else:
             return HttpResponseRedirect("http://" + settings.MY_BASE_HOST  + "/profile/")
@@ -274,39 +277,39 @@ def get_application(req, app_name):
     
     site = _get_current_site(req)
     app = req.storage.findOne('application', {'app_name': app_name, "site_id": site['_id'] })
+
     if app:
         app['is_own'] = True
         resp = HttpResponse(json.dumps(app, default = json_util.default))
-        resp['Cache-Control'] = 'private'
 
-        exp = (datetime.datetime.now() + datetime.timedelta(seconds= (60 * 5)) )
-        resp['Expires'] = exp.strftime('%a %b %d %Y %H:%M:%S GMT+1200')
-        print resp['Expires']
+        # exp = (datetime.datetime.now() + datetime.timedelta(seconds= (60 * 5)) )
+        if 'date_changed' in app:
+            resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)  #exp.strftime('%a %b %d %Y %H:%M:%S GMT+1200')
+            print resp['Last-Modified']
         return resp
     else:
         # search it in global index
         app_ix = req.storage.findOne('global_app_index', {'full_name': app_name} )
-        print app_ix
+
         if app_ix:
             # application name in long name is a first parameter
             # generic.main.be-web.ru
             # theshop.main.be-web.ru
-            #name = app_name.split('.',1)[0]
+            # name = app_name.split('.',1)[0]
             app = req.storage.findOne('application', {'app_name': app_ix['full_name'], 'site_id': app_ix['site_id'] })
             app['is_own'] = False
             resp =  HttpResponse(json.dumps(app, default = json_util.default))
-            resp['Cache-Control'] = 'private'
-
-            exp = (datetime.datetime.now() + datetime.timedelta(seconds=60))
-            resp['Expires'] = exp.strftime('%a, %d %b %Y %H:%M:%S')
-            print resp['Expires']
+            print app
+            if 'date_changed' in app:
+                resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)
+                print resp['Last-Modified']
             return resp
         else:
             raise ValueError("no such application")
 
 
 def put_application_to_global_index(req, site, app):
-    new_values = {}
+    new_values = dict([(k,v) for k,v in app.items() if k in ['date_changed'] ] )
     app_ix = {'full_name': app['app_name'], 'title': app['title'], 'site_id': site['_id'] }
     
     app = req.storage.findOne('global_app_index', app_ix)
@@ -334,6 +337,7 @@ def adding_application(req):
         appl = req.storage.findOne('application', {'app_name': app['app_name'], "site_id": site['_id']})
         if appl:
             appl.update(app)
+            # print "DC", appl.get('date_changed')
             res = req.storage.safe_update('application', appl)
             id_ = res[1]['_id']
         else:
@@ -351,6 +355,7 @@ def adding_application(req):
     app_def_name = app['app_name'] 
     app_name_with_host = app_def_name + u'.' + site['hostname'][0]
     app['app_name'] = app_name_with_host
+    app['date_changed'] = datetime.datetime.now()
     
     if req.user.is_authenticated():
         app['site_id']  = site['_id']
@@ -360,12 +365,12 @@ def adding_application(req):
         
         username = req.POST.get('username', '')
         make_it_global = req.POST.get('make_it_global', False)
-        print "lets do it global", make_it_global
+        # print "lets do it global", make_it_global
         
         user = User.objects.get( username = username )
         my_cr = hashlib.md5(":".join([user.username, hashlib.md5(user.password).hexdigest() ])).hexdigest()
         
-        if my_cr == auth_token:
+        if my_cr == auth_token: # authentication
             app['site_id'] = site['_id']
             obj_id = save_app(site, app, to_global = make_it_global )
         else:
@@ -442,6 +447,12 @@ def setTriggers(req, site ,datatype, event_type, object):
         site['hostname'] = doms
         object['domains'] = doms
 
+        urls = []
+        for page, value in object['pages'].items():
+            if value['show_in_menu']:
+                urls.append( "<a href='#!%s'>%s</a>" % (page, value['title']) )
+
+        site['cached_urls'] = "\n".join(urls)
 
         # Необходимо доставать этот объект целиком перед сохранением, поскольку для оптимизации мы его
         # Достаем без кеша - только учетные данные
@@ -512,7 +523,7 @@ def data_connector(req):
         else:
             type = req.GET.get('type')
             r    = json.loads(req.GET.get('o','{}'), object_hook = json_util.object_hook )
-            print r
+            #print r
             q = {'site_id': site['_id']}
             if ('@' in type):
                 mongo_db, app = type.split('@')
@@ -522,7 +533,7 @@ def data_connector(req):
             if check_roles(req, type, 'view', site = site):
                 if 'q' in r:
                     q.update( r['q'] )
-                    print q
+                    #print q
                     objs = req.storage.find(mongo_db, q)
                 else:
                     objs = req.storage.find(mongo_db, q)
@@ -552,9 +563,15 @@ def blob_extruder(req, blob_id):
     gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
     f = gf.get( ObjectId(blob_id )) # Здесь надо узнать - есть ли файл, если нету - поискать в базе его путь
     mt =  f.content_type
-    if req.META.get('HTTP_IF_NONE_MATCH', '') != f.md5:
+    #raise IndexError(str(req))
+    is_etag = req.META.get('HTTP_IF_NONE_MATCH', '') == f.md5
+    is_last = req.META.get('HTTP_IF_MODIFIED_SINCE', '') == f.upload_date.strftime('%a %b %d %Y %H:%M:%S GMT')
+    print is_etag , is_last
+    if not any([is_etag , is_last]):
         resp = HttpResponse( f , mimetype=mt if mt is not None else "text/plain")
         resp['ETag'] = f.md5
+        resp['Last-Modified'] = f.upload_date.strftime('%a %b %d %Y %H:%M:%S GMT') #"Tue, 16 Jul 2013 23:54:26 GMT")
+        #raise IndexError("WE DO INSTALL TAG")
         return resp
 
     else:
@@ -682,7 +699,7 @@ class RegistrationView( FormView ):
         
             d,is_created = pmodels.Domain.objects.get_or_create(name =settings.MY_BASE_HOST)
         
-            r,is_c = pmodels.Record.objects.get_or_create(name = full, content= settings.MY_BASE_HOST, type = 'CNAME', domain = d)
+            r,is_c = pmodels.Record.objects.get_or_create(name = full, content= settings.MY_BASE_HOST, type = 'CNAME', domain = d, ttl=60*60*24)
         
         
         if settings.DEBUG:
@@ -892,11 +909,14 @@ def site_cacher(req):
     cache = {}
     for i in sjs:
         head = sjs[i]['head']
-        body = sjs[i]['body']
+        cont = sjs[i]['cont']
+        body = "<body>%s</body>"% cont
         S = bs(body)
         html = u"<html> <head>%s %s</head> %s</html>" %( head, DS, body)
         key = i[2:]
-        cache[key] = html
+        cache[key] = {"html":html, 'head':head, 'cont':cont}
+
+
     cur_acc['cache'] = cache
     full_object = req.storage.findOne(accounts, {'_id': cur_acc['_id'] } )
     full_object.update(cur_acc) # Вставляем новые данные
@@ -960,7 +980,8 @@ urlpatterns = patterns('',
     # Examples:
     # url(r'^$', 'sop.views.home', name='home'),
     # url(r'^sop/', include('sop.foo.urls')),
-    
+    url(r'^$', base),
+
     url(r'^admin/', base, {'is_admin' : True} ),
     url(r'^data/$', data_connector),
     url(r'^data/delete/$', data_deleter),
@@ -1001,8 +1022,7 @@ urlpatterns = patterns('',
     url(r'^auth/restore_password/', restore_password, name='restore_password'),
 
     
-    url(r'^$', base)
-    
+
     #url('^(?P<page_name>)[a-z][A-Z][0-9].*)$', base)
     
     

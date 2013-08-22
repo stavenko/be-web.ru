@@ -292,7 +292,6 @@ var o = {
 		  }
         }, // конец галереи
 */
-									
 		"menubar" : {title:"Меню сайта", 
 					default_size: [3,1],
 					init: function(my_cont, constructor_inst, pos, cp){
@@ -307,6 +306,27 @@ var o = {
 					_jq : false,
 
 					draw: function(){
+                        var self = this;
+                        this.data = constructor_inst.getWidgetData(pos, []);
+                        // console.log("wdata", this.data)
+                        if(this.data.length == 0  ){
+                            var pages = $.extend(true, {}, constructor_inst.Site.pages)
+                            var pa = []
+                            $.each(pages,function(i, p){
+                                p.name = i
+                                pa.push(p)
+                            })
+                            pa.sort(function(a,b){ return a.order - b.order } )
+
+                            _.chain(pa)
+                            .map(function(pval, pname) {
+                                    // console.log( pname, pval )
+                                    if (pval.show_in_menu ){
+                                        self.data.push({name: pval.name, title:pval.title})
+                                    }
+                                })
+                        }
+
 						if (typeof this.constr.Site.fonts == 'undefined' ){
 							font = 'Times New Roman'
 						} else{ font = this.constr.Site.fonts.content}
@@ -321,40 +341,27 @@ var o = {
 
 						var current_page = constructor_inst.current_page
 						var self = this;
-						var pages = 0
-						for(i in constructor_inst.Site.pages){
-							pages+=1
-						}
-						//var width = my_cont.width();
-						//var item_width = width / pages;
+						var pages = this.data.length
 
-						var pages = $.extend(true, {}, constructor_inst.Site.pages)
-						var pa = [];
-						$.each(pages,function(i, p){
-							p.slug = i
-							pa.push(p)
-						})
-				        pa.sort(function(a,b){ return a.order - b.order } )
-				
-				
-						$.each(pa, function(ix,p){	
-							var i = p.slug
-							if( p.show_in_menu ){
-								var li = $("<li>").appendTo(self._jq)
-													 .css('float', 'left') //.width(item_width)
-													 .css('padding',0).css('margin-left', '2em')
-													 .css('list-style-type','none')
-								if (i == current_page){
-									li.append(p.title)
-								}else{
-									$("<a>").prop('href', "#!" + i).click(function(evt){
-										window.location.hash = "!" + i
-										evt.preventDefault();
-									}).append(p.title).appendTo(li)
-								
-								}
-							}
-							
+						var pages = this.data; // $.extend(true, {}, this.data)
+
+						$.each(pages, function(ix,p){
+							var i = p.name
+                            var li = $("<li>").appendTo(self._jq)
+                                                 .css('float', 'left') //.width(item_width)
+                                                 .css('padding',0).css('margin-left', '2em')
+                                                 .css('list-style-type','none')
+
+                            if (i == current_page){
+                                li.append(p.title)
+                            }else{
+                                $("<a>").prop('href', "#!" + i).click(function(evt){
+                                    window.location.hash = "!" + i
+                                    evt.preventDefault();
+                                }).append(p.title).appendTo(li)
+
+                            }
+
 						})
 
 					},
@@ -439,9 +446,7 @@ var o = {
 					},
 					_change_text: function(command,val){
 						r = document.execCommand(command, false, val)
-
-			
-					},																				
+					},
 					settings: function(controls){
 						var self =this;
                         var d;
@@ -473,7 +478,6 @@ var o = {
                                 }
                             }
                         }
-
 						if(this.constr){
 							this._jq.prop('contentEditable', 'true') //.prop('id', eid)
                             var initer = function(){
@@ -485,19 +489,18 @@ var o = {
                                     setTimeout(initer, 500)
                                 }
                                 $(document).one('mouseup', function(evt){
-
                                     var sel = window.getSelection()
                                     // console.log(sel);
                                     if ( (sel.focusOffset - sel.anchorOffset)  !=  0){
                                         if (d != null){
                                             d.remove();
                                         }
-
                                         d = $('<div></div>').css({
                                             'position':'absolute',
                                             'background-color':'white'
                                             }).appendTo($('#controls'))
                                             .position({of:evt, my:'right top', at:'left top'})
+                                        $('<button>').html('X').appendTo(d).click(function(){self._change_text("RemoveFormat"); closer()})
                                         $('<button>').html('<b>B</b>').appendTo(d).click(function(){self._change_text("bold"); closer()})
                                         $('<button>').html('<i>i</i>').appendTo(d).click(function(){self._change_text("italic");closer() })
                                         $('<button>').html('<u>U</u>').appendTo(d).click(function(){self._change_text("underline");closer() })
@@ -510,6 +513,10 @@ var o = {
                                             self.color_chooser = self.constr.draw_color_chooser(cb);
                                             self.color_chooser.appendTo($('#controls')).position({of:$(this), my:'left top', at:'right bottom'})
                                         })
+                                        $('<button>').html('Unlink').appendTo(d).click(function(){
+                                            self._change_text('Unlink');closer()
+
+                                        })
                                         $('<button>').html('Link').appendTo(d).click(function(){
                                             var di = $('<div></div>').appendTo($('#controls'));
                                             var link_choice = $("<ul>").appendTo(di)
@@ -517,14 +524,13 @@ var o = {
                                                 var _ret = function(){
                                                     var a;
                                                     if (pname == null){
-
                                                         a = page;
                                                     }else{
                                                         a = "#!" + pname;
                                                     }
                                                     document.execCommand('createLink', false, a);
                                                     di.dialog('close');
-                                                    ;closer();
+                                                    closer();
                                                 }
                                                 return _ret;
                                             }
@@ -629,19 +635,11 @@ var o = {
                     settings: function(controls){
                         var self =this;
                         if(this.constr){
-                            //var eid = "my-" + this._rand_id();
-                            //var tbid = "tb" + this._rand_id();
                             this._jq.prop('contentEditable', 'true') //.prop('id', eid)
 
                                         // .prop("id", tbid)
 
                             var cp = $("<div>").appendTo( controls )
-
-                            //console.log(controls)
-                            //$('<button>').html('<b>B</b>').appendTo(cp).click(function(){self._change_text("bold") })
-                            //$('<button>').html('<i>i</i>').appendTo(cp).click(function(){self._change_text("italic") })
-                            //$('<button>').html('<u>U</u>').appendTo(cp).click(function(){self._change_text("underline") })
-                            //$('<button>').html('<s>S</s>').appendTo(cp).click(function(){self._change_text("StrikeThrough") })
                         $("<div>").width(250).slider({min:100, max:300,value:this._size*10, slide:function(event, ui){
                                 self._size = ui.value/10;
                                 self._jq.css('font-size', self._size + 'px')
@@ -729,15 +727,8 @@ var o = {
                             //var tbid = "tb" + this._rand_id();
                             this._jq.prop('contentEditable', 'true') //.prop('id', eid)
 
-                                        // .prop("id", tbid)
 
                             var cp = $("<div>").appendTo( controls )
-
-                            //console.log(controls)
-                            //$('<button>').html('<b>B</b>').appendTo(cp).click(function(){self._change_text("bold") })
-                            //$('<button>').html('<i>i</i>').appendTo(cp).click(function(){self._change_text("italic") })
-                            //$('<button>').html('<u>U</u>').appendTo(cp).click(function(){self._change_text("underline") })
-                            //$('<button>').html('<s>S</s>').appendTo(cp).click(function(){self._change_text("StrikeThrough") })
                         $("<div>").width(250).slider({min:100, max:300,value:this._size*10, slide:function(event, ui){
                                 self._size = ui.value/10;
                                 self._jq.css('font-size', self._size + 'px')
@@ -960,21 +951,19 @@ var o = {
 						
 						if (z < 0.4) zf /=10;
                         if (z < 0.2) zf /=2;
-
 						if (z > 1.5) zf *= 5;
-						
-						
+
 						var nz = z + zf;
 						if (nz > 0.02 && nz <10){
-								var K = (z*z + z*zf)
-								
-								var nx = x - ( (px*zf) / K );
-								var ny = y - ( (py*zf) / K);
-								
-								self.data.position.left = nx;
-								self.data.position.top = ny;
-								self.data.zoom = nz;
-								self.redraw_ctx();
+                            var K = (z*z + z*zf)
+
+                            var nx = x - ( (px*zf) / K );
+                            var ny = y - ( (py*zf) / K);
+
+                            self.data.position.left = nx;
+                            self.data.position.top = ny;
+                            self.data.zoom = nz;
+                            self.redraw_ctx();
 						}
 
 						

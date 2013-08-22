@@ -1401,7 +1401,7 @@
               var b = $('<body>')
               .prop('style', body_style.cssText)
               .html(content).appendTo(h)
-              hashes[hash] = {'body':h.html(), head:head_content}
+              hashes[hash] = {'cont':b.html(), head:head_content}
               active_renderers[hash] = false;
             }, 5000)
 					}finally{
@@ -1425,6 +1425,7 @@
   window.Constructor.caching = caching;
 
   _make_pallette = function (){
+
 				var h =	 this.Site.colors.base,
 					lights = this.Site.colors.lights,
 					shadows = this.Site.colors.shadows,
@@ -1474,7 +1475,7 @@
 				br_koef	 = [0.05, 0.05, 0.45 ,0.3];
 
 				colors = [h,a,s,A];
-
+        console.log("Hues", colors)
 				var greys = new Array();
 				am = 5
 				for(c =0; c <= am; c++){

@@ -1,5 +1,5 @@
 (function() {
-  var BASE_SITE, Constructor, DEBUG, Site, addCustomColor, addPage, apply_block_settings, back_icons_urls, caching, clone, default_app, default_site, deletePage, delete_block, downPage, drawBackgroundSelectorDialog, getBlockSettings, getWidgetData, get_color, hsvToHex, hsvToRgb, init_cp_marker, is_ie, is_safari, is_webkit, log, move_block, port, rect, redraw_cp, rgb2hsv, scaleImage, setBlockSettings, setDefaultBlockSettings, setWidgetData, showBackgroundScheme, showColorScheme, showFontsScheme, test_block_content, upPage, _add_title, _block_height, _block_left, _block_width, _calc_height, _calc_left, _calc_top, _calc_width, _get_page_var, _make_pallette, _save_site, _set_base_hue, _set_description, _set_keywords, _set_page_var, _set_scheme_type, _show_css_pattern_editor, _show_picture_based_background_list, _stepping_height, _stepping_left, _stepping_top, _stepping_width, _uncalc_left, _uncalc_top,
+  var BASE_SITE, Constructor, DEBUG, Site, addCustomColor, addPage, apply_block_settings, back_icons_urls, caching, clone, default_app, default_site, deletePage, delete_block, downPage, drawBackgroundSelectorDialog, getBlockSettings, getWidgetData, get_color, hsvToHex, hsvToRgb, init_cp_marker, is_ie, is_safari, is_webkit, log, move_block, port, rect, redraw_cp, rgb2hsv, scaleImage, setBlockSettings, setDefaultBlockSettings, setWidgetData, showBackgroundScheme, showFontsScheme, test_block_content, upPage, _add_title, _block_height, _block_left, _block_width, _calc_height, _calc_left, _calc_top, _calc_width, _get_page_var, _make_pallette, _save_site, _set_base_hue, _set_description, _set_keywords, _set_page_var, _set_scheme_type, _show_css_pattern_editor, _show_picture_based_background_list, _stepping_height, _stepping_left, _stepping_top, _stepping_width, _uncalc_left, _uncalc_top,
     _this = this,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -1401,7 +1401,7 @@
               var b = $('<body>')
               .prop('style', body_style.cssText)
               .html(content).appendTo(h)
-              hashes[hash] = {'body':h.html(), head:head_content}
+              hashes[hash] = {'cont':b.html(), head:head_content}
               active_renderers[hash] = false;
             }, 5000)
 					}finally{
@@ -1425,6 +1425,7 @@
   window.Constructor.caching = caching;
 
   _make_pallette = function (){
+
 				var h =	 this.Site.colors.base,
 					lights = this.Site.colors.lights,
 					shadows = this.Site.colors.shadows,
@@ -1474,7 +1475,7 @@
 				br_koef	 = [0.05, 0.05, 0.45 ,0.3];
 
 				colors = [h,a,s,A];
-
+        console.log("Hues", colors)
 				var greys = new Array();
 				am = 5
 				for(c =0; c <= am; c++){
@@ -2431,137 +2432,350 @@
 
   window.Constructor.drawBackgroundSelectorDialog = drawBackgroundSelectorDialog;
 
-  showColorScheme = function (){
-				var to = this._app_admin_contents;
-				var self = this;
-				to.find('*').remove()
-				this._app_admin_cont.show()
-				var c = $("<div>")
+  /*
+  
+  showColorScheme = `function (){
+  				var to = this._app_admin_contents;
+  				var self = this;
+  				to.find('*').remove()
+  				this._app_admin_cont.show()
+  				var c = $("<div>")
+  
+  
+  				self._pallete_drawer = function(C){
+  
+  					C.find('*').remove()
+  					self._make_pallette();
+  					for (k in self.Site.colors.pallette){
+  						var vars = self.Site.colors.pallette[k];
+  						// // // console.log("PAL", k, vars);
+  						for (i in vars){
+  							if(i == 0){
+  								var b = $('<div>').css('float','left').width(100).height(1350).appendTo(C)
+  								var main = $('<div>').css('background-color',hsvToRgb(vars[i])).css('float','left').width(100).height(50)
+  							}else{
+  								// // // // console.log(i)
+  								if(i == 3){
+  									main.appendTo(b);
+  								}
+  
+  								$('<div>').css('background-color',hsvToRgb(vars[i])).css('float','left').width(50).height(25).appendTo(b)
+  							}
+  
+  						}
+  						if (vars){
+  							vars[5]={h:0, s:0, b:0}
+  							vars[6]={h:0, s:0, b:100}
+  							for (var i =0; i < 7; i++){
+  								for (var j =0; j < 7; j++){
+  									//// // // console.log;
+  									if (!((j==i) || (i==5 &&j==6) || (i==6&&j==5)	) ){
+  										$("<div>").text('Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventor')
+  										.css('overflow','hidden').css('float','left').width(100).height(50).css('font-size','10pt')
+  										.css('background-color', hsvToRgb( vars[i]) )
+  										.css('color', hsvToRgb(vars[j]) ).appendTo(b)
+  
+  									}
+  								}
+  
+  
+  							}
+  
+  						}
+  					}
+  				}
+  				var S = $('<div>').append(
+  											$('<input>').prop('name','scheme').prop('type','radio').prop('id','mono').click(function(){ self._set_scheme_type('mono');self.showColorScheme(); }),		$('<label>').prop('for','mono').text('Mono'),
+  											$('<input>').prop('name','scheme').prop('type','radio').prop('id','complement').click(function(){ self._set_scheme_type('complement');self.showColorScheme()}),$('<label>').prop('for','complement').text('Complement'),
+  											$('<input>').prop('name','scheme').prop('type','radio').prop('id','triada').click(function(){ self._set_scheme_type('triada');self.showColorScheme();}),	$('<label>').prop('for','triada').text('Triada'),
+  											$('<input>').prop('name','scheme').prop('type','radio').prop('id','split-trio').click(function(){ self._set_scheme_type('split-trio');self.showColorScheme();}),$('<label>').prop('for','split-trio').text('Split-trio'),
+  											$('<input>').prop('name','scheme').prop('type','radio').prop('id','analogous').click(function(){ self._set_scheme_type('analogous');self.showColorScheme();}), $('<label>').prop('for','analogous').text('Analogoues'),
+  											$('<input>').prop('name','scheme').prop('type','radio').prop('id','accent').click(function(){ self._set_scheme_type('accent');self.showColorScheme();}),	$('<label>').prop('for','accent').text('Accent')
+  											//$('<input>').prop('type','radio').prop('id','mono'),$('<label>').prop('for','mono').text('Mono'),
+  
+  				).buttonset().appendTo(to)
+  				$("<span>").text('brightness').appendTo(to)
+  				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.brightness, slide:function(event, ui){ self.Site.colors.brightness = ui.value;self._pallete_drawer.apply(self,[c])	}} ).appendTo(to)
+  
+  				$("<span>").text('saturation').appendTo(to)
+  				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.saturation, slide:function(event, ui){ self.Site.colors.saturation = ui.value; self._pallete_drawer.apply(self,[c])	 }} ).appendTo(to)
+  
+  				$("<span>").text('lights').appendTo(to)
+  				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.lights, slide:function(event, ui){ self.Site.colors.lights = ui.value; self._pallete_drawer.apply(self,[c])	 } } ).appendTo(to)
+  
+  				$("<span>").text('shadows').appendTo(to)
+  				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.shadows, slide:function(event, ui){ sel
+  				f.Site.colors.shadows = ui.value; self._pallete_drawer.apply(self,[c])} } ).appendTo(to)
+  
+  				var C = $('<canvas>').appendTo(to)
+  				.css('display','block')
+  				.width(360)
+  				.height(30)
+  
+  				var context = C[0].getContext('2d');
+  				for(var h = 0; h< 360; h++){
+  					// // // console.log(rgbc)
+  					context.beginPath()
+  					context.moveTo(h*0.85,0)
+  					context.lineWidth = 1;
+  					context.strokeStyle = hsvToRgb({h:h, s:100, b:100});;
+  					context.lineTo(h*0.85, 300)
+  					context.closePath()
+  					context.stroke()
+  				}
+  				c.appendTo(to)
+  				self._pallete_drawer(c);
+  
+  				var orig;
+  				var point = function(evt){
+  					//// // console.log(evt.clientX),
+  					orig = evt.clientX
+  					self._pallete_drawer(c)
+  				}
+  				var unpoint = function(evt){
+  					var off = C.offset();
+  					self._set_base_hue(evt.clientX - off.left);
+  					orig = false
+  					// TODO: insert textColors code here
+  
+  					self.redraw_background()
+            self.redraw()
+            for(var i in self.Site.textColors){
+              var ix = self.Site.textColors[i].index
+              var hsba = self.get_color(ix)
+              var hex =  hsvToHex( hsba )
+              self.Site.textColors[i].rgb = hex
+              //log(hex)
+  
+  
+            }
+            //log(self.Site.textColors)
+  
+  				}
+  				var dragger=function(evt){
+  					if (orig){
+  						var off = C.offset()
+  						self._set_base_hue(evt.clientX - off.left)
+  						self._pallete_drawer.apply(self,[c])
+  						// // // console.log(evt.clientX - off.left)
+  					}
+  				}
+  
+  				C.mouseup(unpoint).mousedown(point).mousemove(dragger)
+  			}`
+  */
 
 
-				self._pallete_drawer = function(C){
-
-					C.find('*').remove()
-					self._make_pallette();
-					for (k in self.Site.colors.pallette){
-						var vars = self.Site.colors.pallette[k];
-						// // // console.log("PAL", k, vars);
-						for (i in vars){
-							if(i == 0){
-								var b = $('<div>').css('float','left').width(100).height(1350).appendTo(C)
-								var main = $('<div>').css('background-color',hsvToRgb(vars[i])).css('float','left').width(100).height(50)
-							}else{
-								// // // // console.log(i)
-								if(i == 3){
-									main.appendTo(b);
-								}
-
-								$('<div>').css('background-color',hsvToRgb(vars[i])).css('float','left').width(50).height(25).appendTo(b)
-							}
-
-						}
-						if (vars){
-							vars[5]={h:0, s:0, b:0}
-							vars[6]={h:0, s:0, b:100}
-							for (var i =0; i < 7; i++){
-								for (var j =0; j < 7; j++){
-									//// // // console.log;
-									if (!((j==i) || (i==5 &&j==6) || (i==6&&j==5)	) ){
-										$("<div>").text('Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventor')
-										.css('overflow','hidden').css('float','left').width(100).height(50).css('font-size','10pt')
-										.css('background-color', hsvToRgb( vars[i]) )
-										.css('color', hsvToRgb(vars[j]) ).appendTo(b)
-
-									}
-								}
-
-
-							}
-
-						}
-					}
-				}
-				var S = $('<div>').append(
-											$('<input>').prop('name','scheme').prop('type','radio').prop('id','mono').click(function(){ self._set_scheme_type('mono');self.showColorScheme(); }),		$('<label>').prop('for','mono').text('Mono'),
-											$('<input>').prop('name','scheme').prop('type','radio').prop('id','complement').click(function(){ self._set_scheme_type('complement');self.showColorScheme()}),$('<label>').prop('for','complement').text('Complement'),
-											$('<input>').prop('name','scheme').prop('type','radio').prop('id','triada').click(function(){ self._set_scheme_type('triada');self.showColorScheme();}),	$('<label>').prop('for','triada').text('Triada'),
-											$('<input>').prop('name','scheme').prop('type','radio').prop('id','split-trio').click(function(){ self._set_scheme_type('split-trio');self.showColorScheme();}),$('<label>').prop('for','split-trio').text('Split-trio'),
-											$('<input>').prop('name','scheme').prop('type','radio').prop('id','analogous').click(function(){ self._set_scheme_type('analogous');self.showColorScheme();}), $('<label>').prop('for','analogous').text('Analogoues'),
-											$('<input>').prop('name','scheme').prop('type','radio').prop('id','accent').click(function(){ self._set_scheme_type('accent');self.showColorScheme();}),	$('<label>').prop('for','accent').text('Accent')
-											//$('<input>').prop('type','radio').prop('id','mono'),$('<label>').prop('for','mono').text('Mono'),
-
-				).buttonset().appendTo(to)
-				$("<span>").text('brightness').appendTo(to)
-				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.brightness, slide:function(event, ui){ self.Site.colors.brightness = ui.value;self._pallete_drawer.apply(self,[c])	}} ).appendTo(to)
-
-				$("<span>").text('saturation').appendTo(to)
-				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.saturation, slide:function(event, ui){ self.Site.colors.saturation = ui.value; self._pallete_drawer.apply(self,[c])	 }} ).appendTo(to)
-
-				$("<span>").text('lights').appendTo(to)
-				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.lights, slide:function(event, ui){ self.Site.colors.lights = ui.value; self._pallete_drawer.apply(self,[c])	 } } ).appendTo(to)
-
-				$("<span>").text('shadows').appendTo(to)
-				$("<div>").width(250).slider({min:0, max:100,value:self.Site.colors.shadows, slide:function(event, ui){ sel
-				f.Site.colors.shadows = ui.value; self._pallete_drawer.apply(self,[c])} } ).appendTo(to)
-
-				var C = $('<canvas>').appendTo(to)
-				.css('display','block')
-				.width(360)
-				.height(30)
-
-				var context = C[0].getContext('2d');
-				for(var h = 0; h< 360; h++){
-					// // // console.log(rgbc)
-					context.beginPath()
-					context.moveTo(h*0.85,0)
-					context.lineWidth = 1;
-					context.strokeStyle = hsvToRgb({h:h, s:100, b:100});;
-					context.lineTo(h*0.85, 300)
-					context.closePath()
-					context.stroke()
-				}
-				c.appendTo(to)
-				self._pallete_drawer(c);
-
-				var orig;
-				var point = function(evt){
-					//// // console.log(evt.clientX),
-					orig = evt.clientX
-					self._pallete_drawer(c)
-				}
-				var unpoint = function(evt){
-					var off = C.offset();
-					self._set_base_hue(evt.clientX - off.left);
-					orig = false
-					// TODO: insert textColors code here
-
-					self.redraw_background()
-          self.redraw()
-          for(var i in self.Site.textColors){
-            var ix = self.Site.textColors[i].index
-            var hsba = self.get_color(ix)
-            var hex =  hsvToHex( hsba )
-            self.Site.textColors[i].rgb = hex
-            //log(hex)
-
-
+  window.Constructor.showColorScheme = function() {
+    var S, canvas, cont, context, control, dragger, draw_marker, inpt, offset, orig, pal_cont, point, redraw, self, to, unpoint,
+      _this = this;
+    to = this._app_admin_contents;
+    self = this;
+    to.find("*").remove();
+    this._app_admin_cont.show();
+    pal_cont = $("<div>");
+    self._pallete_drawer = function(C) {
+      var b, col, i, k, main, vars, _i, _len, _ref, _results;
+      C.find("*").remove();
+      self._make_pallette();
+      _ref = self.Site.colors.pallette;
+      _results = [];
+      for (k = _i = 0, _len = _ref.length; _i < _len; k = ++_i) {
+        vars = _ref[k];
+        main = void 0;
+        b = void 0;
+        _results.push((function() {
+          var _j, _len1, _results1;
+          _results1 = [];
+          for (i = _j = 0, _len1 = vars.length; _j < _len1; i = ++_j) {
+            col = vars[i];
+            if (i === 0) {
+              b = $("<div>").css("float", "left").width(100).height(1350).appendTo(C);
+              _results1.push(main = $("<div>").css("background-color", hsvToRgb(col)).css("float", "left").width(100).height(50));
+            } else {
+              if (i === 3) {
+                main.appendTo(b);
+              }
+              _results1.push($("<div>").css("background-color", hsvToRgb(col)).css("float", "left").width(50).height(25).appendTo(b));
+            }
           }
-          //log(self.Site.textColors)
+          return _results1;
+        })());
+        /*
+        if vars
+          vars[5] =
+            h: 0
+            s: 0
+            b: 0
+        
+          vars[6] =
+            h: 0
+            s: 0
+            b: 100
+        
+          i = 0
+        
+          while i < 7
+            j = 0
+        
+            while j < 7
+        
+              #// // // console.log;
+              $("<div>").text("Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventor").css("overflow", "hidden").css("float", "left").width(100).height(50).css("font-size", "10pt").css("background-color", hsvToRgb(vars[i])).css("color", hsvToRgb(vars[j])).appendTo b  unless (j is i) or (i is 5 and j is 6) or (i is 6 and j is 5)
+              j++
+          333        i++
+        */
 
-				}
-				var dragger=function(evt){
-					if (orig){
-						var off = C.offset()
-						self._set_base_hue(evt.clientX - off.left)
-						self._pallete_drawer.apply(self,[c])
-						// // // console.log(evt.clientX - off.left)
-					}
-				}
-
-				C.mouseup(unpoint).mousedown(point).mousemove(dragger)
-			};
-
-  window.Constructor.showColorScheme = showColorScheme;
+      }
+      return _results;
+    };
+    S = $("<div>").append($("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "mono").click(function() {
+      self._set_scheme_type("mono");
+      return self.showColorScheme();
+    }), $("<label>").prop("for", "mono").text("Mono"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "complement").click(function() {
+      self._set_scheme_type("complement");
+      return self.showColorScheme();
+    }), $("<label>").prop("for", "complement").text("Complement"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "triada").click(function() {
+      self._set_scheme_type("triada");
+      return self.showColorScheme();
+    }), $("<label>").prop("for", "triada").text("Triada"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "split-trio").click(function() {
+      self._set_scheme_type("split-trio");
+      return self.showColorScheme();
+    }), $("<label>").prop("for", "split-trio").text("Split-trio"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "analogous").click(function() {
+      self._set_scheme_type("analogous");
+      return self.showColorScheme();
+    }), $("<label>").prop("for", "analogous").text("Analogoues"), $("<input>").prop("name", "scheme").prop("type", "radio").prop("id", "accent").click(function() {
+      self._set_scheme_type("accent");
+      return self.showColorScheme();
+    }), $("<label>").prop("for", "accent").text("Accent")).buttonset().appendTo(to);
+    control = function(name) {
+      var cont, inp, sl;
+      cont = $('<div> </div>').css('margin-bottom', 20).css('margin-top', 20).height(50).appendTo(to);
+      $("<span>").text(name).appendTo($('<div></div>').css('float', 'left').css('margin-right', 10).appendTo(cont));
+      sl = void 0;
+      inp = $('<input>').val(_this.Site.colors[name]).appendTo($('<div>').css('margin-right', 10).css('float', 'left').appendTo(cont)).on('keyup change', function(e) {
+        _this.Site.colors[name] = parseInt($(e.target).val());
+        _this._pallete_drawer(pal_cont);
+        return sl.slider('value', parseInt($(e.target).val()));
+      });
+      return sl = $("<div>").width(250).slider({
+        min: 0,
+        max: 100,
+        value: self.Site.colors[name],
+        slide: function(event, ui) {
+          _this.Site.colors[name] = ui.value;
+          return _this._pallete_drawer(pal_cont);
+        }
+      }).appendTo($('<div>').css('float', 'left').width(260).appendTo(cont));
+    };
+    control("brightness");
+    control('saturation');
+    control('lights');
+    control('shadows');
+    cont = $('<div> </div>').css('margin-bottom', 20).css('background-color', 'white').css('margin-top', 20).height(50).appendTo(to);
+    inpt = $('<input>').appendTo($('<div>').appendTo(cont).css('float', 'left')).val(this.Site.colors['base']).on('keyup change', function(e) {
+      var H, v;
+      v = $(e.target).val();
+      H = 0;
+      if (v) {
+        H = parseInt($(e.target).val());
+        if (H === NaN) {
+          H = 0;
+        }
+      }
+      if (H > 360) {
+        $(e.target).val(H % 360);
+      }
+      redraw(H);
+      _this.Site.colors.base = H;
+      return _this._pallete_drawer(pal_cont);
+    });
+    pal_cont.appendTo(to);
+    canvas = $("<canvas>").appendTo(cont).css('float', 'left');
+    canvas[0].width = 360;
+    canvas[0].height = 30;
+    context = canvas[0].getContext("2d");
+    draw_marker = function(x) {
+      context.save();
+      context.translate(x, 15);
+      context.beginPath();
+      context.arc(0, 0, 5, 0, 2 * Math.PI, 0);
+      context.closePath();
+      context.lineWidth = 2;
+      context.strokeStyle = "#000";
+      context.stroke();
+      return context.restore();
+    };
+    redraw = function(H) {
+      var h;
+      if (H == null) {
+        H = _this.Site.colors['base'];
+      }
+      h = 0;
+      while (h < 360) {
+        context.save();
+        context.beginPath();
+        context.translate(h, 0);
+        context.moveTo(0, 0);
+        context.lineWidth = 1;
+        context.strokeStyle = hsvToRgb({
+          h: h,
+          s: 100,
+          b: 100
+        });
+        context.lineTo(0, 30);
+        context.closePath();
+        context.stroke();
+        context.restore();
+        h++;
+      }
+      return draw_marker(H);
+    };
+    redraw();
+    self._pallete_drawer(pal_cont);
+    orig = void 0;
+    offset = void 0;
+    point = function(evt) {
+      orig = evt.clientX;
+      return self._pallete_drawer(pal_cont);
+    };
+    unpoint = function(evt) {
+      var hex, hsba, i, ix, off_, _results;
+      off_ = canvas.offset();
+      self._set_base_hue(evt.clientX - off_.left);
+      orig = false;
+      self.redraw_background();
+      self.redraw();
+      _results = [];
+      for (i in self.Site.textColors) {
+        ix = self.Site.textColors[i].index;
+        hsba = self.get_color(ix);
+        hex = hsvToHex(hsba);
+        _results.push(self.Site.textColors[i].rgb = hex);
+      }
+      return _results;
+    };
+    dragger = function(evt) {
+      var h;
+      evt.preventDefault();
+      evt.stopPropagation();
+      if (orig) {
+        offset = canvas.offset();
+        h = evt.clientX - offset.left;
+        if (h > 360) {
+          h = 360;
+        }
+        if (h < 0) {
+          h = 0;
+        }
+        inpt.val(h);
+        redraw(h);
+        _this.Site.colors.base = h;
+        return _this._pallete_drawer(pal_cont);
+      }
+    };
+    return canvas.mouseup(unpoint).mousedown(point).mousemove(dragger);
+  };
 
   window.Constructor.showLayoutScheme = function() {
     var finaldiv, labels, lo, recount, s, self, to, ul,
@@ -3789,7 +4003,20 @@
 				this.redraw_cp(1);
 			};
 
-  window.Constructor.upPage = upPage;
+  window.Constructor.upPage = function(name) {
+    var ix, ix_s, subst;
+    ix = 1;
+    if (this.Site.pages[name].order != null) {
+      ix = this.Site.pages[name].order;
+    }
+    this.Site.pages[name].order = ix - 1;
+    subst = this.page_order_index[ix - 1];
+    ix_s = this.Site.pages[subst].order;
+    this.Site.pages[subst].order = ix_s + 1;
+    this._save_site();
+    this.load_site();
+    return this.redraw_cp(1);
+  };
 
   window.Constructor.showUserScheme = function() {
     var dialog, self;

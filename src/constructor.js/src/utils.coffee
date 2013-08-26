@@ -433,7 +433,10 @@ window.Constructor.draw_color_chooser = (onSelectColor) ->
       delete hsv.v
 
       #console.log hsv
-      self.Site.colors.custom_pallette.push hsv
+      if self.Site.colors.custom_pallette?
+        self.Site.colors.custom_pallette.push hsv
+      else:
+        self.Site.colors.custom_pallette = [hsv]
       ix = self.Site.colors.custom_pallette.length - 1
       color_chooser.remove()
       onSelectColor color.formatted,

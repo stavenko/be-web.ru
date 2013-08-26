@@ -101,7 +101,6 @@ def _get_current_roles(req, acc_site = None):
 def _get_role_email(req, site, role):
     aasite = _get_current_site_inst(req, site)
     for r in aasite.get('Roles', []):
-        print role, r
         if role in r['roles']:
             return r['user']
     
@@ -168,7 +167,6 @@ def profile_page(req, *k, **kw):
 def site_view(site, req, *k, **kw):
     escaped = req.GET.get('_escaped_fragment_', None)
     site = _get_current_site(req, with_cache = True)
-    print "FUCK"
     if escaped is not None:
         # send cached data to google or yandex
 
@@ -179,13 +177,11 @@ def site_view(site, req, *k, **kw):
     c = RequestContext(req)
     c['site'] = site
     c['main_page'] = site.get('cache',{}).get('',{})
-    print "WTF", c
     return render_to_response("constructor/displayer_page.html", c)
     
 def site_edit(site, req, *k, **kw):
     c = RequestContext(req)
     is_debug = settings.DEBUG
-    print req.user
     if  check_roles(req, sites + '@generic.'  + settings.MY_MAIN_SITE, 'add', site = site):
         site['id'] = site['_id']
         c['site'] = site
@@ -283,9 +279,9 @@ def get_application(req, app_name):
         resp = HttpResponse(json.dumps(app, default = json_util.default))
 
         # exp = (datetime.datetime.now() + datetime.timedelta(seconds= (60 * 5)) )
-        if 'date_changed' in app:
-            resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)  #exp.strftime('%a %b %d %Y %H:%M:%S GMT+1200')
-            print resp['Last-Modified']
+        #if 'date_changed' in app:
+        #    resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)  #exp.strftime('%a %b %d %Y %H:%M:%S GMT+1200')
+            # print resp['Last-Modified']
         return resp
     else:
         # search it in global index
@@ -299,10 +295,10 @@ def get_application(req, app_name):
             app = req.storage.findOne('application', {'app_name': app_ix['full_name'], 'site_id': app_ix['site_id'] })
             app['is_own'] = False
             resp =  HttpResponse(json.dumps(app, default = json_util.default))
-            print app
-            if 'date_changed' in app:
-                resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)
-                print resp['Last-Modified']
+            # print app
+            #if 'date_changed' in app:
+            #    resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)
+                #print resp['Last-Modified']
             return resp
         else:
             raise ValueError("no such application")
@@ -365,8 +361,7 @@ def adding_application(req):
         
         username = req.POST.get('username', '')
         make_it_global = req.POST.get('make_it_global', False)
-        # print "lets do it global", make_it_global
-        
+
         user = User.objects.get( username = username )
         my_cr = hashlib.md5(":".join([user.username, hashlib.md5(user.password).hexdigest() ])).hexdigest()
         
@@ -566,7 +561,7 @@ def blob_extruder(req, blob_id):
     #raise IndexError(str(req))
     is_etag = req.META.get('HTTP_IF_NONE_MATCH', '') == f.md5
     is_last = req.META.get('HTTP_IF_MODIFIED_SINCE', '') == f.upload_date.strftime('%a %b %d %Y %H:%M:%S GMT')
-    print is_etag , is_last
+    # print is_etag , is_last
     if not any([is_etag , is_last]):
         resp = HttpResponse( f , mimetype=mt if mt is not None else "text/plain")
         resp['ETag'] = f.md5
@@ -689,7 +684,7 @@ class RegistrationView( FormView ):
         login(self.request, new_user)
         
         if not self.no_site:            
-            full = hostname +  '.' + settings.MY_BASE_HOST
+            full = hostname.lower() +  '.' + settings.MY_BASE_HOST
             site = {"hostname":[ full ],
                     "email" : email,
                     "django_user_id" : new_user.id }

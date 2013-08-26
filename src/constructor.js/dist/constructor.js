@@ -1807,7 +1807,12 @@
         hsv.h = hsv.h * 360;
         hsv.a = color.a;
         delete hsv.v;
-        self.Site.colors.custom_pallette.push(hsv);
+        if (self.Site.colors.custom_pallette != null) {
+          self.Site.colors.custom_pallette.push(hsv);
+        }
+        ({
+          "else": self.Site.colors.custom_pallette = [hsv]
+        });
         ix = self.Site.colors.custom_pallette.length - 1;
         color_chooser.remove();
         return onSelectColor(color.formatted, {

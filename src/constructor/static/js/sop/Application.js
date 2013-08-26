@@ -108,7 +108,12 @@ var init_db = function(csrf_token){
 			
 		},
 		get_blob_url:function(blob){
-			return "/blob/"+ blob._id['$oid'] + '/' 
+            if(blob.blob){
+			    return "/blob/"+ blob._id['$oid'] + '/'
+            }
+            else{
+                return blob;
+            }
 			
 		},
         get_objects: function(appid, type, query, paging, view, sort){

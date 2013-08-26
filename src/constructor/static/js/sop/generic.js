@@ -1,4 +1,25 @@
+var scaleImage;
 
+scaleImage = function(img, maxWidth, maxHeight, useMax) {
+  var h, height, scale, w, width;
+  if (useMax == null) {
+    useMax = false;
+  }
+  w = img.width;
+  h = img.height;
+  width = img.width;
+  height = img.height;
+  if (useMax) {
+    scale = Math.max(maxWidth / width, maxHeight / height);
+  } else {
+    scale = Math.min(maxWidth / width, maxHeight / height);
+  }
+  width = parseInt(width * scale, 10);
+  height = parseInt(height * scale, 10);
+  img.width = width;
+  img.height = height;
+  return img;
+};
 var o = {
 
 	
@@ -7,6 +28,326 @@ var o = {
 		$("<div>").text("This is " + this.title + " admin page").appendTo(to) 
 	},
 	widgets: {
+        slider:{
+            title:"Слайдер",
+		    default_size: [3,1],
+		    init:function(my_cont,  constructor_inst, pos, cp){// console.log(data)
+                var o = {
+                    my_cont:my_cont,
+                    constr :constructor_inst,
+
+                    disobey:['padding_left_right', 'padding_top', 'line_height'],
+
+                    cp:cp,
+                    pos: pos,
+                    // settings_draw :false,
+                    depends_on_settings:true,
+                    draw_slide:function(slide, to ){
+
+                    },
+
+                    draw: function(set){
+                        if(set == null){
+                            set = constructor_inst.getBlockSettings( pos )
+                        }
+
+                        var self = this;
+                        var timeout = 5000;
+                        self.data = constructor_inst.getWidgetData(pos, {})
+                        self._jq = $('<div>').appendTo(my_cont)
+                        var removers = [];
+
+                        var redraw = function(id){
+                            // console.log(self.data)
+                            if (self.data.slides != null ){
+                                var next_id = (id + 1) % self.data.slides.length
+                                var slide = self.data.slides[id];
+                                var new_ = $('<div></div>')
+
+                                            .prependTo(self._jq)
+                                            .css('position','absolute')
+                                            .width(my_cont.width()).height(my_cont.height())
+                                            .hide()
+
+                                $(new Image()).one('load', function(){
+
+                                    scaleImage(this, my_cont.width(), my_cont.height(),true )
+
+
+                                    //$(this).appendTo(new_);
+
+                                    new_.css('background', 'url('+this.src+')')
+                                        .css('background-size', this.width+ "px " + this.height+'px')
+                                    if (set != null && set.border_radius) {
+                                        new_.css('border-radius', set.border_radius-2 +'px' )
+                                    }
+
+                                    $.each(slide.labels, function(ix, label){
+                                        var col = constructor_inst.get_color( label.color );
+                                        // console.log(label.left);
+                                        $("<div></div>").appendTo(new_)
+                                            .css('position', 'absolute')
+                                            .css('top', label.top + '%')
+                                            .css('left', label.left + '%')
+                                            .css('width', label.width + '%')
+                                            .css('heigth', label.height + '%')
+                                            .css('font-size', label.font + 'pt')
+                                            .css('color', hsvToHex((constructor_inst.get_color( label.color )) ) )
+                                            .text(label.text);
+
+                                    })
+                                    new_.show();
+                                    // console.log(removers)
+                                    if (removers.length != 0 ){
+                                        // console.log('rem')
+                                        removers[0]();
+                                        var a = removers.splice(0, 1)
+                                        // console.log(a,'removers', removers)
+                                    }else{
+                                        // console.log('no rem')
+                                    }
+                                    var remove = function(){
+                                        // console.log('collee');
+                                        new_.animate({opacity:0},{duration:1000, complete:function(){new_.remove()}})
+                                    }
+                                    removers.push(remove)
+
+                                }).prop('src', DB.get_blob_url(slide.image))
+                                setTimeout(function(){ redraw (next_id) }, timeout )
+
+                            }
+                        }
+                        redraw(0);
+
+
+                    },
+                    save: function(){
+                        constructor_inst.setWidgetData(pos, this.data)
+                    },
+                    settings: function(){
+                        var self = this
+                        self.data = constructor_inst.getWidgetData(pos, {})
+
+                        //if (self.data.length >  0 ){
+                            //console.log('ok')
+                        //    self.data = {slides: self.data};
+                        //}
+                        if (self.data == null)self.data = {slides:[]};
+
+
+                        var dialog = $('<div></div>').appendTo($('#controls'))
+                        var slides_cont = $('<div></div>').appendTo( dialog )
+                        var editSlide;
+
+                        var reload_slides = function(){
+                            slides_cont.find('*').remove();
+
+                            var ul = $('<ol></ol>').appendTo(slides_cont)
+
+                            if (self.data.slides != null){
+                                $.each(self.data.slides, function(i, slide){
+                                    var li =  $('<li>').appendTo(ul);
+                                    var src;
+                                    if (slide.image.blob){
+                                        src = DB.get_blob_url(slide.image)
+                                    }else{
+                                        src = slide.image;
+                                    }
+                                    $(new Image()).one('load', function(){
+                                        scaleImage(this,64,64)
+
+                                        $(this).appendTo(li).on('dblclick', function(){
+                                            // console.log("slide num", i)
+                                            editSlide(i);
+                                        })
+
+                                    }).prop('src', src)
+
+                                })
+
+
+                            }
+
+                        }
+                        reload_slides();
+
+
+
+
+
+                        var editSlide = function ( slide_id ){
+
+                            var slide_d = $('<div></div>').appendTo( $('#controls') );
+                            var img_cont = $('<div></div>').appendTo(slide_d).width(my_cont.width()).height(my_cont.height()).css('float','left').css('overflow','hidden')
+
+                            $('<div></div>').css('clear','both').appendTo(slide_d);
+                            var lbs_cont = $('<div></div>').appendTo(slide_d).width(500).height(300).css('float','left')
+
+                            var slide;
+                            if (slide_id === null || slide_id === undefined ){
+
+                                slide = {'image':'', labels:[{text: "lorem ipsгь вщдщк ыше фьуе ыва ", width:10, heigth:10, top:10, left:10, color:{ix:0, v:1}, font:10 }]}
+                            }else{
+                                slide = self.data.slides[slide_id]
+                            }
+
+                            var redraw_slide = function(){
+                                img_cont.find('*').remove();
+                                if( slide.image ){
+                                    if (slide.image.blob){
+                                        src = DB.get_blob_url(slide.image)
+                                    }else{
+                                        src = slide.image;
+                                    }
+                                    $(new Image()).one('load', function(){
+                                        scaleImage(this, img_cont.width(), img_cont.height() , true);
+                                        $(this).appendTo($("<div></div>").css('float','left').appendTo(img_cont) );
+                                    }).prop('src', src);
+
+                                }
+                                $.each(slide.labels, function(ix, label){
+                                    var col = constructor_inst.get_color( label.color );
+                                    var abs_cont = $("<div></div>").appendTo(img_cont).css('position','absolute').width(my_cont.width()).height(my_cont.height())
+                                    $("<div></div>").appendTo(abs_cont)
+                                        .css('position', 'absolute')
+                                        .css('top', label.top + '%')
+                                        .css('left', label.left + '%')
+                                        .css('width', label.width + '%')
+                                        .css('heigth', label.height + '%')
+                                        .css('font-size', label.font + 'pt')
+                                        .css('color', hsvToHex((constructor_inst.get_color( label.color )) ) )
+                                        .text(label.text);
+
+                                })
+
+                            }
+                            var acc_cont;
+                            var draw_label_controls =function (){
+                                acc_cont.find('*').remove();
+                                var acc = $('<div ></div>').appendTo(acc_cont)
+
+                                $.each(slide.labels, function(ix, label){
+                                    // var lblc = $('<div></div>').appendTo(lbs_cont).addClass('');
+                                    if (label.text.length > 50){
+                                        $("<h3></h3>").text(label.text.slice(0,50) + "...").appendTo(acc)
+                                    }else{
+                                        $("<h3></h3>").text(label.text).appendTo(acc)
+                                    }
+                                    var lblc = $('<p>').appendTo($('<div></div>').appendTo(acc))
+
+                                    $('<textarea></textarea>').text(label.text).appendTo(lblc).on('keyup change', function(){
+                                        slide.labels[ix].text = $(this).val();
+                                        redraw_slide()
+                                    });
+
+                                    var c = function(n){
+                                        $("<br>").appendTo(lblc)
+                                        $('<span>').text(n).appendTo(lblc)
+                                        $('<div>').slider({min:0,max:100, value: label[n], slide:function(e, ui){
+                                            slide.labels[ix][n] = ui.value;
+                                            redraw_slide()
+                                        }}).appendTo(lblc);
+
+                                    }
+                                    c('left');
+                                    c('top');
+                                    c('width');
+                                    c('height');
+                                    c('font');
+
+                                    $("<br>").appendTo(lblc)
+                                    $('<span>').text('fonsize').appendTo(lblc)
+                                    $('<button>').text('choose color').appendTo(lblc).click(function(){
+                                        cb = function(col,ix,hsba) {
+                                            label.color = ix;
+                                            redraw_slide();
+                                        };
+                                        self.color_chooser = constructor_inst.draw_color_chooser(cb);
+                                        self.color_chooser.appendTo($('#controls')).position({of:$(slide_d), my:'left top', at:'left top'})
+                                    })
+                                })
+
+
+                                $('<button>').text('add label').click(function(){
+                                    var l = {text: "lorem ipsгь вщдщк ыше фьуе ыва ", width:10, heigth:10, top:10, left:10, color:{ix:0, v:1}, font:10 }
+                                    if (slide.label == null){
+                                        slide.labels = [l]
+                                    }else{
+                                        slide.labels.push(l);
+                                    }
+
+                                    draw_label_controls();
+
+                                }).appendTo(acc_cont);
+                                acc.accordion();
+
+                            }
+                            var changer = $('<div></div>').appendTo(lbs_cont)
+                            acc_cont =  $('<div>').appendTo(lbs_cont)
+                            $('<span></span>').text("Изменить изображение").appendTo(changer)
+                            $('<input>').prop('type','file').appendTo(changer).change(function(){
+                                fr = new FileReader()
+                                fr.onload = function(){
+                                    slide.image = this.result
+                                    redraw_slide();
+                                }
+                                fr.readAsDataURL(this.files[0])
+                            })
+                            draw_label_controls();
+                            redraw_slide();
+
+                            slide_d.dialog({
+                                title:"Slide settings",
+                                width:700,
+                                height:700,
+                                buttons:{
+                                    save:function(){
+                                        if (slide_id != null){
+                                            self.data.slides[slide_id] = slide
+                                        }else{
+                                            if(self.data.slides != null ){
+                                                self.data.slides.push(slide);
+
+                                            }else{
+                                                self.data.slides = [slide];
+
+                                            }
+                                        }
+                                        slide_d.dialog('close');
+                                        reload_slides()
+                                    }
+                                }
+                            })
+                        }
+
+                        $('<button></button>').text('add Slide').appendTo(dialog).click(function(){
+                            console.log("Button - new")
+                            editSlide()
+                        })
+
+                        dialog.dialog({
+                            title:"Slider settings",
+                            width:600,
+                            height:500,
+                            buttons:{save: function(){
+                                    constructor_inst.setWidgetData(pos, self.data)
+
+
+                                }
+                            }
+                        })
+
+
+
+                    }
+
+
+
+                }
+               return o
+            }
+
+        },
         /*
         image_pane:{
             title:"Фотопанно",
@@ -310,7 +651,7 @@ var o = {
                     },
 					draw: function(){
                         var self = this;
-                        console.log( typeof this.data )
+                        // console.log( typeof this.data )
                         if (this.data === undefined ){this.data = constructor_inst.getWidgetData(pos, [])};
                         // console.log("wdata", this.data)
                         if(this.data.length == 0  ){
@@ -557,6 +898,7 @@ var o = {
 					},
 					cancel: function(){
                         this._d_remover();
+                        // document.off('mouseup')
 
 					},
 					_change_text: function(command,val){

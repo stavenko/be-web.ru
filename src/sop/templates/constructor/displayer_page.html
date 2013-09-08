@@ -11,14 +11,17 @@
         <script  src="{{STATIC_URL}}js/underscore-min.js"></script>
         <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/json2.js"></script>
 		<script  src="{{STATIC_URL}}js/sop/Application.js"></script>
+		<script  src="{{STATIC_URL}}js/moment.min.js"></script>
 		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/sop/displayer.js"></script>
 
         {{ main_page.head|safe }}
 		<script>
+		moment.lang(navigator.language);
+		
 		window.STATIC = "{{ STATIC_URL }}";
         window.csrf = "{% csrf_token %}";
 		window.site_id = "{{site.id}}"
-		window.get_application_url = '/a/';
+        window.get_application_url = '/_/a/';
         window.is_constructor = false;
         </script>
 		<style>

@@ -1,5 +1,5 @@
 (function() {
-  var BASE_SITE, Constructor, DEBUG, Site, addCustomColor, addPage, apply_block_settings, back_icons_urls, caching, clone, default_app, default_site, deletePage, delete_block, downPage, drawBackgroundSelectorDialog, getBlockSettings, getWidgetData, get_color, hsvToHex, hsvToRgb, init_cp_marker, is_ie, is_safari, is_webkit, log, move_block, port, rect, redraw_cp, rgb2hsv, scaleImage, setBlockSettings, setDefaultBlockSettings, setWidgetData, showBackgroundScheme, showFontsScheme, test_block_content, upPage, _add_title, _block_height, _block_left, _block_width, _calc_height, _calc_left, _calc_top, _calc_width, _get_page_var, _make_pallette, _save_site, _set_base_hue, _set_description, _set_keywords, _set_page_var, _set_scheme_type, _show_css_pattern_editor, _show_picture_based_background_list, _stepping_height, _stepping_left, _stepping_top, _stepping_width, _uncalc_left, _uncalc_top,
+  var BASE_SITE, Constructor, DEBUG, Site, WI, addCustomColor, addPage, back_icons_urls, caching, clone, default_app, default_site, deletePage, delete_block, downPage, drawBackgroundSelectorDialog, getBlockSettings, getWidgetData, hsvToHex, hsvToRgb, init_cp_marker, is_ie, is_safari, is_webkit, log, move_block, port, rect, redraw_cp, rgb2hsv, scaleImage, setBlockSettings, setDefaultBlockSettings, setWidgetData, showBackgroundScheme, showFontsScheme, test_block_content, upPage, _add_title, _block_height, _block_left, _block_width, _calc_height, _calc_left, _calc_top, _calc_width, _get_page_var, _make_pallette, _save_site, _set_base_hue, _set_description, _set_keywords, _set_page_var, _set_scheme_type, _show_css_pattern_editor, _show_picture_based_background_list, _stepping_height, _stepping_left, _stepping_top, _stepping_width, _uncalc_left, _uncalc_top,
     _this = this,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -347,6 +347,765 @@
     return window.Constructor.init(window.is_constructor, window.site_id);
   });
 
+  window.WidgetIniter = function() {
+    this.default_size = [3, 1];
+    this.disobey = [];
+    this.redraw = function() {
+      this.my_cont.find("*").remove();
+      return this.draw();
+    };
+    this._data = function() {
+      if (this.data) {
+        return this.data;
+      } else {
+        return this._def_data;
+      }
+    };
+    this.init = function(my_cont, constructor_inst, pos, cp) {
+      this.set = constructor_inst.getBlockSettings(pos);
+      this.data = constructor_inst.getWidgetData(pos);
+      this.my_cont = my_cont;
+      this.pos = pos;
+      this.constructor_inst = constructor_inst;
+      this.C = constructor_inst;
+      return this;
+    };
+    this.draw = function() {
+      this.apply_block_settings();
+      return this._draw();
+    };
+    this.save = function() {
+      if (this._save) {
+        this._save();
+      }
+      this.C.setWidgetData(this.pos, this.data);
+      return this.C.setBlockSettings(this.pos, this.set);
+    };
+    this.cancel = function() {
+      if (this._cancel) {
+        return this._cancel();
+      }
+    };
+    this.settings = function(cp) {
+      this._init_block_cp(cp);
+      if (this._settings != null) {
+        this._settings(cp);
+      }
+      console.log("Wot");
+      return cp.show();
+    };
+    this._init_block_cp = function(to) {
+      var cb, cl, lhs, li, m, o, old_settings, onCancel, onColorChoice, onPatternChoice, onSave, plr, pt, self, settings, ul, vf, w;
+      cb = void 0;
+      cl = void 0;
+      lhs = void 0;
+      li = void 0;
+      m = void 0;
+      o = void 0;
+      old_settings = void 0;
+      onCancel = void 0;
+      onColorChoice = void 0;
+      onPatternChoice = void 0;
+      onSave = void 0;
+      plr = void 0;
+      pt = void 0;
+      self = void 0;
+      settings = void 0;
+      ul = void 0;
+      vf = void 0;
+      w = void 0;
+      m = $("<div>").appendTo(to);
+      self = this;
+      old_settings = $.extend(true, {}, this.set);
+      onPatternChoice = function(pattern) {
+        self.set.background = {
+          type: "pattern",
+          pattern: pattern
+        };
+        return self.apply_block_settings();
+      };
+      onColorChoice = function(color, pal_ix, hsba) {
+        if (color === "clear") {
+          self.set.background = {
+            type: "none"
+          };
+        } else {
+          self.set.background = {
+            type: "color",
+            color: pal_ix
+          };
+        }
+        return self.apply_block_settings();
+      };
+      onCancel = function() {
+        this.set = old_settings;
+        self.apply_block_settings();
+        return $(this).dialog("close");
+      };
+      onSave = function() {
+        return $(this).dialog("close");
+      };
+      cl = $("<button>").button().text("Выбор фона").click(function() {
+        return self.C.drawBackgroundSelectorDialog(onPatternChoice, onColorChoice, onCancel, onSave);
+      }).appendTo(m);
+      cl = $("<button>").button().text("выбрать цвет рамки").click(function() {
+        var cc;
+        cb = void 0;
+        cc = void 0;
+        cb = function(col, ix) {
+          if (col !== "clear") {
+            self.set.border_color = ix;
+            return self.apply_block_settings();
+          }
+        };
+        cc = self.C.draw_color_chooser(cb);
+        return cc.appendTo(to).position({
+          of: this,
+          my: "left top",
+          at: "left top"
+        });
+      }).appendTo(m);
+      cl = $("<button>").button().text("выбрать цвет текста").click(function() {
+        var cc;
+        cb = void 0;
+        cc = void 0;
+        cb = function(col, ix) {
+          if (col !== "clear") {
+            self.set.text_color = ix;
+            return self.apply_block_settings();
+          }
+        };
+        cc = self.C.draw_color_chooser(cb);
+        return cc.appendTo(to).position({
+          of: this,
+          my: "left top",
+          at: "left top"
+        });
+      }).appendTo(m);
+      vf = function(a, d) {
+        if (typeof a === "undefined") {
+          return d;
+        } else {
+          return a;
+        }
+      };
+      ul = $("<ul>").appendTo(m).addClass("cp-ul");
+      li = $("<li>").appendTo(ul);
+      $("<span>").text("Прозрачность блока").appendTo(li);
+      $("<div>").width(250).slider({
+        min: 0,
+        max: 100,
+        value: vf(self.set.bg_opacity, 100) * 100,
+        slide: function(event, ui) {
+          self.set.bg_opacity = ui.value / 100;
+          return self.apply_block_settings();
+        }
+      }).appendTo(li);
+      li = $("<li>").appendTo(ul);
+      $("<span>").text("Радиус границы").appendTo(li);
+      $("<div>").width(250).slider({
+        min: 0,
+        max: 100,
+        value: vf(self.set.border_radius, 0),
+        slide: function(event, ui) {
+          self.set.border_radius = ui.value;
+          return self.apply_block_settings();
+        }
+      }).appendTo(li);
+      li = $("<li>").appendTo(ul);
+      $("<span>").text("Ширина границы").appendTo(li);
+      $("<div>").width(250).slider({
+        min: 0,
+        max: 100,
+        value: vf(self.set.border_width, 0) * 10,
+        slide: function(event, ui) {
+          self.set.border_width = ui.value / 10;
+          return self.apply_block_settings();
+        }
+      }).appendTo(li);
+      li = $("<li>").appendTo(ul);
+      $("<span>").text("Межстрочный интервал").appendTo(li);
+      lhs = $("<div>").width(250).slider({
+        min: 0,
+        max: 300,
+        value: self.set.line_height,
+        slide: function(event, ui) {
+          self.set.line_height = ui.value / 10;
+          return self.apply_block_settings();
+        }
+      }).appendTo(li);
+      li = $("<li>").appendTo(ul);
+      $("<span>").text("Размер шрифта").appendTo(li);
+      $("<div>").width(250).slider({
+        min: 0,
+        max: 300,
+        value: self.set.font_size,
+        slide: function(event, ui) {
+          self.set.font_size = ui.value / 10;
+          return self.apply_block_settings();
+        }
+      }).appendTo(li);
+      li = $("<li>").appendTo(ul);
+      $("<span>").text("отступ сверху").appendTo(li);
+      pt = (self.set.padding_top ? self.set.padding_top * 10 : 0);
+      $("<div>").width(250).slider({
+        min: 0,
+        max: 300,
+        value: pt,
+        slide: function(event, ui) {
+          self.set.padding_top = ui.value / 10;
+          return self.apply_block_settings();
+        }
+      }).appendTo(li);
+      li = $("<li>").appendTo(ul);
+      $("<span>").text("Отступ слева-справа").appendTo(li);
+      plr = (self.set.padding_left_right ? self.set.padding_left_right * 10 : 0);
+      $("<div>").width(250).slider({
+        min: 0,
+        max: 300,
+        value: plr,
+        slide: function(event, ui) {
+          self.set.padding_left_right = ui.value / 10;
+          return self.apply_block_settings();
+        }
+      }).appendTo(li);
+      $("<label for='available_all_pages'>").appendTo(m).append("Показывать на всех страницах");
+      cb = $("<input type='checkbox' id='available_all_pages'>").appendTo(m).click(function() {
+        if (self.C.Site.blocks[self.pos].display_on === "all") {
+          return self.C.Site.blocks[self.pos].display_on = self.current_page;
+        } else {
+          return self.C.Site.blocks[self.pos].display_on = "all";
+        }
+      });
+      cb.prop("checked", self.C.Site.blocks[self.pos].display_on === "all");
+      $("<br>").appendTo(m);
+      $("<label for='unsnap_to_grid'>").appendTo(m).append("Свободный блок");
+      cb = $("<input type='checkbox' id='unsnap_to_grid'>").appendTo(m).click(function() {
+        var bl;
+        self.set.unsnap_to_grid = this.checked;
+        bl = self.C.get_block(self.pos);
+        if (this.checked) {
+          self.C.move_block(self.pos, self.C._calc_left(bl.x + 1) + self.set.border_width, self.C._calc_top(bl.y) + self.set.border_width, true);
+          self.C.Site.blocks[self.pos].width = self.C._calc_width(bl.width);
+          return self.C.Site.blocks[self.pos].height = self.C._calc_height(bl.height);
+        } else {
+          self.C.move_block(self.pos, Math.round(self.C._uncalc_left(bl.x) + self.set.border_width), Math.round(self.C._uncalc_top(bl.y) + self.set.border_width), true);
+          self.C.Site.blocks[self.pos].width = Math.round(self.C.Site.blocks[self.pos].width / self.C._block_width());
+          return self.C.Site.blocks[self.pos].height = Math.round(self.C.Site.blocks[self.pos].height / self.C._block_height());
+        }
+      });
+      cb.prop("checked", self.set.unsnap_to_grid);
+      $("<br>").appendTo(m);
+      cl = $("<button>").button().text("Применить для всех новых блоков").click(function() {
+        self.C.Site.default_block_settings = self.set;
+        self.C.redraw();
+        return m.remove();
+      }).css("display", "block").css("padding", "5px").css("margin-bottom", "10px").appendTo(m);
+      cl = $("<button>").button().text("Применить для всех имеющихся блоков").click(function() {
+        self.C.Site.default_block_settings = self.set;
+        $.each(self.C.Site.blocks, function(i, bl) {
+          return delete bl["settings"];
+        });
+        self.C.redraw();
+        return to.remove();
+      }).appendTo(m).css("display", "block").css("padding", "5px").css("margin-bottom", "10px");
+      o = {
+        save: function() {
+          return self.C.setBlockSettings(obj.pos, self.set);
+        },
+        cancel: function() {}
+      };
+      return o;
+    };
+    return this.apply_block_settings = function() {
+      var C, appl, background, border_color, border_radius, border_width, f, font_size, k, line_height, opacity, padding_left_right, padding_top, text_color;
+      C = this.my_cont.parent();
+      border_color = function() {
+        var c, color;
+        if (this.set.border_color != null) {
+          if (typeof this.set.border_color === "string") {
+            return C.css("border-color", this.set.border_color);
+          } else {
+            color = this.C.get_color(this.set.border_color);
+            c = hsvToRgb(color);
+            return C.css("border-color", c);
+          }
+        }
+      };
+      opacity = function() {
+        return this.my_cont.css("opacity", this.set.bg_opacity);
+      };
+      border_radius = function() {
+        C.css("-moz-border-radius", this.set.border_radius + "px");
+        C.css("-webkit-border-radius", this.set.border_radius + "px");
+        return C.css("border-radius", this.set.border_radius + "px");
+      };
+      border_width = function() {
+        var bl, xx, yy;
+        bl = this.C.get_block(this.pos);
+        if (!this.set.unsnap_to_grid) {
+          xx = this.C._calc_left(bl.x + 1) - this.set.border_width;
+          yy = this.C._calc_top(bl.y) - this.set.border_width;
+        } else {
+          xx = bl.x;
+          yy = bl.y;
+        }
+        C.css("border-width", this.set.border_width + "px");
+        C.css("left", xx);
+        C.css("top", yy);
+        return C.css("border-style", "solid");
+      };
+      line_height = function() {
+        return C.css("line-height", this.set.line_height + "px");
+      };
+      font_size = function() {
+        return C.css("font-size", this.set.font_size + "px");
+      };
+      padding_left_right = function() {
+        var W;
+        W = C.width();
+        C.children().eq(0).css("margin-left", this.set.padding_left_right + "px");
+        C.children().eq(0).css("margin-right", this.set.padding_left_right + "px");
+        return C.children().eq(0).width(W - this.set.padding_left_right * 2);
+      };
+      padding_top = function() {
+        return C.children().eq(0).css("padding-top", this.set.padding_top + "px");
+      };
+      background = function() {
+        var c, color, patt;
+        if (this.set.background.type === "color") {
+          if (typeof this.set.background.color === "string") {
+            return C.css("background", this.set.background.color);
+          } else {
+            color = this.C.get_color(this.set.background.color);
+            c = hsvToRgb(color);
+            return C.css("background", c);
+          }
+        } else if (this.set.background.type === "none") {
+          return C.css("background", "");
+        } else if (this.set.background.type === "pattern") {
+          patt = this.set.background.pattern;
+          if (patt.type === "image") {
+            return C.css("background", "url(" + patt.image + " ) repeat");
+          } else if (patt.type === "constructor") {
+            return this.C.renderPattern(C, patt);
+          } else {
+            return this.C._draw_css_background(C, patt.image);
+          }
+        }
+      };
+      text_color = function() {
+        if (this.set.text_color) {
+          return C.css("color", hsvToRgb(this.C.get_color(this.set.text_color)));
+        }
+      };
+      appl = {
+        border_color: border_color,
+        opacity: opacity,
+        border_radius: border_radius,
+        border_width: border_width,
+        padding_top: padding_top,
+        padding_left_right: padding_left_right,
+        background: background,
+        font_size: font_size,
+        line_height: line_height,
+        text_color: text_color
+      };
+      for (k in appl) {
+        f = appl[k];
+        if (this.do_not_apply != null) {
+          if (this.do_not_apply.indexOf(k) === -1) {
+            f.apply(this);
+          }
+        } else {
+          f.apply(this);
+        }
+      }
+      if (this.need_redraw) {
+        return this._draw();
+      }
+    };
+  };
+
+  WI = function WidgetIniter(){
+    this.default_size = [3,1];
+    this.disobey = [];
+    this.redraw = function(){
+        this.my_cont.find('*').remove()
+        this.draw();
+    };
+    this._data = function(){
+        //console.log(">>>>",this.data);
+        return this.data?this.data:this._def_data}
+
+    this.init = function(my_cont, constructor_inst, pos, cp){
+        this.set = constructor_inst.getBlockSettings(pos)
+        this.data     = constructor_inst.getWidgetData(pos)
+        this.my_cont = my_cont;
+        this.pos = pos;
+        this.constructor_inst = constructor_inst;
+        this.C = constructor_inst;
+        return this;
+    }
+    this.draw = function(){
+        // console.log('fdfdf')
+        this.apply_block_settings()
+        this._draw()
+
+
+    }
+    this.save = function(){
+        if (this._save)this._save();
+
+        this.C.setWidgetData(this.pos, this.data)
+        this.C.setBlockSettings(this.pos, this.set);
+    };
+    this.cancel = function(){if (this._cancel)this._cancel();};
+	
+    this.settings = function( cp ){ 
+		this._init_block_cp( cp );
+        if (this._settings != null ) {this._settings(cp);}
+		cp.show();
+    };
+	
+    this._init_block_cp = function(to) {
+      var cb, cl, lhs, li, m, o, old_settings, onCancel, onColorChoice, onPatternChoice, onSave, plr, pt, self, settings, ul, vf, w;
+      m = $("<div>").appendTo(to);
+      self = this;
+      old_settings = $.extend(true, {}, this.set);
+
+      onPatternChoice = function(pattern) {
+        self.set.background = {
+          type: "pattern",
+          pattern: pattern
+        };
+        return self.apply_block_settings();
+      };
+
+      onColorChoice = function(color, pal_ix, hsba) {
+        if (color === "clear") {
+          self.set.background = {
+            type: "none"
+          };
+        } else {
+          self.set.background = {
+            type: "color",
+            color: pal_ix
+          };
+        }
+        return self.apply_block_settings();
+      };
+      onCancel = function() {
+        this.set = old_settings;
+        self.apply_block_settings();
+        return $(this).dialog("close");
+      };
+      onSave = function() {
+        return $(this).dialog("close");
+      };
+
+        cl = $("<button>").button().text("Выбор фона").click(function() {
+          return self.C.drawBackgroundSelectorDialog(onPatternChoice, onColorChoice, onCancel, onSave);
+        }).appendTo(m);
+
+        cl = $("<button>").button().text("выбрать цвет рамки").click(function() {
+          var cb, cc;
+          cb = function(col, ix) {
+            if (col !== "clear") {
+              self.set.border_color = ix;
+              return self.apply_block_settings();
+            }
+          };
+          cc = self.C.draw_color_chooser(cb);
+          return cc.appendTo(to).position({
+            of: this,
+            my: "left top",
+            at: "left top"
+          });
+        }).appendTo(m);
+        cl = $("<button>").button().text("выбрать цвет текста").click(function() {
+          var cb, cc;
+          cb = function(col, ix) {
+            if (col !== "clear") {
+              self.set.text_color = ix;
+              return self.apply_block_settings();
+            }
+          };
+          cc = self.C.draw_color_chooser(cb);
+          return cc.appendTo(to).position({
+            of: this,
+            my: "left top",
+            at: "left top"
+          });
+        }).appendTo(m);
+
+
+      vf = function(a, d) {
+        if (typeof a === "undefined") {
+          return d;
+        } else {
+          return a;
+        }
+      };
+
+
+      ul = $("<ul>").appendTo(m).addClass("cp-ul");
+
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Прозрачность блока").appendTo(li);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 100,
+          value: vf(self.set.bg_opacity, 100) * 100,
+          slide: function(event, ui) {
+            self.set.bg_opacity = ui.value / 100;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Радиус границы").appendTo(li);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 100,
+          value: vf(self.set.border_radius, 0),
+          slide: function(event, ui) {
+            self.set.border_radius = ui.value;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Ширина границы").appendTo(li);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 100,
+          value: vf(self.set.border_width, 0) * 10,
+          slide: function(event, ui) {
+            self.set.border_width = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Межстрочный интервал").appendTo(li);
+        lhs = $("<div>").width(250).slider({
+          min: 0,
+          max: 300,
+          value: self.set.line_height,
+          slide: function(event, ui) {
+            self.set.line_height = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Размер шрифта").appendTo(li);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 300,
+          value: self.set.font_size,
+          slide: function(event, ui) {
+            self.set.font_size = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("отступ сверху").appendTo(li);
+        pt = (self.set.padding_top ? self.set.padding_top * 10 : 0);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 300,
+          value: pt,
+          slide: function(event, ui) {
+            self.set.padding_top = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Отступ слева-справа").appendTo(li);
+        plr = (self.set.padding_left_right ? self.set.padding_left_right * 10 : 0);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 300,
+          value: plr,
+          slide: function(event, ui) {
+            self.set.padding_left_right = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+
+      $("<label for='available_all_pages'>").appendTo(m).append("Показывать на всех страницах");
+      cb = $("<input type='checkbox' id='available_all_pages'>").appendTo(m).click(function() {
+        if (self.C.Site.blocks[self.pos].display_on === "all") {
+          return self.C.Site.blocks[self.pos].display_on = self.current_page;
+        } else {
+          return self.C.Site.blocks[self.pos].display_on = "all";
+        }
+      });
+
+      cb.prop("checked", self.C.Site.blocks[self.pos].display_on === "all");
+      $("<br>").appendTo(m);
+      $("<label for='unsnap_to_grid'>").appendTo(m).append("Свободный блок");
+      cb = $("<input type='checkbox' id='unsnap_to_grid'>").appendTo(m).click(function() {
+        self.set.unsnap_to_grid = this.checked;
+        var bl = self.C.get_block(self.pos);
+        if (this.checked) {
+            self.C.move_block(self.pos, self.C._calc_left(bl.x + 1) + self.set.border_width, self.C._calc_top(bl.y ) + self.set.border_width, true);
+
+            self.C.Site.blocks[self.pos].width = self.C._calc_width(bl.width);
+            self.C.Site.blocks[self.pos].height = self.C._calc_height(bl.height);
+        } else {
+          self.C.move_block(self.pos, Math.round(self.C._uncalc_left(bl.x) + self.set.border_width), Math.round(self.C._uncalc_top(bl.y) + self.set.border_width), true);
+          self.C.Site.blocks[self.pos].width = Math.round(self.C.Site.blocks[self.pos].width / self.C._block_width())
+          self.C.Site.blocks[self.pos].height = Math.round(self.C.Site.blocks[self.pos].height  / self.C._block_height())
+        }
+      });
+      cb.prop("checked", self.set.unsnap_to_grid);
+      $("<br>").appendTo(m);
+      cl = $("<button>").button().text("Применить для всех новых блоков").click(function() {
+        self.C.Site.default_block_settings = self.set;
+        self.C.redraw();
+        return m.remove();
+      }).css("display", "block").css("padding", "5px").css("margin-bottom", "10px").appendTo(m);
+      cl = $("<button>").button().text("Применить для всех имеющихся блоков").click(function() {
+        self.C.Site.default_block_settings = self.set;
+        $.each(self.C.Site.blocks, function(i, bl) {
+          return delete bl["settings"];
+        });
+        self.C.redraw();
+        return to.remove();
+      }).appendTo(m).css("display", "block").css("padding", "5px").css("margin-bottom", "10px");
+      o = {
+        save: function() {
+          //console.log('save')
+          return self.C.setBlockSettings(obj.pos, self.set);
+        },
+        cancel: function() {}
+      };
+      return o;
+    };
+
+    this.apply_block_settings = function(){
+        var C = this.my_cont.parent();
+        var border_color = function(){
+            if (this.set.border_color != null) {
+                //console.log(this.set.border_color)
+                if (typeof this.set.border_color === 'string'){
+                    C.css('border-color', this.set.border_color);
+                }else{
+
+                    var color = this.C.get_color(this.set.border_color);
+                    c = hsvToRgb(color);
+                    C.css("border-color", c );
+                }
+            }
+        }
+        var opacity = function(){
+            this.my_cont.css("opacity", this.set.bg_opacity);
+        }
+        var  border_radius = function(){
+            C.css("-moz-border-radius", this.set.border_radius + "px");
+            C.css("-webkit-border-radius", this.set.border_radius + "px");
+            C.css("border-radius", this.set.border_radius + "px");
+        }
+
+        var border_width = function(){
+                   bl = this.C.get_block(this.pos);
+                  if (!this.set.unsnap_to_grid) {
+                    xx = this.C._calc_left(bl.x + 1) - this.set.border_width;
+                    yy = this.C._calc_top(bl.y) - this.set.border_width;
+                  } else {
+                    xx = bl.x;
+                    yy = bl.y;
+                  }
+                  C.css("border-width", this.set.border_width + "px");
+                  C.css("left", xx);
+                  C.css("top", yy);
+                  C.css("border-style", "solid");
+        }
+        var line_height = function(){
+            C.css("line-height", this.set.line_height + "px");
+
+        }
+        var font_size = function(){
+             C.css("font-size", this.set.font_size + "px");
+
+        }
+        var padding_left_right = function(){
+            //C = w.children().eq(0);
+            var W = C.width();
+            C.children().eq(0).css("margin-left", this.set.padding_left_right + "px");
+            C.children().eq(0).css("margin-right", this.set.padding_left_right + "px");
+            C.children().eq(0).width(W - this.set.padding_left_right * 2);
+
+        }
+        var padding_top = function(){
+            C.children().eq(0).css("padding-top", this.set.padding_top + "px");
+        }
+        var background = function(){
+            if (this.set.background.type === "color") {
+
+                if (typeof this.set.background.color === "string") {
+                  C.css("background", this.set.background.color);
+                } else {
+                  color = this.C.get_color(this.set.background.color);
+                  c = hsvToRgb(color);
+                  C.css("background", c);
+                }
+
+            } else if (this.set.background.type === "none") {
+                C.css("background", "");
+            } else if (this.set.background.type === "pattern") {
+              patt = this.set.background.pattern;
+              if (patt.type === "image") {
+                C.css("background", "url(" + patt.image + " ) repeat");
+              } else if (patt.type === 'constructor') {
+                this.C.renderPattern(C, patt);
+              } else {
+                this.C._draw_css_background(C, patt.image);
+              }
+            }
+        }
+
+
+        var text_color = function(){
+            if (this.set.text_color ){
+                C.css('color', hsvToRgb(this.C.get_color( this.set.text_color ) ) )
+            }
+        }
+        var appl = {border_color:border_color,
+                opacity:opacity,
+                border_radius:border_radius,
+                border_width: border_width,
+                padding_top: padding_top,
+                padding_left_right: padding_left_right,
+                background:background,
+                font_size:font_size,
+                line_height:line_height,
+                text_color:text_color
+
+            }
+        // console.log(this.set);
+        for (k in appl){
+            f = appl[k]
+            // console.log(k)
+            if (this.do_not_apply != null){
+                if (this.do_not_apply.indexOf(k) === -1)
+                   f.apply(this)
+
+            }else {f.apply(this)}
+        }
+        if (this.need_redraw){
+            this._draw();
+        }
+
+
+
+
+    }
+    // return this;
+}
+
+;
+
   window.Constructor.redraw = function(force_reload) {
     if (force_reload == null) {
       force_reload = false;
@@ -672,23 +1431,17 @@
 
   window.Constructor._get_page_var = _get_page_var;
 
-  get_color = function (c){
-				this._make_pallette()
-				if (c.v == 'C') {// color from custom palette
-					return this.Site.colors.custom_pallette[c.ix]
-
-				}else{
-					return this.Site.colors.pallette[c.v][c.ix]
-				}
-
-
-			};
-
   window.Constructor.get_color = function(c) {
-    var v;
+    var v, _ref;
     this._make_pallette();
     if (c.v === 'C') {
-      return this.Site.colors.custom_pallette[c.ix];
+      console.log("FROM_PALLETTE", (_ref = c.ix, __indexOf.call(this.Site.colors.custom_pallette, _ref) >= 0));
+      if (c.ix in this.Site.colors.custom_pallette) {
+        console.log(c.ix);
+        return this.Site.colors.custom_pallette[c.ix];
+      } else {
+        return this.Site.colors.custom_pallette[0];
+      }
     } else {
       v = this.Site.colors.pallette[c.v];
       if (v) {
@@ -819,78 +1572,6 @@
     return this.layout_cont.height(Math.max.apply(Math, hm));
   };
 
-  apply_block_settings = function (obj, settings, widget){
-				var w = obj.jq,
-				bl = this.get_block(obj.pos);
-				if(widget.disobey.indexOf('border_color') == -1){
-					if(typeof settings.border_color == 'string'){
-						w.css('border-color', settings.border_color);
-					}else{
-						if (typeof settings.border_color == 'undefined'){
-							settings.border_color = {v:0, ix:0}
-						}
-						var color = this.get_color(settings.border_color)
-						var c = hsvToRgb(color);
-						w.css('border-color', c);
-					}
-
-				}
-
-				if(widget.disobey.indexOf('bg_opacity') == -1)w.css('opacity', settings.bg_opacity);
-				if(widget.disobey.indexOf('border_radius')== -1 )w.css('border-radius', settings.border_radius +'px')
-				if(widget.disobey.indexOf('border_width') == -1){
-					if(!(settings.unsnap_to_grid)){
-						var xx = this._calc_left(bl.x+1) - settings.border_width
-						var yy = this._calc_top(bl.y) - settings.border_width
-					}else{
-						var xx = bl.x
-						var yy = bl.y
-
-					}
-					w.css('border-width', settings.border_width +'px')
-					w.css('left',  xx)
-					w.css('top',  yy)
-					w.css('border-style','solid')
-
-				}
-
-				if(widget.disobey.indexOf('line_height') == -1)w.css('line-height', settings.line_height +'px')
-				if(widget.disobey.indexOf('font_size') == -1)w.css('font-size', settings.font_size +'px')
-
-				if(widget.disobey.indexOf('padding_left_right') == -1){
-					C = w.children().eq(0);
-					W = w.width();
-
-					C.css('margin-left',settings.padding_left_right +'px')
-					C.css('margin-right',settings.padding_left_right +'px')
-					C.width( W - settings.padding_left_right * 2)
-				}
-
-				if(widget.disobey.indexOf('padding_top') == -1)C.css('padding-top',settings.padding_top +'px')
-				if (settings.background.type == 'color'){
-					if(widget.disobey.indexOf('background_color') == -1){
-						if(typeof settings.background.color == 'string'){
-							w.css('background' , settings.background.color );
-						}else{
-							var color = this.get_color(settings.background.color)
-							var c = hsvToRgb(color);
-							w.css('background', c);
-						}
-					}
-				}else if(settings.background.type == 'none'){
-							w.css('background', '');
-				} else if(settings.background.type == 'pattern'){
-					patt = settings.background.pattern
-					if (['image', 'constructor'].indexOf(patt.type ) != -1){
-						w.css('background', 'url(' + patt.image +' ) repeat' )
-					}else{
-						this._draw_css_background(w, patt.image);
-					}
-
-				}
-
-			};
-
   window.Constructor.reapply_block_settings = function(obj, widget) {
     var sett;
     sett = this.getBlockSettings(obj.pos);
@@ -899,96 +1580,103 @@
 
   window.Constructor.apply_block_settings = function(obj, settings, widget) {
     var C, W, bl, c, color, patt, w, xx, yy;
-    w = obj.jq;
-    bl = this.get_block(obj.pos);
-    if (widget.disobey.indexOf("border_color") === -1) {
-      if (typeof settings.border_color === "string") {
-        w.css("border-color", settings.border_color);
-      } else {
-        if (typeof settings.border_color === "undefined") {
-          settings.border_color = {
-            v: 0,
-            ix: 0
-          };
-        }
-        color = this.get_color(settings.border_color);
-        c = hsvToRgb(color);
-        w.css("border-color", c);
-      }
-    }
-    if (widget.disobey.indexOf("bg_opacity") === -1) {
-      w.css("opacity", settings.bg_opacity);
-    }
-    if (__indexOf.call(widget.disobey, "border_radius") < 0) {
-      w.css("-moz-border-radius", settings.border_radius + "px");
-      w.css("-webkit-border-radius", settings.border_radius + "px");
-      w.css("border-radius", settings.border_radius + "px");
-    }
-    if (widget.disobey.indexOf("border_width") === -1) {
-      if (!settings.unsnap_to_grid) {
-        xx = this._calc_left(bl.x + 1) - settings.border_width;
-        yy = this._calc_top(bl.y) - settings.border_width;
-      } else {
-        xx = bl.x;
-        yy = bl.y;
-      }
-      w.css("border-width", settings.border_width + "px");
-      w.css("left", xx);
-      w.css("top", yy);
-      w.css("border-style", "solid");
-    }
-    if (widget.disobey.indexOf("line_height") === -1) {
-      w.css("line-height", settings.line_height + "px");
-    }
-    if (widget.disobey.indexOf("font_size") === -1) {
-      w.css("font-size", settings.font_size + "px");
-    }
-    if (widget.disobey.indexOf("padding_left_right") === -1) {
-      C = w.children().eq(0);
-      W = w.width();
-      C.css("margin-left", settings.padding_left_right + "px");
-      C.css("margin-right", settings.padding_left_right + "px");
-      C.width(W - settings.padding_left_right * 2);
-    }
-    if (widget.disobey.indexOf("padding_top") === -1) {
-      C.css("padding-top", settings.padding_top + "px");
-    }
-    if (settings.background.type === "color") {
-      if (widget.disobey.indexOf("background_color") === -1) {
-        if (typeof settings.background.color === "string") {
-          w.css("background", settings.background.color);
+    if (!widget.has_own_settings) {
+      w = obj.jq;
+      bl = this.get_block(obj.pos);
+      if (widget.disobey.indexOf("border_color") === -1) {
+        if (typeof settings.border_color === "string") {
+          w.css("border-color", settings.border_color);
         } else {
-          color = this.get_color(settings.background.color);
+          if (typeof settings.border_color === "undefined") {
+            settings.border_color = {
+              v: 0,
+              ix: 0
+            };
+          }
+          color = this.get_color(settings.border_color);
           c = hsvToRgb(color);
-          w.css("background", c);
+          w.css("border-color", c);
         }
       }
-    } else if (settings.background.type === "none") {
-      w.css("background", "");
-    } else if (settings.background.type === "pattern") {
-      patt = settings.background.pattern;
-      if (patt.type === "image") {
-        w.css("background", "url(" + patt.image + " ) repeat");
-      } else if (patt.type === 'constructor') {
-        this.renderPattern(w, patt);
-      } else {
-        this._draw_css_background(w, patt.image);
+      if (widget.disobey.indexOf("bg_opacity") === -1) {
+        w.css("opacity", settings.bg_opacity);
       }
-    }
-    if (widget.depends_on_settings != null) {
-      return widget.draw(settings);
+      if (__indexOf.call(widget.disobey, "border_radius") < 0) {
+        w.css("-moz-border-radius", settings.border_radius + "px");
+        w.css("-webkit-border-radius", settings.border_radius + "px");
+        w.css("border-radius", settings.border_radius + "px");
+      }
+      if (widget.disobey.indexOf("border_width") === -1) {
+        if (!settings.unsnap_to_grid) {
+          xx = this._calc_left(bl.x + 1) - settings.border_width;
+          yy = this._calc_top(bl.y) - settings.border_width;
+        } else {
+          xx = bl.x;
+          yy = bl.y;
+        }
+        w.css("border-width", settings.border_width + "px");
+        w.css("left", xx);
+        w.css("top", yy);
+        w.css("border-style", "solid");
+      }
+      if (widget.disobey.indexOf("line_height") === -1) {
+        w.css("line-height", settings.line_height + "px");
+      }
+      if (widget.disobey.indexOf("font_size") === -1) {
+        w.css("font-size", settings.font_size + "px");
+      }
+      if (widget.disobey.indexOf("padding_left_right") === -1) {
+        C = w.children().eq(0);
+        W = w.width();
+        C.css("margin-left", settings.padding_left_right + "px");
+        C.css("margin-right", settings.padding_left_right + "px");
+        C.width(W - settings.padding_left_right * 2);
+      }
+      if (widget.disobey.indexOf("padding_top") === -1) {
+        C.css("padding-top", settings.padding_top + "px");
+      }
+      if (settings.background.type === "color") {
+        if (widget.disobey.indexOf("background_color") === -1) {
+          if (typeof settings.background.color === "string") {
+            w.css("background", settings.background.color);
+          } else {
+            color = this.get_color(settings.background.color);
+            c = hsvToRgb(color);
+            w.css("background", c);
+          }
+        }
+      } else if (settings.background.type === "none") {
+        w.css("background", "");
+      } else if (settings.background.type === "pattern") {
+        patt = settings.background.pattern;
+        if (patt.type === "image") {
+          w.css("background", "url(" + patt.image + " ) repeat");
+        } else if (patt.type === 'constructor') {
+          this.renderPattern(w, patt);
+        } else {
+          this._draw_css_background(w, patt.image);
+        }
+      }
+      if (widget.depends_on_settings != null) {
+        return widget.draw(settings);
+      }
     }
   };
 
   window.Constructor.init_block = function(bl, to) {
-    var H, W, Widget, app_name, delete_marker, draga, h, he, init_resizer, l, make_draggable, mh, mouseHeight, mouseWidth, mw, newWidget, o, po, r, resize_marker, self, settings, start_x, start_y, w, wdata, wi, widget_name, widget_str,
+    var H, W, Widget, app_name, clc, delete_marker, draga, h, he, init_resizer, l, make_draggable, mh, mouseHeight, mouseWidth, mw, newWidget, o, po, r, resize_marker, self, start_x, start_y, w, wdata, wi, widget_name, widget_str,
       _this = this;
     init_resizer = function() {};
     newWidget = function(c, t, p, cp) {
-      var A;
+      var A, W, wi;
       A = t.Site.Applications[app_name];
       if ((A != null) && (A.widgets[widget_name] != null)) {
-        return A.widgets[widget_name].init(c, t, p, cp);
+        W = A.widgets[widget_name];
+        wi = (function() {
+          return new W();
+        })();
+        wi.init(c, t, p, cp);
+        return wi;
       } else {
         return false;
       }
@@ -1012,9 +1700,7 @@
       return false;
     }
     Widget.draw();
-    settings = self.getBlockSettings(to.pos);
-    self.apply_block_settings(to, settings, Widget);
-    if (settings.unsnap_to_grid) {
+    if (Widget.set.unsnap_to_grid) {
       W = bl.width;
       H = bl.height;
     }
@@ -1043,7 +1729,7 @@
         },
         drag: function(event, ui) {
           var ll, tt;
-          if (!settings.unsnap_to_grid) {
+          if (!Widget.set.unsnap_to_grid) {
             ll = self._stepping_left(ui.position.left);
             tt = self._stepping_top(ui.position.top);
             draga = {
@@ -1073,73 +1759,52 @@
     }
     if (this.is_constructor) {
       to.jq.dblclick(function() {
-        var control_panel, saving_data, wco, _i, _len, _ref;
-        control_panel = $("<div>").appendTo($("#controls"));
-        wco = self.init_block_cp(to, control_panel, Widget);
-        saving_data = function(evt) {
+        var control_panel, _i, _len, _ref;
+        control_panel = $("<div>").addClass('widget-control').appendTo($("#controls"));
+        _ref = _this.inited_blocks;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          bl = _ref[_i];
+          bl.unbind("click dblclick");
+          bl.draggable('destroy');
+        }
+        $("#controls>.widget-control").hide();
+        control_panel.css("position", "absolute").position({
+          of: w,
+          my: "left top",
+          at: "right top",
+          collision: "none none"
+        }).css("border", "2px solid black").css("background-color", "white").draggable({
+          scroll: false
+        }).css("padding", "10");
+        if (Widget.settings) {
+          Widget.settings(control_panel);
+        }
+        console.log(to.jq.parent());
+        $("<div>").css("background-color", "green").appendTo(to.jq.parent()).css("position", "absolute").position({
+          of: to.jq,
+          my: "left top",
+          at: "left-20 top",
+          collision: "none none"
+        }).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function() {
           if (Widget.save) {
             Widget.save();
           }
-          wco.save();
-          _this.settings_over_block = false;
+          _this._save_site();
           control_panel.remove();
-          return _this.redraw.apply(self, []);
-        };
-        if (_this.settings_over_block !== false) {
-          return _this.settings_over_block.saving();
-        } else {
-          _this.settings_over_block = {
-            to: to,
-            Widget: Widget,
-            saving: saving_data
-          };
-          _ref = _this.inited_blocks;
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            bl = _ref[_i];
-            bl.unbind("click dblclick");
-            bl.draggable('destroy');
+          return self.redraw();
+        });
+        return $("<div>").css("background-color", "red").appendTo(to.jq.parent()).css("position", "absolute").position({
+          of: to.jq,
+          my: "left top",
+          at: "left-20 top+30",
+          collision: "none none"
+        }).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function() {
+          if (Widget.cancel) {
+            Widget.cancel();
           }
-          $("#controls>.widget-control").hide();
-          control_panel.css("position", "absolute").position({
-            of: w,
-            my: "left top",
-            at: "right top",
-            collision: "none none"
-          }).css("border", "2px solid black").css("background-color", "white").draggable({
-            scroll: false
-          }).css("padding", "10");
-          if (Widget.settings) {
-            Widget.settings(control_panel);
-          }
-          $("<div>").css("background-color", "orange").appendTo(to.jq).css("position", "absolute").position({
-            of: to.jq,
-            my: "left top",
-            at: "right top",
-            collision: "none"
-          }).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20);
-          $("<div>").css("background-color", "green").appendTo(to.jq.parent()).css("position", "absolute").position({
-            of: to.jq,
-            my: "left top",
-            at: "left-20 top",
-            collision: "none none"
-          }).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function() {
-            saving_data();
-            return _this._save_site();
-          });
-          return $("<div>").css("background-color", "red").appendTo(to.jq.parent()).css("position", "absolute").position({
-            of: to.jq,
-            my: "left top",
-            at: "left-20 top+30",
-            collision: "none none"
-          }).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click(function() {
-            if (Widget.cancel) {
-              Widget.cancel();
-            }
-            control_panel.remove();
-            this.settings_over_block = false;
-            return self.redraw.apply(self, []);
-          });
-        }
+          control_panel.remove();
+          return self.redraw.apply(self, []);
+        });
       });
       mouseWidth = W;
       mouseHeight = H;
@@ -1179,7 +1844,7 @@
             if (fr.size()) {
               nh = evt.clientY - start_y + H;
               nw = evt.clientX - start_x + W;
-              if (!settings.unsnap_to_grid) {
+              if (!Widget.set.unsnap_to_grid) {
                 width_step = self._stepping_width(nw);
                 height_step = self._stepping_height(nh);
                 fr.width(width_step.val);
@@ -1208,11 +1873,14 @@
       resize_marker.css("left", po.left + o.left + wi - mw);
       delete_marker.css("top", po.top);
       delete_marker.css("left", po.left + o.left + wi - mw);
-      to.jq.click(function(e) {
+      clc = function(e) {
         $("#controls>.widget-control").hide();
         delete_marker.show().zIndex(1000);
         return resize_marker.show().zIndex(1000);
-      });
+      };
+      (function() {
+        return to.jq.on('click', clc);
+      })();
     }
     return to.jq;
   };
@@ -1693,6 +2361,7 @@
           }
         } else if (imgo.type === "color") {
           c = _this.get_color(imgo.color);
+          console.log("BG", imgo.color);
           return C.css("background", hsvToRgb(c));
         } else {
           if (imgo.type === "none") {
@@ -1809,10 +2478,9 @@
         delete hsv.v;
         if (self.Site.colors.custom_pallette != null) {
           self.Site.colors.custom_pallette.push(hsv);
+        } else {
+          self.Site.colors.custom_pallette = [hsv];
         }
-        ({
-          "else": self.Site.colors.custom_pallette = [hsv]
-        });
         ix = self.Site.colors.custom_pallette.length - 1;
         color_chooser.remove();
         return onSelectColor(color.formatted, {
@@ -2924,7 +3592,51 @@
 				this._app_admin_cont.show()
 			 };
 
-  window.Constructor.showFontsScheme = showFontsScheme;
+  window.Constructor.showFontsScheme = function() {
+    var available_fonts_sans, available_fonts_serif, body, d, fch, font_example, fonts, h, head, p, sel_fonts, to,
+      _this = this;
+    head = $("<h3>").text('This is a sample Header');
+    body = $("<p>").text('Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.');
+    this._app_admin_contents.find('*').remove();
+    to = $('<div>').appendTo(this._app_admin_contents);
+    available_fonts_serif = ['Georgia', 'Palatino Linotype', 'Times New Roman', 'Garamond'];
+    available_fonts_sans = ["Arial", "Arial Black", "Arial Narrow", "Arial Rounded MT Bold", "Avant Garde", "Calibri", "Futura", "Comic Sans MS", "Impact", "Lucida Sans Unicode", "Tahoma", "Trebuchet MS", "Verdana"];
+    fonts = available_fonts_sans.concat(available_fonts_serif);
+    sel_fonts = $.extend(false, {}, this.Site.fonts);
+    font_example = function() {
+      head.css('font-family', sel_fonts.header);
+      return body.css('font-family', sel_fonts.content);
+    };
+    fch = function(e) {
+      var j;
+      j = $(e.target);
+      sel_fonts[j.attr('name')] = j.val();
+      return font_example();
+    };
+    h = $('<select>').appendTo(to).attr('name', 'header').change(fch);
+    $.each(fonts, function(ix, f) {
+      return $("<option>").appendTo(h).css('font-family', f).val(f).text(f);
+    });
+    h.val(sel_fonts.header);
+    p = $('<select>').appendTo(to).attr('name', 'content').change(fch);
+    $.each(fonts, function(ix, f) {
+      return $("<option>").appendTo(p).css('font-family', f).val(f).text(f);
+    });
+    p.val(sel_fonts.content);
+    to = $("<Div>").appendTo(this._app_admin_contents);
+    d = $('<div>').appendTo(to).append(head).append(body);
+    font_example();
+    $("<button>").appendTo(this._app_admin_contents).text("Сохранить и закрыть").click(function() {
+      _this.Site.fonts = sel_fonts;
+      _this._save_site();
+      return _this._app_admin_cont.hide();
+    });
+    $("<button>").appendTo(this._app_admin_contents).text("Сохранить").click(function() {
+      _this.Site.fonts = sel_fonts;
+      return _this._save_site();
+    });
+    return this._app_admin_cont.show();
+  };
 
   showBackgroundScheme = function (){
 				var to = this._app_admin_contents;
@@ -4407,9 +5119,10 @@
       return self._app_admin_cont.hide();
     })).appendTo(this._app_admin_cont);
     this._app_admin_contents = $("<div>").appendTo(this._app_admin_cont);
-    $("<div>").height(50).width("100%").appendTo(this.cp).append($("<button>").button().text("hide").click(function() {
-      self.cp.remove();
-      return self.CPmarker.show();
+    $("<div>").height(50).width("100%").appendTo(this.cp).append($("<button>").button().text("hide").click(function(e) {
+      $(e.target).remove();
+      _this.cp.remove();
+      return _this.CPmarker.show();
     }));
     this.cp_acc = $("<div>").appendTo(this.cp);
     $("<h3>").text("Основные").appendTo(this.cp_acc);
@@ -4708,7 +5421,7 @@
     };
     SF = function(evt) {
       return $.ajax({
-        url: "/app/list/",
+        url: "/_/app/list/",
         dataType: "JSON",
         success: function(js) {
           var dhtml, dialog, res_cont, vals;
@@ -4781,7 +5494,9 @@
       if (app.widgets) {
         li = $("<li>").text(app.title).appendTo(ul);
         ul_ = $("<ul>").appendTo(li);
-        return $.each(app.widgets, function(name, w) {
+        return $.each(app.widgets, function(name, wc) {
+          var w;
+          w = new wc();
           return $("<li>").text(w.title).appendTo(ul_).prop("type", name + "." + app_name).draggable({
             scroll: false,
             start: function() {},

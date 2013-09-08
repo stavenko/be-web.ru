@@ -10,6 +10,7 @@ src/constructor/models.py
 src/constructor/runner.py
 src/constructor/tests.py
 src/constructor/urls.py
+src/constructor/utils.py
 src/constructor/views.py
 src/constructor/static/.DS_Store
 src/constructor/static/css/.DS_Store
@@ -69,6 +70,7 @@ src/constructor/static/js/jquery-ui-1.10.0.custom.js
 src/constructor/static/js/jquery.watermark.min.js
 src/constructor/static/js/json2.js
 src/constructor/static/js/md5.js
+src/constructor/static/js/moment.min.js
 src/constructor/static/js/mustache.js
 src/constructor/static/js/underscore-min.js
 src/constructor/static/js/cp/jquery.colorpicker.js
@@ -233,6 +235,8 @@ src/constructor/static/js/sop/displayer.src.coffee
 src/constructor/static/js/sop/displayer.src.js
 src/constructor/static/js/sop/generic.js
 src/constructor/static/js/sop/generic.manifest
+src/constructor/static/js/sop/thenews.js
+src/constructor/static/js/sop/thenews.manifest
 src/constructor/static/js/sop/theshop.js
 src/constructor/static/js/sop/theshop.manifest
 src/constructor/static/js/sop/common/advanced.js

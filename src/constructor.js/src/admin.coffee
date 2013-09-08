@@ -936,8 +936,62 @@ showFontsScheme = `function (){
 
 				this._app_admin_cont.show()
 			 }`
-window.Constructor.showFontsScheme = showFontsScheme
-
+			 
+window.Constructor.showFontsScheme =  -> # showFontsScheme
+	head = $("<h3>").text('This is a sample Header');
+	body = $("<p>").text('Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.');
+	this._app_admin_contents.find('*').remove();
+	to = $('<div>').appendTo(this._app_admin_contents)
+	available_fonts_serif = ['Georgia', 'Palatino Linotype', 'Times New Roman','Garamond']
+	available_fonts_sans= ["Arial", "Arial Black", "Arial Narrow" ,"Arial Rounded MT Bold", "Avant Garde", "Calibri", "Futura", "Comic Sans MS", "Impact", "Lucida Sans Unicode", "Tahoma", "Trebuchet MS", "Verdana"]
+	#available_fonts_mono= ["Courier New", "Lucida Console"],
+	fonts = available_fonts_sans.concat available_fonts_serif;
+	#console.log(fonts);
+	sel_fonts = $.extend(false, {}, @Site.fonts) # {header: "Arial", content:"Arial"}
+	font_example = ->
+		head.css('font-family', sel_fonts.header)
+		body.css('font-family', sel_fonts.content)
+		# console.log("aaa");
+	fch = (e) ->
+		j = $(e.target)
+		sel_fonts[j.attr 'name'] = j.val();
+		font_example()
+	
+	h = $('<select>').appendTo(to).attr('name', 'header').change fch
+	$.each(fonts , (ix, f)=>
+		$("<option>").appendTo(h).css('font-family', f).val(f).text(f)
+		)
+	h.val(sel_fonts.header)
+		
+	p = $('<select>').appendTo(to).attr('name', 'content').change fch
+	$.each(fonts , (ix, f)=>
+		$("<option>").appendTo(p).css('font-family', f).val(f).text(f)
+		)
+	p.val(sel_fonts.content)
+		
+	#m = $('<select>').appendTo(to).attr('name', 'monospace').change fch
+	#$.each(fonts , (ix, f)=>
+	#	$("<option>").appendTo(m).css('font-family', f).val(f).text(f)
+	#	)
+	to = $("<Div>").appendTo(this._app_admin_contents);	
+	d = $('<div>').appendTo( to ).append(head).append(body)
+	
+	font_example();
+	$("<button>").appendTo(this._app_admin_contents).text("Сохранить и закрыть").click( =>
+		@Site.fonts = sel_fonts
+		@_save_site();
+		this._app_admin_cont.hide();
+		
+		)
+	$("<button>").appendTo(this._app_admin_contents).text("Сохранить").click( =>
+		@Site.fonts = sel_fonts
+		@_save_site();
+		
+		)
+	
+	
+	this._app_admin_cont.show();
+	
 
 
 
@@ -2405,9 +2459,10 @@ window.Constructor.show_CP = (active_tab) ->
     self._app_admin_cont.hide()
   )).appendTo @_app_admin_cont
   @_app_admin_contents = $("<div>").appendTo(@_app_admin_cont)
-  $("<div>").height(50).width("100%").appendTo(@cp).append $("<button>").button().text("hide").click(->
-    self.cp.remove()
-    self.CPmarker.show()
+  $("<div>").height(50).width("100%").appendTo(@cp).append $("<button>").button().text("hide").click( (e)=>
+    $(e.target).remove();
+    @cp.remove()
+    @CPmarker.show()
   )
   @cp_acc = $("<div>").appendTo(@cp)
   $("<h3>").text("Основные").appendTo @cp_acc
@@ -2692,7 +2747,7 @@ window.Constructor.show_CP = (active_tab) ->
 
   SF = (evt) =>
     $.ajax
-      url: "/app/list/",
+      url: "/_/app/list/",
       dataType: "JSON",
       success: (js) =>
         vals = for k in js.apps
@@ -2744,7 +2799,8 @@ window.Constructor.show_CP = (active_tab) ->
     if app.widgets
       li = $("<li>").text(app.title).appendTo(ul)
       ul_ = $("<ul>").appendTo(li)
-      $.each app.widgets, (name, w) =>
+      $.each app.widgets, (name, wc) =>
+        w = new wc();
         $("<li>").text(w.title).appendTo(ul_).prop("type", name + "." + app_name).draggable
           scroll: false
           start: ->

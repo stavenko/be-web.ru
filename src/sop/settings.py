@@ -151,7 +151,7 @@ INSTALLED_APPS = (
 )
 POWERDNS_RECORD_TYPES=( 'A', 'AAAA', 'CNAME', 'HINFO', 'MX', 'NAPTR', 'NS',
     'PTR', 'SOA', 'SRV', 'TXT',)
-LOGIN_REDIRECT_URL = '/profile/'    
+LOGIN_REDIRECT_URL = '/_/profile/'
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
 # the site admins on every HTTP 500 error.

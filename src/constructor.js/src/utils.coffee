@@ -317,6 +317,7 @@ window.Constructor.redraw_background = ->
   #log( "BGs", @Site.backgrounds )
   if @Site.backgrounds?
     $.each @Site.backgrounds, (name, imgo) =>
+
       if name is "body"
         C = $("body")
       else C = @layout_cont  if name is "content"
@@ -337,6 +338,8 @@ window.Constructor.redraw_background = ->
           @_draw_css_background C, pat
       else if imgo.type is "color"
         c = @get_color(imgo.color)
+        console.log("BG", imgo.color)
+
         C.css "background", hsvToRgb(c)
       else C.css "background", ""  if imgo.type is "none"
 
@@ -433,12 +436,15 @@ window.Constructor.draw_color_chooser = (onSelectColor) ->
       delete hsv.v
 
       #console.log hsv
+      #console.log("BEFORE", self.Site.colors.custom_pallette)
       if self.Site.colors.custom_pallette?
         self.Site.colors.custom_pallette.push hsv
-      else:
+      else
         self.Site.colors.custom_pallette = [hsv]
+      #console.log("AFTER", self.Site.colors.custom_pallette)
       ix = self.Site.colors.custom_pallette.length - 1
       color_chooser.remove()
+      #console.log( "Index", ix )
       onSelectColor color.formatted,
         v: "C"
         ix: ix

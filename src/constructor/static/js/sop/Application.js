@@ -21,7 +21,7 @@ var init_db = function(csrf_token){
 
             fd.append('x-data', JSON.stringify(data))
             fd.append(cs_name, cs_val)
-            xhr.open("POST", "/data/", true)
+            xhr.open("POST", "/_/data/", true)
             xhr.upload.progress = progress
             xhr.onloadend = loadend
             xhr.send(fd)
@@ -34,7 +34,7 @@ var init_db = function(csrf_token){
 			var fd = new FormData();
             fd.append('page_cache', str_cache)
             fd.append(cs_name, cs_val)
-            xhr.open("POST", "/site_cache/", false)
+            xhr.open("POST", "/_/site_cache/", false)
             
             xhr.send(fd)
 		},
@@ -52,7 +52,7 @@ var init_db = function(csrf_token){
             fd.append('body', body)
             fd.append('to', to)
             fd.append(cs_name, cs_val)
-            xhr.open("POST", "/email/", false)
+            xhr.open("POST", "/_/email/", false)
             
             xhr.send(fd)
 		},
@@ -61,7 +61,7 @@ var init_db = function(csrf_token){
             var fd = new FormData();
             fd.append('x-data', app)
             fd.append(cs_name, cs_val)
-            xhr.open("POST", "/app/add/", true)
+            xhr.open("POST", "/_/app/add/", true)
             xhr.send(fd)
 		},
         save_object_sync:function(appid, type, obj, progress, complete){
@@ -79,7 +79,7 @@ var init_db = function(csrf_token){
 				fd.append('is_unique', true)
 			}
             fd.append(cs_name, cs_val)
-            xhr.open("POST", "/data/", false)
+            xhr.open("POST", "/_/data/", false)
             xhr.upload.progress = progress
             xhr.onloadend = loadend
             
@@ -98,7 +98,7 @@ var init_db = function(csrf_token){
                 }
             };
 			$.ajax({
-				url:'/data/delete/',
+				url:'/_/data/delete/',
 				data: d,
 				dataType:'json',
 				type:'POST',
@@ -109,7 +109,7 @@ var init_db = function(csrf_token){
 		},
 		get_blob_url:function(blob){
             if(blob.blob){
-			    return "/blob/"+ blob._id['$oid'] + '/'
+			    return "/_/blob/"+ blob._id['$oid'] + '/'
             }
             else{
                 return blob;
@@ -128,7 +128,7 @@ var init_db = function(csrf_token){
 
 			//console.log("Ha")
             var data = [];
-            $.ajax({url:'/data/',
+            $.ajax({url:'/_/data/',
                     data: d,
                     dataType:'json',
                     success: function(js){data = js},

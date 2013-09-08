@@ -6,7 +6,7 @@ import cookielib
 
 directory = "/Users/azl/Documents/workspace/be-web.ru/src/constructor/static/js/sop/"
 
-apps = ["generic", 'theshop']
+apps = ["generic", 'theshop', 'thenews']
 
 #def object_hook(k,v):
 #    print k, v
@@ -15,18 +15,18 @@ js = "return this.Main(constr,appid)"
 import hashlib
 
 username = "stavenko@gmail.com"
-LOCAL = False
+LOCAL = True
 MAKE_IT_GLOBAL = True;
 
 if LOCAL:
     key_hash = '2c0d4179689f6437b9eceb6c56b5442a' # localhost
     cookie_url = 'http://test.be-test.com:8000/'
-    post_url   = 'http://test.be-test.com:8000/app/add/'
+    post_url   = 'http://test.be-test.com:8000/_/app/add/'
     
 else:
     key_hash = '50360e1f4c3ee726b87f387b53c57c3b' # globalhost
     cookie_url = 'http://www.be-web.ru/'
-    post_url   = 'http://www.be-web.ru/app/add/'
+    post_url   = 'http://www.be-web.ru/_/app/add/'
     
 
 

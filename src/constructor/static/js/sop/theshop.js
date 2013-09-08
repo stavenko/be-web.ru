@@ -239,7 +239,7 @@
                 }
 
             },
-
+       
 
             _scaleImage : function(img, maxHeight, maxWidth){
                 var width = img[0].width,

@@ -1,0 +1,12 @@
+{	"app_name":"thenews",
+    "title": "News Application",
+	"roles":["guest","admin"],
+	"default_role": "guest",
+	"author": "Vasiliy G. Stavenko",
+	"author_email": "stavenko@gmail.com",
+	"homepage":"www.be-web.ru",
+	"data":{"newsItem":{ "view":["client","admin"],
+	                    "add":["admin"],
+	                    "del":["admin"] } 
+	}
+}

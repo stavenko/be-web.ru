@@ -350,6 +350,728 @@ window.Constructor = new Constructor();
 $(document).bind "ready", (e) =>
     window.Constructor.init window.is_constructor, window.site_id
 
+window.WidgetIniter = ->
+	@default_size = [3, 1]
+	@disobey = []
+	@redraw = ->
+	    @my_cont.find("*").remove()
+	    @draw()
+
+	@_data = ->
+
+	    #console.log(">>>>",this.data);
+	    (if @data then @data else @_def_data)
+
+	@init = (my_cont, constructor_inst, pos, cp) ->
+	    @set = constructor_inst.getBlockSettings(pos)
+	    @data = constructor_inst.getWidgetData(pos)
+	    @my_cont = my_cont
+	    @pos = pos
+	    @constructor_inst = constructor_inst
+	    @C = constructor_inst
+	    this
+
+	@draw = ->
+	    @apply_block_settings()
+	    @_draw()
+
+	@save = ->
+	    @_save()  if @_save
+	    @C.setWidgetData @pos, @data
+	    @C.setBlockSettings @pos, @set
+
+	@cancel = ->
+	    @_cancel()  if @_cancel
+
+	@settings = (cp) ->
+		  @_init_block_cp cp
+		  @_settings cp  if @_settings?
+		  console.log("Wot")
+		  cp.show()
+
+
+	@_init_block_cp = (to) ->
+	    cb = undefined
+	    cl = undefined
+	    lhs = undefined
+	    li = undefined
+	    m = undefined
+	    o = undefined
+	    old_settings = undefined
+	    onCancel = undefined
+	    onColorChoice = undefined
+	    onPatternChoice = undefined
+	    onSave = undefined
+	    plr = undefined
+	    pt = undefined
+	    self = undefined
+	    settings = undefined
+	    ul = undefined
+	    vf = undefined
+	    w = undefined
+	    m = $("<div>").appendTo(to)
+	    self = this
+	    old_settings = $.extend(true, {}, @set)
+	    onPatternChoice = (pattern) ->
+	      self.set.background =
+	        type: "pattern"
+	        pattern: pattern
+
+	      self.apply_block_settings()
+
+	    onColorChoice = (color, pal_ix, hsba) ->
+	      if color is "clear"
+	        self.set.background = type: "none"
+	      else
+	        self.set.background =
+	          type: "color"
+	          color: pal_ix
+	      self.apply_block_settings()
+
+	    onCancel = ->
+	      @set = old_settings
+	      self.apply_block_settings()
+	      $(this).dialog "close"
+
+	    onSave = ->
+	      $(this).dialog "close"
+
+	    cl = $("<button>").button().text("Выбор фона").click(->
+	      self.C.drawBackgroundSelectorDialog onPatternChoice, onColorChoice, onCancel, onSave
+	    ).appendTo(m)
+	    cl = $("<button>").button().text("выбрать цвет рамки").click(->
+	      cb = undefined
+	      cc = undefined
+	      cb = (col, ix) ->
+	        if col isnt "clear"
+	          self.set.border_color = ix
+	          self.apply_block_settings()
+
+	      cc = self.C.draw_color_chooser(cb)
+	      cc.appendTo(to).position
+	        of: this
+	        my: "left top"
+	        at: "left top"
+
+	    ).appendTo(m)
+	    cl = $("<button>").button().text("выбрать цвет текста").click(->
+	      cb = undefined
+	      cc = undefined
+	      cb = (col, ix) ->
+	        if col isnt "clear"
+	          self.set.text_color = ix
+	          self.apply_block_settings()
+
+	      cc = self.C.draw_color_chooser(cb)
+	      cc.appendTo(to).position
+	        of: this
+	        my: "left top"
+	        at: "left top"
+
+	    ).appendTo(m)
+	    vf = (a, d) ->
+	      if typeof a is "undefined"
+	        d
+	      else
+	        a
+
+	    ul = $("<ul>").appendTo(m).addClass("cp-ul")
+	    li = $("<li>").appendTo(ul)
+	    $("<span>").text("Прозрачность блока").appendTo li
+	    $("<div>").width(250).slider(
+	      min: 0
+	      max: 100
+	      value: vf(self.set.bg_opacity, 100) * 100
+	      slide: (event, ui) ->
+	        self.set.bg_opacity = ui.value / 100
+	        self.apply_block_settings()
+	    ).appendTo li
+	    li = $("<li>").appendTo(ul)
+	    $("<span>").text("Радиус границы").appendTo li
+	    $("<div>").width(250).slider(
+	      min: 0
+	      max: 100
+	      value: vf(self.set.border_radius, 0)
+	      slide: (event, ui) ->
+	        self.set.border_radius = ui.value
+	        self.apply_block_settings()
+	    ).appendTo li
+	    li = $("<li>").appendTo(ul)
+	    $("<span>").text("Ширина границы").appendTo li
+	    $("<div>").width(250).slider(
+	      min: 0
+	      max: 100
+	      value: vf(self.set.border_width, 0) * 10
+	      slide: (event, ui) ->
+	        self.set.border_width = ui.value / 10
+	        self.apply_block_settings()
+	    ).appendTo li
+	    li = $("<li>").appendTo(ul)
+	    $("<span>").text("Межстрочный интервал").appendTo li
+	    lhs = $("<div>").width(250).slider(
+	      min: 0
+	      max: 300
+	      value: self.set.line_height
+	      slide: (event, ui) ->
+	        self.set.line_height = ui.value / 10
+	        self.apply_block_settings()
+	    ).appendTo(li)
+	    li = $("<li>").appendTo(ul)
+	    $("<span>").text("Размер шрифта").appendTo li
+	    $("<div>").width(250).slider(
+	      min: 0
+	      max: 300
+	      value: self.set.font_size
+	      slide: (event, ui) ->
+	        self.set.font_size = ui.value / 10
+	        self.apply_block_settings()
+	    ).appendTo li
+	    li = $("<li>").appendTo(ul)
+	    $("<span>").text("отступ сверху").appendTo li
+	    pt = ((if self.set.padding_top then self.set.padding_top * 10 else 0))
+	    $("<div>").width(250).slider(
+	      min: 0
+	      max: 300
+	      value: pt
+	      slide: (event, ui) ->
+	        self.set.padding_top = ui.value / 10
+	        self.apply_block_settings()
+	    ).appendTo li
+	    li = $("<li>").appendTo(ul)
+	    $("<span>").text("Отступ слева-справа").appendTo li
+	    plr = ((if self.set.padding_left_right then self.set.padding_left_right * 10 else 0))
+	    $("<div>").width(250).slider(
+	      min: 0
+	      max: 300
+	      value: plr
+	      slide: (event, ui) ->
+	        self.set.padding_left_right = ui.value / 10
+	        self.apply_block_settings()
+	    ).appendTo li
+	    $("<label for='available_all_pages'>").appendTo(m).append "Показывать на всех страницах"
+	    cb = $("<input type='checkbox' id='available_all_pages'>").appendTo(m).click(->
+	      if self.C.Site.blocks[self.pos].display_on is "all"
+	        self.C.Site.blocks[self.pos].display_on = self.current_page
+	      else
+	        self.C.Site.blocks[self.pos].display_on = "all"
+	    )
+	    cb.prop "checked", self.C.Site.blocks[self.pos].display_on is "all"
+	    $("<br>").appendTo m
+	    $("<label for='unsnap_to_grid'>").appendTo(m).append "Свободный блок"
+	    cb = $("<input type='checkbox' id='unsnap_to_grid'>").appendTo(m).click(->
+	      self.set.unsnap_to_grid = @checked
+	      bl = self.C.get_block(self.pos)
+	      if @checked
+	        self.C.move_block self.pos, self.C._calc_left(bl.x + 1) + self.set.border_width, self.C._calc_top(bl.y) + self.set.border_width, true
+	        self.C.Site.blocks[self.pos].width = self.C._calc_width(bl.width)
+	        self.C.Site.blocks[self.pos].height = self.C._calc_height(bl.height)
+	      else
+	        self.C.move_block self.pos, Math.round(self.C._uncalc_left(bl.x) + self.set.border_width), Math.round(self.C._uncalc_top(bl.y) + self.set.border_width), true
+	        self.C.Site.blocks[self.pos].width = Math.round(self.C.Site.blocks[self.pos].width / self.C._block_width())
+	        self.C.Site.blocks[self.pos].height = Math.round(self.C.Site.blocks[self.pos].height / self.C._block_height())
+	    )
+	    cb.prop "checked", self.set.unsnap_to_grid
+	    $("<br>").appendTo m
+	    cl = $("<button>").button().text("Применить для всех новых блоков").click(->
+	      self.C.Site.default_block_settings = self.set
+	      self.C.redraw()
+	      m.remove()
+	    ).css("display", "block").css("padding", "5px").css("margin-bottom", "10px").appendTo(m)
+	    cl = $("<button>").button().text("Применить для всех имеющихся блоков").click(->
+	      self.C.Site.default_block_settings = self.set
+	      $.each self.C.Site.blocks, (i, bl) ->
+	        delete bl["settings"]
+
+	      self.C.redraw()
+	      to.remove()
+	    ).appendTo(m).css("display", "block").css("padding", "5px").css("margin-bottom", "10px")
+	    o =
+	      save: ->
+    
+	        #console.log('save')
+	        self.C.setBlockSettings obj.pos, self.set
+
+	      cancel: ->
+
+	    o
+
+	@apply_block_settings = ->
+		C = @my_cont.parent()
+		border_color = ->
+		  if @set.border_color?
+
+		    #console.log(this.set.border_color)
+		    if typeof @set.border_color is "string"
+		      C.css "border-color", @set.border_color
+		    else
+		      color = @C.get_color(@set.border_color)
+		      c = hsvToRgb(color)
+		      C.css "border-color", c
+
+		opacity = ->
+		  @my_cont.css "opacity", @set.bg_opacity
+
+		border_radius = ->
+		  C.css "-moz-border-radius", @set.border_radius + "px"
+		  C.css "-webkit-border-radius", @set.border_radius + "px"
+		  C.css "border-radius", @set.border_radius + "px"
+
+		border_width = ->
+		  bl = @C.get_block(@pos)
+		  unless @set.unsnap_to_grid
+		    xx = @C._calc_left(bl.x + 1) - @set.border_width
+		    yy = @C._calc_top(bl.y) - @set.border_width
+		  else
+		    xx = bl.x
+		    yy = bl.y
+		  C.css "border-width", @set.border_width + "px"
+		  C.css "left", xx
+		  C.css "top", yy
+		  C.css "border-style", "solid"
+
+		line_height = ->
+		  C.css "line-height", @set.line_height + "px"
+
+		font_size = ->
+		  C.css "font-size", @set.font_size + "px"
+
+		padding_left_right = ->
+
+		  #C = w.children().eq(0);
+		  W = C.width()
+		  C.children().eq(0).css "margin-left", @set.padding_left_right + "px"
+		  C.children().eq(0).css "margin-right", @set.padding_left_right + "px"
+		  C.children().eq(0).width W - @set.padding_left_right * 2
+
+		padding_top = ->
+		  C.children().eq(0).css "padding-top", @set.padding_top + "px"
+
+		background = ->
+		  if @set.background.type is "color"
+		    if typeof @set.background.color is "string"
+		      C.css "background", @set.background.color
+		    else
+		      color = @C.get_color(@set.background.color)
+		      c = hsvToRgb(color)
+		      C.css "background", c
+		  else if @set.background.type is "none"
+		    C.css "background", ""
+		  else if @set.background.type is "pattern"
+		    patt = @set.background.pattern
+		    if patt.type is "image"
+		      C.css "background", "url(" + patt.image + " ) repeat"
+		    else if patt.type is "constructor"
+		      @C.renderPattern C, patt
+		    else
+		      @C._draw_css_background C, patt.image
+
+		text_color = ->
+		  C.css "color", hsvToRgb(@C.get_color(@set.text_color))  if @set.text_color
+
+		appl =
+		  border_color: border_color
+		  opacity: opacity
+		  border_radius: border_radius
+		  border_width: border_width
+		  padding_top: padding_top
+		  padding_left_right: padding_left_right
+		  background: background
+		  font_size: font_size
+		  line_height: line_height
+		  text_color: text_color
+
+
+		# console.log(this.set);
+		for k of appl
+		  f = appl[k]
+
+		  # console.log(k)
+		  if @do_not_apply?
+		    f.apply this  if @do_not_apply.indexOf(k) is -1
+		  else
+		    f.apply this
+		# console.log (@)
+		@_draw()  if @need_redraw
+
+	
+WI = 	`function WidgetIniter(){
+    this.default_size = [3,1];
+    this.disobey = [];
+    this.redraw = function(){
+        this.my_cont.find('*').remove()
+        this.draw();
+    };
+    this._data = function(){
+        //console.log(">>>>",this.data);
+        return this.data?this.data:this._def_data}
+
+    this.init = function(my_cont, constructor_inst, pos, cp){
+        this.set = constructor_inst.getBlockSettings(pos)
+        this.data     = constructor_inst.getWidgetData(pos)
+        this.my_cont = my_cont;
+        this.pos = pos;
+        this.constructor_inst = constructor_inst;
+        this.C = constructor_inst;
+        return this;
+    }
+    this.draw = function(){
+        // console.log('fdfdf')
+        this.apply_block_settings()
+        this._draw()
+
+
+    }
+    this.save = function(){
+        if (this._save)this._save();
+
+        this.C.setWidgetData(this.pos, this.data)
+        this.C.setBlockSettings(this.pos, this.set);
+    };
+    this.cancel = function(){if (this._cancel)this._cancel();};
+	
+    this.settings = function( cp ){ 
+		this._init_block_cp( cp );
+        if (this._settings != null ) {this._settings(cp);}
+		cp.show();
+    };
+	
+    this._init_block_cp = function(to) {
+      var cb, cl, lhs, li, m, o, old_settings, onCancel, onColorChoice, onPatternChoice, onSave, plr, pt, self, settings, ul, vf, w;
+      m = $("<div>").appendTo(to);
+      self = this;
+      old_settings = $.extend(true, {}, this.set);
+
+      onPatternChoice = function(pattern) {
+        self.set.background = {
+          type: "pattern",
+          pattern: pattern
+        };
+        return self.apply_block_settings();
+      };
+
+      onColorChoice = function(color, pal_ix, hsba) {
+        if (color === "clear") {
+          self.set.background = {
+            type: "none"
+          };
+        } else {
+          self.set.background = {
+            type: "color",
+            color: pal_ix
+          };
+        }
+        return self.apply_block_settings();
+      };
+      onCancel = function() {
+        this.set = old_settings;
+        self.apply_block_settings();
+        return $(this).dialog("close");
+      };
+      onSave = function() {
+        return $(this).dialog("close");
+      };
+
+        cl = $("<button>").button().text("Выбор фона").click(function() {
+          return self.C.drawBackgroundSelectorDialog(onPatternChoice, onColorChoice, onCancel, onSave);
+        }).appendTo(m);
+
+        cl = $("<button>").button().text("выбрать цвет рамки").click(function() {
+          var cb, cc;
+          cb = function(col, ix) {
+            if (col !== "clear") {
+              self.set.border_color = ix;
+              return self.apply_block_settings();
+            }
+          };
+          cc = self.C.draw_color_chooser(cb);
+          return cc.appendTo(to).position({
+            of: this,
+            my: "left top",
+            at: "left top"
+          });
+        }).appendTo(m);
+        cl = $("<button>").button().text("выбрать цвет текста").click(function() {
+          var cb, cc;
+          cb = function(col, ix) {
+            if (col !== "clear") {
+              self.set.text_color = ix;
+              return self.apply_block_settings();
+            }
+          };
+          cc = self.C.draw_color_chooser(cb);
+          return cc.appendTo(to).position({
+            of: this,
+            my: "left top",
+            at: "left top"
+          });
+        }).appendTo(m);
+
+
+      vf = function(a, d) {
+        if (typeof a === "undefined") {
+          return d;
+        } else {
+          return a;
+        }
+      };
+
+
+      ul = $("<ul>").appendTo(m).addClass("cp-ul");
+
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Прозрачность блока").appendTo(li);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 100,
+          value: vf(self.set.bg_opacity, 100) * 100,
+          slide: function(event, ui) {
+            self.set.bg_opacity = ui.value / 100;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Радиус границы").appendTo(li);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 100,
+          value: vf(self.set.border_radius, 0),
+          slide: function(event, ui) {
+            self.set.border_radius = ui.value;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Ширина границы").appendTo(li);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 100,
+          value: vf(self.set.border_width, 0) * 10,
+          slide: function(event, ui) {
+            self.set.border_width = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Межстрочный интервал").appendTo(li);
+        lhs = $("<div>").width(250).slider({
+          min: 0,
+          max: 300,
+          value: self.set.line_height,
+          slide: function(event, ui) {
+            self.set.line_height = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Размер шрифта").appendTo(li);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 300,
+          value: self.set.font_size,
+          slide: function(event, ui) {
+            self.set.font_size = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("отступ сверху").appendTo(li);
+        pt = (self.set.padding_top ? self.set.padding_top * 10 : 0);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 300,
+          value: pt,
+          slide: function(event, ui) {
+            self.set.padding_top = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+        li = $("<li>").appendTo(ul);
+        $("<span>").text("Отступ слева-справа").appendTo(li);
+        plr = (self.set.padding_left_right ? self.set.padding_left_right * 10 : 0);
+        $("<div>").width(250).slider({
+          min: 0,
+          max: 300,
+          value: plr,
+          slide: function(event, ui) {
+            self.set.padding_left_right = ui.value / 10;
+            return self.apply_block_settings();
+          }
+        }).appendTo(li);
+
+      $("<label for='available_all_pages'>").appendTo(m).append("Показывать на всех страницах");
+      cb = $("<input type='checkbox' id='available_all_pages'>").appendTo(m).click(function() {
+        if (self.C.Site.blocks[self.pos].display_on === "all") {
+          return self.C.Site.blocks[self.pos].display_on = self.current_page;
+        } else {
+          return self.C.Site.blocks[self.pos].display_on = "all";
+        }
+      });
+
+      cb.prop("checked", self.C.Site.blocks[self.pos].display_on === "all");
+      $("<br>").appendTo(m);
+      $("<label for='unsnap_to_grid'>").appendTo(m).append("Свободный блок");
+      cb = $("<input type='checkbox' id='unsnap_to_grid'>").appendTo(m).click(function() {
+        self.set.unsnap_to_grid = this.checked;
+        var bl = self.C.get_block(self.pos);
+        if (this.checked) {
+            self.C.move_block(self.pos, self.C._calc_left(bl.x + 1) + self.set.border_width, self.C._calc_top(bl.y ) + self.set.border_width, true);
+
+            self.C.Site.blocks[self.pos].width = self.C._calc_width(bl.width);
+            self.C.Site.blocks[self.pos].height = self.C._calc_height(bl.height);
+        } else {
+          self.C.move_block(self.pos, Math.round(self.C._uncalc_left(bl.x) + self.set.border_width), Math.round(self.C._uncalc_top(bl.y) + self.set.border_width), true);
+          self.C.Site.blocks[self.pos].width = Math.round(self.C.Site.blocks[self.pos].width / self.C._block_width())
+          self.C.Site.blocks[self.pos].height = Math.round(self.C.Site.blocks[self.pos].height  / self.C._block_height())
+        }
+      });
+      cb.prop("checked", self.set.unsnap_to_grid);
+      $("<br>").appendTo(m);
+      cl = $("<button>").button().text("Применить для всех новых блоков").click(function() {
+        self.C.Site.default_block_settings = self.set;
+        self.C.redraw();
+        return m.remove();
+      }).css("display", "block").css("padding", "5px").css("margin-bottom", "10px").appendTo(m);
+      cl = $("<button>").button().text("Применить для всех имеющихся блоков").click(function() {
+        self.C.Site.default_block_settings = self.set;
+        $.each(self.C.Site.blocks, function(i, bl) {
+          return delete bl["settings"];
+        });
+        self.C.redraw();
+        return to.remove();
+      }).appendTo(m).css("display", "block").css("padding", "5px").css("margin-bottom", "10px");
+      o = {
+        save: function() {
+          //console.log('save')
+          return self.C.setBlockSettings(obj.pos, self.set);
+        },
+        cancel: function() {}
+      };
+      return o;
+    };
+
+    this.apply_block_settings = function(){
+        var C = this.my_cont.parent();
+        var border_color = function(){
+            if (this.set.border_color != null) {
+                //console.log(this.set.border_color)
+                if (typeof this.set.border_color === 'string'){
+                    C.css('border-color', this.set.border_color);
+                }else{
+
+                    var color = this.C.get_color(this.set.border_color);
+                    c = hsvToRgb(color);
+                    C.css("border-color", c );
+                }
+            }
+        }
+        var opacity = function(){
+            this.my_cont.css("opacity", this.set.bg_opacity);
+        }
+        var  border_radius = function(){
+            C.css("-moz-border-radius", this.set.border_radius + "px");
+            C.css("-webkit-border-radius", this.set.border_radius + "px");
+            C.css("border-radius", this.set.border_radius + "px");
+        }
+
+        var border_width = function(){
+                   bl = this.C.get_block(this.pos);
+                  if (!this.set.unsnap_to_grid) {
+                    xx = this.C._calc_left(bl.x + 1) - this.set.border_width;
+                    yy = this.C._calc_top(bl.y) - this.set.border_width;
+                  } else {
+                    xx = bl.x;
+                    yy = bl.y;
+                  }
+                  C.css("border-width", this.set.border_width + "px");
+                  C.css("left", xx);
+                  C.css("top", yy);
+                  C.css("border-style", "solid");
+        }
+        var line_height = function(){
+            C.css("line-height", this.set.line_height + "px");
+
+        }
+        var font_size = function(){
+             C.css("font-size", this.set.font_size + "px");
+
+        }
+        var padding_left_right = function(){
+            //C = w.children().eq(0);
+            var W = C.width();
+            C.children().eq(0).css("margin-left", this.set.padding_left_right + "px");
+            C.children().eq(0).css("margin-right", this.set.padding_left_right + "px");
+            C.children().eq(0).width(W - this.set.padding_left_right * 2);
+
+        }
+        var padding_top = function(){
+            C.children().eq(0).css("padding-top", this.set.padding_top + "px");
+        }
+        var background = function(){
+            if (this.set.background.type === "color") {
+
+                if (typeof this.set.background.color === "string") {
+                  C.css("background", this.set.background.color);
+                } else {
+                  color = this.C.get_color(this.set.background.color);
+                  c = hsvToRgb(color);
+                  C.css("background", c);
+                }
+
+            } else if (this.set.background.type === "none") {
+                C.css("background", "");
+            } else if (this.set.background.type === "pattern") {
+              patt = this.set.background.pattern;
+              if (patt.type === "image") {
+                C.css("background", "url(" + patt.image + " ) repeat");
+              } else if (patt.type === 'constructor') {
+                this.C.renderPattern(C, patt);
+              } else {
+                this.C._draw_css_background(C, patt.image);
+              }
+            }
+        }
+
+
+        var text_color = function(){
+            if (this.set.text_color ){
+                C.css('color', hsvToRgb(this.C.get_color( this.set.text_color ) ) )
+            }
+        }
+        var appl = {border_color:border_color,
+                opacity:opacity,
+                border_radius:border_radius,
+                border_width: border_width,
+                padding_top: padding_top,
+                padding_left_right: padding_left_right,
+                background:background,
+                font_size:font_size,
+                line_height:line_height,
+                text_color:text_color
+
+            }
+        // console.log(this.set);
+        for (k in appl){
+            f = appl[k]
+            // console.log(k)
+            if (this.do_not_apply != null){
+                if (this.do_not_apply.indexOf(k) === -1)
+                   f.apply(this)
+
+            }else {f.apply(this)}
+        }
+        if (this.need_redraw){
+            this._draw();
+        }
+
+
+
+
+    }
+    // return this;
+}
+
+`
 # END of Main.coffee
 
 
@@ -428,10 +1150,7 @@ window.Constructor._init_page = (hash_ = window.location.hash.slice(1).split('?'
 
 window.Constructor.getPageData = ( page_name, do_reload = false ) -> # DOne
   @load_site(do_reload);
-  # log(page_name,this.Site.pages[page_name]);
-  # log(@Site.pages, page_name)
   @Site.pages[page_name]
-  #log(@Site.pages, page_name)
 
 
 window.Constructor.load_site = (do_reload = false ) -> #done
@@ -639,22 +1358,15 @@ window.Constructor._get_page_var = _get_page_var
 
 
 
-
-get_color = `function (c){
-				this._make_pallette()
-				if (c.v == 'C') {// color from custom palette
-					return this.Site.colors.custom_pallette[c.ix]
-
-				}else{
-					return this.Site.colors.pallette[c.v][c.ix]
-				}
-
-
-			}`
 window.Constructor.get_color = (c) ->
   @_make_pallette()
   if c.v is 'C'
-    @Site.colors.custom_pallette[c.ix]
+    console.log("FROM_PALLETTE", c.ix in  @Site.colors.custom_pallette);
+    if  c.ix of @Site.colors.custom_pallette
+      console.log(c.ix)
+      @Site.colors.custom_pallette[c.ix]
+    else
+      @Site.colors.custom_pallette[ 0 ]
   else
     v = @Site.colors.pallette[c.v]
     if v
@@ -755,8 +1467,9 @@ window.Constructor.init_grid = (to, head) ->
       return  unless block.dont_display_on.indexOf(self.current_page) is -1
     else return  unless block.display_on is self.current_page
     set = self.getBlockSettings(ix)
+
     bw = (if set then set.border_width else 0)
-    x = block.x #Number(koords.split(':')[0]);
+    x = block.x # Number(koords.split(':')[0]);
     y = block.y # Number(koords.split(':')[1]);
     unless set.unsnap_to_grid
 
@@ -789,149 +1502,75 @@ window.Constructor.init_grid = (to, head) ->
 
 
 
-
-apply_block_settings = `function (obj, settings, widget){
-				var w = obj.jq,
-				bl = this.get_block(obj.pos);
-				if(widget.disobey.indexOf('border_color') == -1){
-					if(typeof settings.border_color == 'string'){
-						w.css('border-color', settings.border_color);
-					}else{
-						if (typeof settings.border_color == 'undefined'){
-							settings.border_color = {v:0, ix:0}
-						}
-						var color = this.get_color(settings.border_color)
-						var c = hsvToRgb(color);
-						w.css('border-color', c);
-					}
-
-				}
-
-				if(widget.disobey.indexOf('bg_opacity') == -1)w.css('opacity', settings.bg_opacity);
-				if(widget.disobey.indexOf('border_radius')== -1 )w.css('border-radius', settings.border_radius +'px')
-				if(widget.disobey.indexOf('border_width') == -1){
-					if(!(settings.unsnap_to_grid)){
-						var xx = this._calc_left(bl.x+1) - settings.border_width
-						var yy = this._calc_top(bl.y) - settings.border_width
-					}else{
-						var xx = bl.x
-						var yy = bl.y
-
-					}
-					w.css('border-width', settings.border_width +'px')
-					w.css('left',  xx)
-					w.css('top',  yy)
-					w.css('border-style','solid')
-
-				}
-
-				if(widget.disobey.indexOf('line_height') == -1)w.css('line-height', settings.line_height +'px')
-				if(widget.disobey.indexOf('font_size') == -1)w.css('font-size', settings.font_size +'px')
-
-				if(widget.disobey.indexOf('padding_left_right') == -1){
-					C = w.children().eq(0);
-					W = w.width();
-
-					C.css('margin-left',settings.padding_left_right +'px')
-					C.css('margin-right',settings.padding_left_right +'px')
-					C.width( W - settings.padding_left_right * 2)
-				}
-
-				if(widget.disobey.indexOf('padding_top') == -1)C.css('padding-top',settings.padding_top +'px')
-				if (settings.background.type == 'color'){
-					if(widget.disobey.indexOf('background_color') == -1){
-						if(typeof settings.background.color == 'string'){
-							w.css('background' , settings.background.color );
-						}else{
-							var color = this.get_color(settings.background.color)
-							var c = hsvToRgb(color);
-							w.css('background', c);
-						}
-					}
-				}else if(settings.background.type == 'none'){
-							w.css('background', '');
-				} else if(settings.background.type == 'pattern'){
-					patt = settings.background.pattern
-					if (['image', 'constructor'].indexOf(patt.type ) != -1){
-						w.css('background', 'url(' + patt.image +' ) repeat' )
-					}else{
-						this._draw_css_background(w, patt.image);
-					}
-
-				}
-
-			}`
-
-
 window.Constructor.reapply_block_settings = (obj, widget)->
   sett = @getBlockSettings(obj.pos)
   @apply_block_settings(obj, sett, widget)
 
 window.Constructor.apply_block_settings = (obj, settings, widget) ->
-  w = obj.jq#.children(":first")
-  bl = @get_block(obj.pos)
-  if widget.disobey.indexOf("border_color") is -1
-    if typeof settings.border_color is "string"
-      w.css "border-color", settings.border_color
-    else
-      if typeof settings.border_color is "undefined"
-        settings.border_color =
-          v: 0
-          ix: 0
-      color = @get_color(settings.border_color)
-      c = hsvToRgb(color)
-      w.css "border-color", c
-  w.css "opacity", settings.bg_opacity  if widget.disobey.indexOf("bg_opacity") is -1
-  if "border_radius" not  in widget.disobey
-    w.css "-moz-border-radius" , settings.border_radius + "px"
-    w.css "-webkit-border-radius" , settings.border_radius + "px"
-    w.css "border-radius" , settings.border_radius + "px"
+  if not widget.has_own_settings
 
-
-  if widget.disobey.indexOf("border_width") is -1
-    unless settings.unsnap_to_grid
-      xx = @_calc_left(bl.x + 1) - settings.border_width
-      yy = @_calc_top(bl.y) - settings.border_width
-    else
-      xx = bl.x
-      yy = bl.y
-    w.css "border-width", settings.border_width + "px"
-    w.css "left", xx
-    w.css "top", yy
-    w.css "border-style", "solid"
-  w.css "line-height", settings.line_height + "px"  if widget.disobey.indexOf("line_height") is -1
-  w.css "font-size", settings.font_size + "px"  if widget.disobey.indexOf("font_size") is -1
-  if widget.disobey.indexOf("padding_left_right") is -1
-    C = w.children().eq(0)
-    W = w.width()
-    C.css "margin-left", settings.padding_left_right + "px"
-    C.css "margin-right", settings.padding_left_right + "px"
-    C.width W - settings.padding_left_right * 2
-  C.css "padding-top", settings.padding_top + "px"  if widget.disobey.indexOf("padding_top") is -1
-  if settings.background.type is "color"
-    if widget.disobey.indexOf("background_color") is -1
-      if typeof settings.background.color is "string"
-        w.css "background", settings.background.color
+    w = obj.jq #.children(":first")
+    bl = @get_block(obj.pos)
+    if widget.disobey.indexOf("border_color") is -1
+      if typeof settings.border_color is "string"
+        w.css "border-color", settings.border_color
       else
-        color = @get_color(settings.background.color)
+        if typeof settings.border_color is "undefined"
+          settings.border_color =
+            v: 0
+            ix: 0
+        color = @get_color(settings.border_color)
         c = hsvToRgb(color)
-        w.css "background", c
-  else if settings.background.type is "none"
-    w.css "background", ""
-  else if settings.background.type is "pattern"
-    patt = settings.background.pattern
-    if patt.type is "image"
+        w.css "border-color", c
+    w.css "opacity", settings.bg_opacity  if widget.disobey.indexOf("bg_opacity") is -1
+    if "border_radius" not  in widget.disobey
+      w.css "-moz-border-radius" , settings.border_radius + "px"
+      w.css "-webkit-border-radius" , settings.border_radius + "px"
+      w.css "border-radius" , settings.border_radius + "px"
 
-      w.css "background", "url(" + patt.image + " ) repeat"
-    else if patt.type is 'constructor'
-      @renderPattern w, patt
 
-    else
-      @_draw_css_background w, patt.image
-  if widget.depends_on_settings?
+    if widget.disobey.indexOf("border_width") is -1
+      unless settings.unsnap_to_grid
+        xx = @_calc_left(bl.x + 1) - settings.border_width
+        yy = @_calc_top(bl.y) - settings.border_width
+      else
+        xx = bl.x
+        yy = bl.y
+      w.css "border-width", settings.border_width + "px"
+      w.css "left", xx
+      w.css "top", yy
+      w.css "border-style", "solid"
+    w.css "line-height", settings.line_height + "px"  if widget.disobey.indexOf("line_height") is -1
+    w.css "font-size", settings.font_size + "px"  if widget.disobey.indexOf("font_size") is -1
+    if widget.disobey.indexOf("padding_left_right") is -1
+      C = w.children().eq(0)
+      W = w.width()
+      C.css "margin-left", settings.padding_left_right + "px"
+      C.css "margin-right", settings.padding_left_right + "px"
+      C.width W - settings.padding_left_right * 2
+    C.css "padding-top", settings.padding_top + "px"  if widget.disobey.indexOf("padding_top") is -1
+    if settings.background.type is "color"
+      if widget.disobey.indexOf("background_color") is -1
+        if typeof settings.background.color is "string"
+          w.css "background", settings.background.color
+        else
+          color = @get_color(settings.background.color)
+          c = hsvToRgb(color)
+          w.css "background", c
+    else if settings.background.type is "none"
+      w.css "background", ""
+    else if settings.background.type is "pattern"
+      patt = settings.background.pattern
+      if patt.type is "image"
 
-    widget.draw(settings)
+        w.css "background", "url(" + patt.image + " ) repeat"
+      else if patt.type is 'constructor'
+        @renderPattern w, patt
 
+      else
+        @_draw_css_background w, patt.image
+    if widget.depends_on_settings?
+      widget.draw(settings)
 
 
 
@@ -945,7 +1584,11 @@ window.Constructor.init_block = (bl, to) ->
     A = t.Site.Applications[app_name]
     if A? and A.widgets[widget_name]?
 
-      A.widgets[widget_name].init c, t, p, cp
+      W = A.widgets[widget_name];
+      wi = (->new W())();
+      wi.init c, t, p, cp
+      #console.log(c,t,p,cp)
+      return wi
     else
       false
   r = bl.top
@@ -967,16 +1610,18 @@ window.Constructor.init_block = (bl, to) ->
     return false
   #log( widget_name, app_name)
   Widget.draw()
-  settings = self.getBlockSettings(to.pos)
-
+  # console.log("Widget test", bl.x, bl.y, bl.width, bl.height, app_name, widget_name, Widget.data);
+  # settings = self.getBlockSettings(to.pos)
   #console.log("B", w.width() )
-  self.apply_block_settings to, settings, Widget
-  if settings.unsnap_to_grid
+  # self.apply_block_settings to, settings, Widget
+  if Widget.set.unsnap_to_grid
     W = bl.width
     H = bl.height
 
   # console.log("WH", W,H)
+
   make_draggable = (to)=>
+    #console.log(to.jq)
     to.jq.draggable
       scroll: false
       zIndex: 100
@@ -1000,7 +1645,7 @@ window.Constructor.init_block = (bl, to) ->
         # // // console.log(ui)
         # var C = ui.helper;
         #console.log(settings)
-        unless settings.unsnap_to_grid
+        unless Widget.set.unsnap_to_grid
           ll = self._stepping_left(ui.position.left)
           tt = self._stepping_top(ui.position.top)
           draga =
@@ -1028,63 +1673,68 @@ window.Constructor.init_block = (bl, to) ->
 
   if @is_constructor
     to.jq.dblclick =>
-      control_panel = $("<div>").appendTo($("#controls"))
-      wco = self.init_block_cp(to, control_panel, Widget)
-      saving_data = (evt) =>
-        Widget.save()  if Widget.save
-        wco.save()
+      control_panel = $("<div>").addClass('widget-control') .appendTo($("#controls"))
+      #wco = self.init_block_cp(to, control_panel, Widget)
+      #saving_data = (evt) =>
+      #  Widget.save()  if Widget.save
+      #  wco.save()
+      #
+      #
+      #  @settings_over_block = false
+      #  control_panel.remove()
+      #  @redraw.apply self, []
 
-        @settings_over_block = false
+      #if   @settings_over_block isnt false
+
+      #  @settings_over_block.saving()
+      #else
+      #  @settings_over_block = {to:to, Widget:Widget, saving: saving_data }
+
+      for bl in @inited_blocks
+        bl.unbind "click dblclick"
+        bl.draggable('destroy')
+      #log("after loop",  to.jq.attr('class'))
+
+      $("#controls>.widget-control").hide()
+      control_panel.css("position", "absolute").position(
+        of: w
+        my: "left top"
+        at: "right top"
+        collision: "none none"
+      ).css("border", "2px solid black").css("background-color", "white").draggable(scroll: false).css "padding", "10"
+
+
+      Widget.settings control_panel  if Widget.settings
+
+      #$("<div>").css("background-color", "orange").appendTo(to.jq).css("position", "absolute").position(
+      #  of: to.jq
+      #  my: "left top"
+      #  at: "right top"
+      #  collision: "none"
+      #).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height 20
+      console.log(to.jq.parent());
+      $("<div>").css("background-color", "green").appendTo(to.jq.parent()).css("position", "absolute").position(
+        of: to.jq
+        my: "left top"
+        at: "left-20 top"
+        collision: "none none"
+      ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click =>
+        Widget.save() if Widget.save #saving_data()
+        @_save_site();
         control_panel.remove()
-        @redraw.apply self, []
+        self.redraw();
 
-      if   @settings_over_block isnt false
+      $("<div>").css("background-color", "red").appendTo(to.jq.parent()).css("position", "absolute").position(
+        of: to.jq
+        my: "left top"
+        at: "left-20 top+30"
+        collision: "none none"
+      ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click ->
+        Widget.cancel()  if Widget.cancel
 
-        @settings_over_block.saving()
-      else
-        @settings_over_block = {to:to, Widget:Widget, saving: saving_data }
-
-        for bl in @inited_blocks
-          bl.unbind "click dblclick"
-          bl.draggable('destroy')
-        #log("after loop",  to.jq.attr('class'))
-
-        $("#controls>.widget-control").hide()
-        control_panel.css("position", "absolute").position(
-          of: w
-          my: "left top"
-          at: "right top"
-          collision: "none none"
-        ).css("border", "2px solid black").css("background-color", "white").draggable(scroll: false).css "padding", "10"
-
-
-        Widget.settings control_panel  if Widget.settings
-        $("<div>").css("background-color", "orange").appendTo(to.jq).css("position", "absolute").position(
-          of: to.jq
-          my: "left top"
-          at: "right top"
-          collision: "none"
-        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height 20
-        $("<div>").css("background-color", "green").appendTo(to.jq.parent()).css("position", "absolute").position(
-          of: to.jq
-          my: "left top"
-          at: "left-20 top"
-          collision: "none none"
-        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click =>
-          saving_data()
-          @_save_site();
-
-        $("<div>").css("background-color", "red").appendTo(to.jq.parent()).css("position", "absolute").position(
-          of: to.jq
-          my: "left top"
-          at: "left-20 top+30"
-          collision: "none none"
-        ).addClass("ui-icon ui-icon-gripsmall-diagonal-se").width(20).height(20).click ->
-          Widget.cancel()  if Widget.cancel
-
-          control_panel.remove()
-          @settings_over_block = false
-          self.redraw.apply self, []
+        control_panel.remove()
+        # @settings_over_block = false
+        self.redraw.apply self, []
 
 
     mouseWidth = W
@@ -1135,7 +1785,7 @@ window.Constructor.init_block = (bl, to) ->
           if fr.size()
             nh = evt.clientY - start_y + H
             nw = evt.clientX - start_x + W
-            unless settings.unsnap_to_grid
+            unless Widget.set.unsnap_to_grid
               width_step = self._stepping_width(nw)
               height_step = self._stepping_height(nh)
               fr.width width_step.val
@@ -1163,12 +1813,14 @@ window.Constructor.init_block = (bl, to) ->
     resize_marker.css "left", po.left + o.left + wi - mw
     delete_marker.css "top", po.top
     delete_marker.css "left", po.left + o.left + wi - mw
-    to.jq.click (e) ->
-      $("#controls>.widget-control").hide()
+    #console.log(to.jq)
+    clc = (e) =>
+      #console.log('silent click');
 
+      $("#controls>.widget-control").hide()
       delete_marker.show().zIndex 1000
       resize_marker.show().zIndex 1000
-
+    (->to.jq.on('click', clc))()
   to.jq
 
 
@@ -1592,6 +2244,7 @@ window.Constructor.redraw_background = ->
   #log( "BGs", @Site.backgrounds )
   if @Site.backgrounds?
     $.each @Site.backgrounds, (name, imgo) =>
+
       if name is "body"
         C = $("body")
       else C = @layout_cont  if name is "content"
@@ -1612,6 +2265,8 @@ window.Constructor.redraw_background = ->
           @_draw_css_background C, pat
       else if imgo.type is "color"
         c = @get_color(imgo.color)
+        console.log("BG", imgo.color)
+
         C.css "background", hsvToRgb(c)
       else C.css "background", ""  if imgo.type is "none"
 
@@ -1708,12 +2363,15 @@ window.Constructor.draw_color_chooser = (onSelectColor) ->
       delete hsv.v
 
       #console.log hsv
+      #console.log("BEFORE", self.Site.colors.custom_pallette)
       if self.Site.colors.custom_pallette?
         self.Site.colors.custom_pallette.push hsv
-      else:
+      else
         self.Site.colors.custom_pallette = [hsv]
+      #console.log("AFTER", self.Site.colors.custom_pallette)
       ix = self.Site.colors.custom_pallette.length - 1
       color_chooser.remove()
+      #console.log( "Index", ix )
       onSelectColor color.formatted,
         v: "C"
         ix: ix

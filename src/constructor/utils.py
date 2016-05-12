@@ -26,7 +26,39 @@ top_roles = {sites:{'view': ['admin','guest'],
                        'del':[]}
                     }
 
+def get_application_obj(req,app_name):
 
+    site = _get_current_site(req)
+    app = req.storage.findOne('application', {'app_name': app_name, "site_id": site['_id'] })
+
+    if app:
+        app['is_own'] = True
+        #resp = HttpResponse(json.dumps(app, default = json_util.default))
+
+        # exp = (datetime.datetime.now() + datetime.timedelta(seconds= (60 * 5)) )
+        #if 'date_changed' in app:
+        #    resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)  #exp.strftime('%a %b %d %Y %H:%M:%S GMT+1200')
+            # print resp['Last-Modified']
+        return app
+    else:
+        # search it in global index
+        app_ix = req.storage.findOne('global_app_index', {'full_name': app_name} )
+
+        if app_ix:
+            # application name in long name is a first parameter
+            # generic.main.be-web.ru
+            # theshop.main.be-web.ru
+            # name = app_name.split('.',1)[0]
+            app = req.storage.findOne('application', {'app_name': app_ix['full_name'], 'site_id': app_ix['site_id'] })
+            app['is_own'] = False
+            #resp =  HttpResponse(json.dumps(app, default = json_util.default))
+            # print app
+            #if 'date_changed' in app:
+            #    resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)
+                #print resp['Last-Modified']
+            return app
+        else:
+            raise ValueError("no such application")
 
 def _get_current_site(req, with_cache = False):
     host = req.META['HTTP_HOST']
@@ -117,5 +149,5 @@ def check_roles(req, datatype, perm, site = None):
     rl = roles['roles'][perm]
     pre_checker = [ (r + '#' + roles['application'] ) for r in rl]
     checker = [ ((r + '#' + roles['application']) in site_roles) for r in rl]
-    #raise IndexError("!")
+    # raise IndexError("!")
     return any(checker)

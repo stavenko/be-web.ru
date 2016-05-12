@@ -10,6 +10,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+OWNER_EMAIL = "stavenko@gmail.com"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
@@ -32,6 +33,8 @@ DATABASES = {
         
     }
 }
+
+DISPLAYER_PATH='/var/www/src/constructor/static/js/sop/displayer.min.js'
 
 DATABASE_ROUTERS = ['powerdns.routers.PowerDNSRouter']
 MY_BASE_HOST = 'be-web.ru'

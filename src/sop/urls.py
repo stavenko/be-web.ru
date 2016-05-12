@@ -7,8 +7,8 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.conf import settings
 import json, gridfs, base64, hashlib, datetime
-
-from constructor.utils import _get_current_site, accounts,sites,check_roles
+from bson import json_util
+from constructor.utils import _get_current_site, accounts,sites,check_roles,get_application_obj
     
 
 try:
@@ -59,11 +59,27 @@ def site_view(site, req, *k, **kw):
 
         html = site.get('cache',{}).get(escaped, {}).get("html", "")
         return HttpResponse(html)
+    
         
     site['id'] = site['_id']
     c = RequestContext(req)
     c['site'] = site
     c['main_page'] = site.get('cache',{}).get('',{})
+    S = req.storage.findOne(sites, {'site_id':site['id']})
+    c['site_object'] = json.dumps(S, default = json_util.default)
+    apps = S['_Apps']
+    apps = dict([(a,get_application_obj(req, a)) for a in apps])
+    c['app_eggs'] = json.dumps(apps, default = json_util.default)
+    pats = req.storage.find('pattern', {'site_id': site['id']})
+    pats = dict([(str(p['_id']),p) for p in pats])
+    c['patterns']    =  json.dumps(pats, default = json_util.default)
+    # DIRTY OPTIMIZATION HACK
+    
+    displayer_path = settings.DISPLAYER_PATH
+    cont = open(displayer_path,'r').read()
+    c['constructor_script'] = cont
+
+    
     return render_to_response("constructor/displayer_page.html", c)
     
 def site_edit(site, req, *k, **kw):
@@ -72,6 +88,15 @@ def site_edit(site, req, *k, **kw):
     if  check_roles(req, sites + '@generic.'  + settings.MY_MAIN_SITE, 'add', site = site):
         site['id'] = site['_id']
         c['site'] = site
+        
+        S = req.storage.findOne(sites, {'site_id':site['id']})
+        c['site_object'] = json.dumps(S, default = json_util.default)
+        apps = S['_Apps']
+        apps = dict([(a,get_application_obj(req, a)) for a in apps])
+        c['app_eggs'] = json.dumps(apps, default = json_util.default)
+        pats = req.storage.find('pattern', {'site_id': site['id']})
+        pats = dict([(str(p['_id']),p) for p in pats])
+        c['patterns']    =  json.dumps(pats, default = json_util.default)
         return render_to_response("constructor/constructor_page.html", c)
     else:
         # Try to redirect at the base admin at first
@@ -98,7 +123,7 @@ def base(req, *k, **kw):
                 #print ">>>>"
                 return site_view(site, req, *k, **kw)
         else:
-            return HttpResponseRedirect("http://" + settings.MY_BASE_HOST  + "/profile/")
+            return HttpResponseRedirect("http://" + settings.MY_BASE_HOST  + "/_/profile/")
                 
 
 

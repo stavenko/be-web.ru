@@ -2,6 +2,7 @@ var init_db = function(csrf_token){
     var cs_name = $(csrf_token).prop('name');
     var cs_val  = $(csrf_token).val()
     var a = {
+		__query_cache : {}, // Refresh every F5 data
         save_object: function(appid, type, obj, progress, complete){
             var data = {'object':obj,
                             'type' : type+ "@" + appid};
@@ -108,13 +109,56 @@ var init_db = function(csrf_token){
 			
 		},
 		get_blob_url:function(blob){
-            if(blob.blob){
-			    return "/_/blob/"+ blob._id['$oid'] + '/'
-            }
-            else{
-                return blob;
-            }
+			// console.log(">>", blob);
 			
+			if(blob.blob){
+				if('file_id' in blob){
+					// console.log('new_style')
+					return "/_/blob/" + blob.file_id['$oid'] + '/'
+				}else{
+				    return "/_/blob/"+ blob._id['$oid'] + '/'
+				}
+			}else{
+				return blob;
+			}
+		},
+		remove_blob:function(blob){
+			console.log("BLOB REMOVE");
+			if(blob.blob){
+				if('file_id' in blob){
+					d = {};
+					d[cs_name] = cs_val;
+					$.ajax({
+						url: "/_/del_blob/" + blob._id['$oid'] + '/',
+						data : d,
+						type:'post'
+					})
+					
+				}else{
+				    console.log("NO REMOVE")
+				}
+			}
+			
+			
+		},
+		get_objects_async: function(appid, type, query, paging, view, sort, callback){
+			// console.log(type, appid);
+            var d = {type: type + "@" + appid }
+            var o = {}
+            if (query){o['q'] =query}
+            if (view){o['v']=view}
+            if (sort){o['o'] = sort}
+            if (paging){o['p'] = paging}
+            d['o'] = JSON.stringify(o)
+            //var data = [];
+            $.ajax({url:'/_/data/',
+                    data: d,
+                    dataType:'json',
+					cache:false,
+                    success: function(js){callback(js)}
+				})
+            //return data
+        	
 		},
         get_objects: function(appid, type, query, paging, view, sort){
 			// console.log(type, appid);

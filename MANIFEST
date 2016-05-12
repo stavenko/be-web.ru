@@ -25,6 +25,11 @@ src/constructor/static/css/images/map-pointer.png
 src/constructor/static/css/images/map.png
 src/constructor/static/css/images/preview-opacity.png
 src/constructor/static/css/images/ui-colorpicker.png
+src/constructor/static/fonts/ARIALN.TTF
+src/constructor/static/fonts/arialn-webfont.eot
+src/constructor/static/fonts/arialn-webfont.svg
+src/constructor/static/fonts/arialn-webfont.ttf
+src/constructor/static/fonts/arialn-webfont.woff
 src/constructor/static/images/.DS_Store
 src/constructor/static/images/bar-opacity.png
 src/constructor/static/images/cart.png
@@ -64,6 +69,7 @@ src/constructor/static/images/back_constr/fg/icons_73.png
 src/constructor/static/images/back_constr/fg/icons_76.png
 src/constructor/static/images/back_constr/fg/icons_81.png
 src/constructor/static/js/.DS_Store
+src/constructor/static/js/excanvas.compiled.js
 src/constructor/static/js/jquery-1.10.2.min.js
 src/constructor/static/js/jquery-1.9.0.js
 src/constructor/static/js/jquery-ui-1.10.0.custom.js
@@ -72,6 +78,7 @@ src/constructor/static/js/json2.js
 src/constructor/static/js/md5.js
 src/constructor/static/js/moment.min.js
 src/constructor/static/js/mustache.js
+src/constructor/static/js/swfobject.js
 src/constructor/static/js/underscore-min.js
 src/constructor/static/js/cp/jquery.colorpicker.js
 src/constructor/static/js/cp/parsers/jquery.ui.colorpicker-cmyk-parser.js
@@ -231,6 +238,7 @@ src/constructor/static/js/sop/constructor.src.coffee
 src/constructor/static/js/sop/constructor.src.js
 src/constructor/static/js/sop/displayer.js
 src/constructor/static/js/sop/displayer.js.map
+src/constructor/static/js/sop/displayer.min.js
 src/constructor/static/js/sop/displayer.src.coffee
 src/constructor/static/js/sop/displayer.src.js
 src/constructor/static/js/sop/generic.js
@@ -239,6 +247,8 @@ src/constructor/static/js/sop/thenews.js
 src/constructor/static/js/sop/thenews.manifest
 src/constructor/static/js/sop/theshop.js
 src/constructor/static/js/sop/theshop.manifest
+src/constructor/static/js/sop/untitled.html
+src/constructor/static/js/sop/untitled.txt
 src/constructor/static/js/sop/common/advanced.js
 src/constructor/static/js/sop/common/nicEdit-latest.js
 src/constructor/static/js/sop/common/paper.js

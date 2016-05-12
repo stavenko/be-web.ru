@@ -26,7 +26,7 @@ function dummyIniter(){
     this.default_size = [4,4];
     this.title = "Пустышка";
     this._draw = function(){
-        this._jq = $('<span></span>').appendTo(this.my_cont)
+        this._jq = $('<span></span>').appendTo(this.my_cont);
     };
 }
 
@@ -40,10 +40,24 @@ function textIniter(){
         if (typeof this.C.Site.fonts == 'undefined' ){
             font = 'Times New Roman'
         } else{ font = this.C.Site.fonts.content}
+		var b = DB.get_blob_url (this._data()) 
+		var self=this;
+		if (! this._data().blob){
         this._jq = $("<div>")
             .addClass('text-data')
             .html(this._data()).appendTo(this.my_cont)
-            .css('font-family', font )
+			setFont(this._jq, font)
+		}else{
+			$.ajax({
+				url:b,
+				success:function(v){
+			        self._jq = $("<div>")
+			            .addClass('text-data')
+			            .html(v).appendTo(self.my_cont)
+							setFont(self._jq, font)
+				}
+			})
+		}
     };
     this._change_text = function(command,val){
        r = document.execCommand(command, false, val);
@@ -135,7 +149,7 @@ function textIniter(){
                                 }
                                 return _ret;
                             }
-                            $.each(constructor_inst.Site.pages, function(pname, page){
+                            $.each(constr.Site.pages, function(pname, page){
                                 var li = $('<li></li>').appendTo(link_choice)
                                 $('<button></button>').text(page.title).appendTo(li)
                                     .click(namer(pname, page))
@@ -422,7 +436,6 @@ function sliderIniter(){
         }
 
         $('<button></button>').text('add Slide').appendTo(dialog).click(function(){
-            //console.log("Button - new")
             editSlide()
         })
         dialog.dialog({
@@ -444,8 +457,8 @@ function menuIniter(){
     this.default_size = [4,1];
     this._def_data =[];
     this._settings = function(){this.is_settings = true;  this.redraw();  }
-    this._save = function(){this.is_settings = false, this.redraw();}
-    this._cancel = function(){this.is_settings = false, this.redraw();}
+    this._save = function(){this.is_settings = false; this.redraw();}
+    this._cancel = function(){this.is_settings = false; this.redraw();}
 
     this._draw = function(){
 		
@@ -476,9 +489,11 @@ function menuIniter(){
 
         this._jq = $("<ul>")
                     .appendTo(this.my_cont)
-                    .css('font-family', font )
+                    //.css('font-family', font )
                     // .css('font-size', my_cont.width() / 40)
                     .css('padding',0).css('margin', 0)
+					setFont(this._jq, font)
+					
 
 
         var current_page = self.C.current_page
@@ -545,6 +560,7 @@ function menuIniter(){
             }
 
         })
+
         if(self.is_settings ){
             $('<button></button>').appendTo($('<li></li>').css('float', 'left') //.width(item_width)
                     .css('padding',0).css('margin-right', '2em')
@@ -627,7 +643,147 @@ function pageheaderIniter(){
                 .addClass('text-data')
                 .css('margin', '0')
                 .html(t).appendTo(this.my_cont)
-                .css('font-family', font )
+                // .css('font-family', font )
+				setFont(this._jq, font)
+				
+    }
+}
+function fileWidget(){
+    WidgetIniter.call(this);
+    this.title = "Файл для скачивания";
+    this.is_settings = false
+    this.default_size = [4,1];
+    this._def_data = "Site header H3";
+    this._settings = function(){
+		this.dialog = $('<div>').appendTo($('#controls'))
+		var self = this;
+		var display = $("<div>")
+		
+		$('<span>').text('Выбор файла').appendTo(this.dialog)
+		
+		$('<input>').prop('type','file').appendTo(this.dialog).on('change', function(){
+			var f = this.files[0]
+			var fr = new FileReader()
+			$(fr).one('load', function(e){
+				if (!f.type) {
+					var ext = f.name.split('.').pop().toLowerCase();
+					if (['xls','xlsx'].indexOf(ext) != -1) {
+						var type = "application/vnd.ms-excel";
+						f.type = type;
+						var a = this.result.split(';')
+						a[0] += a[0] + type
+						res = a[0] + ';' + a[1];
+						// console.log(res)
+					}
+				}else{
+					var type = f.type;
+					var res = this.result;
+				}
+				
+				file = {'name': f.name, type:type ,size:f.size, content:res}
+				self._file_data = file;
+				self._draw();
+				
+			})
+			fr.readAsDataURL(f)
+		})
+		display.appendTo(this.dialog);
+		this.dialog.dialog({width:600, height:300, title:' Выбор файла',buttons:{
+			'Сохранить':function(){
+				self.data = self._file_data 
+				
+			}
+		}})
+		
+
+    }
+	
+    this._save = function(){
+		this.data = this._file_data 
+		this.dialog.dialog('close')
+		
+	}
+	this._cancel = function(){
+		this.dialog.dialog('close')
+		
+	}
+	
+
+    this._draw = function(){
+		this.my_cont.find('*').remove();
+		this._jq = $('<div>').appendTo(this.my_cont)
+		.css('font-family', this.C.Site.fonts.content)
+		.width(this.my_cont.width()).height(this.my_cont.height())
+		
+		if(this.data){
+			var s = this.data.size / 1024
+			var url = DB.get_blob_url(this.data.content)
+			
+			var link = $('<a>').prop('href', url).text(this.data.name).appendTo(this._jq);
+			
+			
+			
+			
+		}else{
+	    	this._jq.text("This is file widget")
+		}
+		
+    }
+	
+}
+
+function swfWidget(){
+    WidgetIniter.call(this);
+    this.title = "Flash-Баннер";
+    this.is_settings = false
+    this.default_size = [4,1];
+    this._def_data = "";
+    this._settings = function(){
+		this.dialog = $('<div>').appendTo($('#controls'))
+		var self = this;
+		var display = $("<div>")
+		
+		$('<span>').text('Выбор файла').appendTo(this.dialog)
+		
+		$('<input>').prop('type','file').appendTo(this.dialog).on('change', function(){
+			var f = this.files[0]
+			var fr = new FileReader()
+			$(fr).one('load', function(e){
+				file = {'name': f.name, type:f.type ,size:f.size, content:this.result}
+				self._file_data = file;
+				self._draw();
+			})
+			fr.readAsDataURL(f)
+		})
+		display.appendTo(this.dialog);
+		this.dialog.dialog({width:600, height:300, title:' Выбор файла',buttons:{
+			'Сохранить':function(){
+				self.data = self._file_data 
+			}
+		}})
+    }
+    this._save = function(){
+		this.data = this._file_data 
+		this.dialog.dialog('close')
+	}
+	this._cancel = function(){
+		this.dialog.dialog('close')
+	}
+    this._draw = function(){
+		this.my_cont.find('*').remove();
+		this._jq = $('<div>').appendTo(this.my_cont).width(this.my_cont.width()).height(this.my_cont.height())
+		if(this.data){
+			
+			var s = this.data.size / 1024
+			var url = DB.get_blob_url(this.data.content)
+			var _id = 'id_swf_rand'
+			$('<div>').attr('id', _id ).appendTo(this._jq)
+			swfobject.embedSWF( url, _id, '300', '500','9.0.0.0' )
+			
+			
+		}else{
+	    	this._jq.text("This is Flassh banner widget")
+		}
     }
 }
 
@@ -660,7 +816,9 @@ function headerIniter(){
                 .addClass('text-data')
                 .html(t).appendTo(this.my_cont)
                 .css('margin','0')
-                .css('font-family', font )
+                // .css('font-family', font )
+				setFont(this._jq, font)
+				
     }
 }
 function lineIniter(){
@@ -682,14 +840,12 @@ function lineIniter(){
 
     this.draw = function(){
         var self = this;
-        // console.log(this.set)
         var width = this.set.border_width
         if (typeof this.set.border_color !== 'string'){
             var col   = hsvToRgb(this.C.get_color(this.set.border_color))
         }else{
             var col = this.set.border_color
         }
-        // console.log(col, width)
         this.my_cont.find('*').remove();
         this.my_cont.parent().css('border-width', 0);
         this._jq = $('<div></div>').appendTo(this.my_cont)
@@ -718,15 +874,54 @@ function imageIniter(){
     this.is_settings = false
     this.default_size = [4,1];
     this.need_redraw = true;
-    this._def_data = "Site header H3";
+    this._def_data = "";
     this._settings = function(){
+		this._old_settings = $.extend( true, {}, this.data)
+        var self = this;
+		
+		var link_chooser = function(){
+			var di = $('<div></div>').appendTo( $('#controls') );
+			var link_choice = $("<ul>").appendTo(di)
+			var namer = function(pname, title){
+			    var _ret = function(){
+			        var a;
+			        item = {name:pname, title:title}
+			        self.data.link =item
+			    }
+			    return _ret;
+			}
+			$.each(self.C.Site.pages, function(pname, page){
+			    var li = $('<li></li>').appendTo(link_choice)
+			    $('<button></button>').text(page.title).appendTo(li)
+			        .click(namer(pname, page.title))
+			})
+			var li = $('<li>Ссылка не на мой сайт:</li>').appendTo(link_choice)
+			var li = $('<li>URL</li>').appendTo(link_choice)
+
+			// var link = '';
+			var sel;
+			var inp =$('<input type="text">').appendTo(li)
+			    .on('mousedown',function (){ 
+			    } );
+			var li = $('<li>Надпись в меню</li>').appendTo(link_choice)
+			var inpl = $('<input type="text">').appendTo(li)
+
+			$('<button>').text("Создать").appendTo(li).mousedown(function(e){
+			    var link = inp.val();
+			    var name = inpl.val();
+			    var r = namer( link, name)
+			    // restoreSelection(sel);
+			    r(e);
+			})
+			di.dialog({title: "Сделать ссылку изображения"})
+		}
+		link_chooser()
 
         this.my_cont.unbind('mousemove')
         this.my_cont.unbind('mouseup')
         this.my_cont.unbind('mousedown')
 
         var off = this._jq.offset();
-        var self = this;
         var start_pos,
             is_drag,
             old_pos;
@@ -735,11 +930,10 @@ function imageIniter(){
             var x = self.data.position.left;
             var y = self.data.position.top;
 
-            if (z < 0.4) zf /=10;
-            if (z < 0.2) zf /=2;
-            if (z > 1.5) zf *= 5;
-
-            var nz = z + zf;
+            if (z < 2.4) {zf /=2};
+            if (z < 1.4) {zf /=4};
+            if (z < 0.6) {zf /= 8};
+			var nz = z + zf;
             if (nz > 0.02 && nz <10){
                 var K = (z*z + z*zf)
 
@@ -758,7 +952,6 @@ function imageIniter(){
         this.my_cont.bind('mousewheel DOMMouseScroll MozMousePixelScroll',function(evt){
             evt.stopImmediatePropagation();
             evt.preventDefault();
-            // console.log(navigator.userAgent)
             var is_webkit = /WebKit/.test( navigator.userAgent )
             var is_firefox = /Firefox/.test( navigator.userAgent )
             var handle_event = function(){
@@ -768,7 +961,6 @@ function imageIniter(){
                 }else {
                     dt = evt.originalEvent.wheelDelta;
                 }
-                // console.log(evt, dt);
                 var a = dt / Math.abs(dt)
                 zoom(0.1 *a, evt.originalEvent.pageX - off.left, evt.originalEvent.pageY - off.top)
 
@@ -816,124 +1008,156 @@ function imageIniter(){
 
     }
     this._save = function(){
-        // console.log (this.data)
-        //var canvas = this._jq[0];
-        //var image = canvas.toDataURL("image/png");
-
-        //var data = this.data
-        // console.log("SAVE", data)
-
-         // console.log("Do we savinf data?");
-        // this.constr.setWidgetData(this.pos, data )
     }
+	this._cancel = function(){
+		this.data = this._old_settings;
+	}
+	this._remove = function(){
+		DB.remove_blob(this.data.image)
+	}
     this._dr = function(){
-				// console.log ("POS", this.constr.Site.pages[''].blocks[2].widget.data.position)
-				var self = this;
-				if (this._jq){
-					 this._jq.remove()
+		var self = this;
+		if (this._jq){
+			 this._jq.remove()
+		}
+	    this.redraw_ctx= function(){
+			this.data = this._data();
+		    var W=this.my_cont.width(),
+		        H = this.my_cont.height();
+		    this.ctx.clearRect(0,0, W , H)
+
+		    // Баг в гуглохроме -
+		        var is_webkit = /WebKit/.test( navigator.userAgent )
+		        if (is_webkit && W*H >60000 ){
+		            var rectWidth = this.my_cont.width()
+		            var rectHeight = this.my_cont.height()
+
+		            if ( this.border_radius !== 0 ) {
+		                var cr = this.border_radius * 0.9
+
+		                var context = this.ctx
+
+		                context.beginPath();
+		                   // line
+		                context.moveTo(cr, 0);
+		                context.lineTo(rectWidth - cr, 0);
+		                    //arc
+		                //context.arcTo( rectWidth , 0,  rectWidth  , cr,  cr);
+		                context.arc(rectWidth-cr, cr, cr, 1.5 * Math.PI, 0, false)
+
+		                    // more line
+		                context.lineTo(rectWidth , rectHeight-cr);
+
+		                context.arc( rectWidth-cr, rectHeight -cr, cr,  0, 0.5 * Math.PI, false);
+
+		                context.lineTo(cr , rectHeight );
+		                context.arc( cr, rectHeight -cr, cr,   0.5 * Math.PI, Math.PI,false);
+
+		                context.lineTo(0 , cr );
+		                context.arc( cr, cr, cr,     Math.PI, 1.5 * Math.PI,false);
+
+		                context.clip();
+
+		            }
+
+		        }
+		        this.ctx.save()
+				this.ctx.scale(this.data.zoom, this.data.zoom)
+				this.ctx.translate(this.data.position.left, this.data.position.top)
+				this.ctx.drawImage(this.img, 0, 0)
+				this.ctx.restore();
+
+		};
+        this.border_radius = this.set.border_radius == null?0:this.set.border_radius;
+
+        this.border_radius = Math.min (this.border_radius, this.my_cont.width()/2, this.my_cont.height()/2)
+
+
+        this.canv = $("<canvas>").css('border-radius', this.border_radius * 0.94) // .appendTo(this.my_cont)
+		if(this.data.link && (!this.C.is_constructor)){
+			this.canv.mouseup(function(e){
+				if (self.data.link.name in self.C.Site.pages){
+					window.location.hash = "#!" + self.data.link.name
 				}
-
-                this.border_radius = this.set.border_radius == null?0:this.set.border_radius;
-
-                this.border_radius = Math.min (this.border_radius, this.my_cont.width()/2, this.my_cont.height()/2)
-
-                this.canv = $("<canvas>").css('border-radius', this.border_radius * 0.94) // .appendTo(this.my_cont)
-
-				this.c = this.canv[0];
-                this._jq = $('<div></div>').appendTo(this.my_cont)
-                d = $('<div>')
-                    //.css('border-radius','50px')
-                    .css('position','static')
-                    .css('overflow','hidden')
-                    .width( this.my_cont.width())
-                    .height(this.my_cont.height())
-                    .appendTo(this._jq).append(this.canv)
-
-
-				this.c.width =  this.my_cont.width()
-				this.c.height =  this.my_cont.height()
-
-
-				this.img = new Image();
-				if (this.data.image.blob){
-					this.img.src = DB.get_blob_url(this.data.image)
-				}else{
-					this.img.src = this.data.image;
+				else{
+					window.location = self.data.link.name
 				}
-                // console.log( this.img.src )
-				this.ctx = this.c.getContext('2d')
-				this.img.onload=function(){
-                    // console.log('draw ctx');
-					self.redraw_ctx();
+			})
+		}
+		this.c = this.canv[0];
+        this._jq = $('<div></div>').appendTo(this.my_cont)
+        d = $('<div>')
+            //.css('border-radius','50px')
+            .css('position','static')
+            .css('overflow','hidden')
+            .width( this.my_cont.width())
+            .height(this.my_cont.height())
+            .appendTo(this._jq).append(this.canv)
 
-                    self._jq.appendTo(self.my_cont);
+
+		this.c.width =  this.my_cont.width()
+		this.c.height =  this.my_cont.height()
 
 
-				}
-			}
-    this.redraw_ctx= function(){
-                    var W=this.my_cont.width(),
-                        H = this.my_cont.height();
-                    this.ctx.clearRect(0,0, W , H)
+		this.img = new Image();
+		var url = DB.get_blob_url(this.data.image);
+		this.img.src = url 
+		this.ctx = this.c.getContext('2d')
+		this.img.onload=function(){
+			self.redraw_ctx();
+            self._jq.appendTo(self.my_cont);
 
-                    // Баг в гуглохроме -
-                        var is_webkit = /WebKit/.test( navigator.userAgent )
-                        if (is_webkit && W*H >60000 ){
-                            var rectWidth = this.my_cont.width()
-                            var rectHeight = this.my_cont.height()
 
-                            if ( this.border_radius !== 0 ) {
-                                var cr = this.border_radius * 0.9
-
-                                var context = this.ctx
-
-                                context.beginPath();
-                                   // line
-                                context.moveTo(cr, 0);
-                                context.lineTo(rectWidth - cr, 0);
-                                    //arc
-                                //context.arcTo( rectWidth , 0,  rectWidth  , cr,  cr);
-                                context.arc(rectWidth-cr, cr, cr, 1.5 * Math.PI, 0, false)
-
-                                    // more line
-                                context.lineTo(rectWidth , rectHeight-cr);
-
-                                context.arc( rectWidth-cr, rectHeight -cr, cr,  0, 0.5 * Math.PI, false);
-
-                                context.lineTo(cr , rectHeight );
-                                context.arc( cr, rectHeight -cr, cr,   0.5 * Math.PI, Math.PI,false);
-
-                                context.lineTo(0 , cr );
-                                context.arc( cr, cr, cr,     Math.PI, 1.5 * Math.PI,false);
-
-                                context.clip();
-
-                            }
-
-                        }
-
-                        this.ctx.save()
-						this.ctx.scale(this.data.zoom, this.data.zoom)
-						this.ctx.translate(this.data.position.left, this.data.position.top)
-						this.ctx.drawImage(this.img ,0,0)
-						this.ctx.restore();
-
-				},
+		}
+	}
+	this._dr_no_canv = function(){
+		var canv = $('<div>').css('border-radius', this.border_radius * 0.94)
+		var self = this;
+		canv.appendTo(this.my_cont).width(this.my_cont.width()).height(this.my_cont.height() )
+		onload = function(){
+			
+			var z = self._data().zoom
+			var pos = self._data().position
+			
+			var pt = Math.round(pos.top)*z;	
+			var pl = Math.round(pos.left)*z;
+			var zw = this.width * z
+			var zh = this.height * z
+			var spos = pl + 'px ' + pt + 'px'
+			canv.css('background-image', 'url(' + this.src + ')')
+			canv.css('background-repeat','no-repeat')
+			canv.css('background-position', spos)
+			canv.css('background-size' , zw + 'px '+ zh +'px');
+		}
+		console.log("HERE", this.img)
+		if (this.img != null){
+			onload.apply(this.img, []);
+			
+		}else{
+			this.img = new Image();
+			var url = DB.get_blob_url(this.data.image);
+			console.log("URL", url)
+			this.img.src = url 
+			var self = this;
+			this.img.onload= onload
+			
+		}
+		
+	}
     this._draw = function(){
-
         var self = this
-        if ( this.data != null && this.data.image != null){
-            //if (this.data.image.blob){
-
-                //}
-            this._dr()
+		if ( this._data() != null && this._data().image != null){
+			if(isCanvasSupported()){
+			 	this._dr()
+			}else{
+	            this._dr_no_canv()
+			}
         }else{
             this._jq = $("<img>").prop('src', '/static/images/images.jpg')
             .appendTo(this.my_cont)
             .css('margin',10)
             if(this.C.is_constructor){
                 this._jq.click(function(){
-                    // console.log("i'm fucking pushing you")
                     var input = $("<input>").attr('type','file').change(function(){
                         var fr = new FileReader()
                         var _this = this;
@@ -975,6 +1199,8 @@ var o = {
         "header" :  headerIniter,
         'image' : imageIniter,
         "line": lineIniter,
+		'file': fileWidget,
+		'flash': swfWidget
         /*
 
         "line" : {title:"Горизонтальная линия",
@@ -1588,7 +1814,7 @@ var o = {
 
 		}*/
 			}
-		 };	
+		 };
 		 
 	return o
 	

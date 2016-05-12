@@ -2251,14 +2251,14 @@ window.Constructor.showSEOScheme = ->
 
 window.Constructor.showTextColorScheme = ->
 
-  templ = "
+	templ = "
 <div>
-  <ul>
-  <li> Текст <div name ='text_color' style='width:30px; height:20px; background-color:{{ text_color }}; display:inline-block'></div></li>
-  <li> Ссылки <div name ='link_color' style='width:30px; height:20px; background-color:{{ link_color }}; display:inline-block'></div></li>
-  <li> Посещенные ссылки <div name ='visited_color' style='width:30px; height:20px; background-color:{{ visited_color }}; display:inline-block'></div></li>
-  <li> Активные ссылки <div name ='active_color' style='width:30px; height:20px; background-color:{{ active_color }}; display:inline-block'></div></li>
-  <li> Ссылка под курсором <div name ='hover_color' style='width:30px; height:20px; background-color:{{ hover_color }}; display:inline-block'></div></li>
+	<ul>
+	<li> Текст <div name ='text_color' style='width:30px; height:20px; background-color:{{ text_color }}; display:inline-block'></div></li>
+	<li> Ссылки <div name ='link_color' style='width:30px; height:20px; background-color:{{ link_color }}; display:inline-block'></div></li>
+	<li> Посещенные ссылки <div name ='visited_color' style='width:30px; height:20px; background-color:{{ visited_color }}; display:inline-block'></div></li>
+	<li> Активные ссылки <div name ='active_color' style='width:30px; height:20px; background-color:{{ active_color }}; display:inline-block'></div></li>
+	<li> Ссылка под курсором <div name ='hover_color' style='width:30px; height:20px; background-color:{{ hover_color }}; display:inline-block'></div></li>
 
 
 </ul>
@@ -2266,53 +2266,57 @@ window.Constructor.showTextColorScheme = ->
 </div>
 "
 
-  #colors = @getTextColors()
-  hsbas = {}
-  if @Site.textColors?
-    for attr, val of @Site.textColors
-      hsbas[attr] = val
-  current_cols = @getTextColors()
+	#colors = @getTextColors()
+	hsbas = {}
+	if @Site.textColors?
+		for attr, val of @Site.textColors
+			hsbas[attr] = val
+	current_cols = @getTextColors()
 
 
 
-  ht = Mustache.render(templ, current_cols)
-  cold = $("<div>").html(ht)
-  cold.find('div[name]').click (e) =>
-    col_type = $(e.target).attr('name')
-    d =$(e.target)
-    setter = (col, ix, hsba) ->
-      d.css('background-color', col )
-      hsbas[col_type] = {index:ix,rgb:col}
-      {}
+	ht = Mustache.render(templ, current_cols)
+	cold = $("<div>").html(ht)
+	cold.find('div[name]').click (e) =>
+		col_type = $(e.target).attr('name')
+		d =$(e.target)
+		setter = (col, ix, hsba) ->
+			d.css('background-color', col )
+			# console.log('now')
+			rgb = hsvToRgb( hsba, false, true )
+			# console.log(rgb);
+			hsbas[col_type] = {index:ix,rgb: rgb }
+			# console.log('done')
+			{}
 
-    color_chooser = @draw_color_chooser setter
-    color_chooser.appendTo($('#controls')).position({of:$(e.target), my:'left top', at:'right bottom'})
+		color_chooser = @draw_color_chooser setter
+		color_chooser.appendTo($('#controls')).position({of:$(e.target), my:'left top', at:'right bottom'})
 
-  #log("SMT")
-  cold.dialog(
-    title: "Цвет ссылок и текста"
-    width: 400
-    height: 400
-    buttons:
-      "Сохранить и перезагрузить": =>
-        #log(@)
-        @Site.textColors = hsbas
-        @_save_site()
+	#log("SMT")
+	cold.dialog(
+		title: "Цвет ссылок и текста"
+		width: 400
+		height: 400
+		buttons:
+			"Сохранить и перезагрузить": =>
+				#log(@)
+				@Site.textColors = hsbas
+				@_save_site()
 
-        cold.dialog('close')
-        window.location.reload()
-      "Сохранить без перезагрузки": =>
-        #log(@)
-        @Site.textColors = hsbas
-        @_save_site()
-        @redraw()
-        cold.dialog('close')
+				cold.dialog('close')
+				window.location.reload()
+			"Сохранить без перезагрузки": =>
+				#log(@)
+				@Site.textColors = hsbas
+				@_save_site()
+				@redraw()
+				cold.dialog('close')
 
-      "Отмена": =>
-        @redraw()
-        cold.dialog('close')
+			"Отмена": =>
+				@redraw()
+				cold.dialog('close')
 
-  )
+	)
 
 window.Constructor.backgroundChooser =(type) ->
   self = this
@@ -2383,14 +2387,13 @@ window.Constructor.showDomainScheme = ()->
   T('input').prop('name','domain_name').val('Добавить домен').appendTo(adder).prop('type', 'button').click =>
     val = dom_name.val()
     key = md5((new Date()).toString())
-    console.log(val, key)
     dconf = T('div').appendTo($('#controls'))
     T('p').appendTo(dconf).text('для добавления домена вам нужно подтвердить его владение. Для этого создайте в вашем домене TXT-запись bewebconfirm.' + val + " со значением ")
     T('b').appendTo(dconf).text(key)
     mess = T('p').appendTo(dconf)
     T('button').appendTo(dconf).text('Подтвердить').click(=>
       $.ajax(
-        url:'/check_domain'
+        url:'/_/check_domain/'
         data: {domain:val, key: key}
         failure: () ->
           mess.text("Домен не подтвержден, Попробуйте еще!")
@@ -2658,16 +2661,14 @@ window.Constructor.show_CP = (active_tab) ->
   template_search_results = "
   <ul>
     {{#apps}}
-      <li> {{ title }}  {{#in_app}}<span style='color:green;'>Уже добавлено</span> {{/in_app}} {{^in_app}}<input class='_add_button' type='button' app_name='{{app_name}}' value='+'>{{/in_app}} </li>
+      <li> {{ title }}  {{#in_app}}<span style='color:green;'>Уже добавлено</span> {{/in_app}} {{^in_app}}<input class='_add_button' type='button' app_name='{{full_name}}' value='+'>{{/in_app}} </li>
     {{/apps}}
   </ul>
   "
 
 
   E = (evt) =>
-
     app = $(evt.target).attr 'app_name'
-
     if app?
         source = @getAppSource app
     else
@@ -2692,8 +2693,7 @@ window.Constructor.show_CP = (active_tab) ->
               {is_function: true,body: body}
             else val
           )
-          #log( typeof res )
-          DB.save_application res  # if "Main" of res and "getter" of res and "roles" of res and "data" of res
+          DB.save_application res  # if "Main" of res and "getter" of res and "roles" of res and "data of res
     editAreaLoader.init
       id: "id_source_textarea"
       syntax: "js"
@@ -2712,10 +2712,6 @@ window.Constructor.show_CP = (active_tab) ->
       @_save_site();
       @redraw();
       self.redraw_cp 2
-      #log(@Site._Apps)
-    #else
-    #  log('no delete')
-
   $("<h3>").text("Приложения").appendTo @cp_acc
   app_menu = $( Mustache.render(app_menu_template, {'apps':({key:k,val:v } for k,v of @Site.Applications )}) )
   @cp_acc.append app_menu
@@ -2767,7 +2763,7 @@ window.Constructor.show_CP = (active_tab) ->
         dialog.find('#id_app_search_input').bind 'keyup', (e)=>
           val = $(e.target).val()
           $.ajax
-            url: "/app/list/"
+            url: "/_/app/list/"
             data:
               iname: val
             dataType: 'JSON'

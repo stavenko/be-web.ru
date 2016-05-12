@@ -19,13 +19,13 @@ from bson import ObjectId
 from django import forms
 from powerdns import models as pmodels
 import dns.resolver
-import json, gridfs, base64, hashlib, datetime
+import json, gridfs, base64, hashlib, datetime, re, pymongo
 from django.core.context_processors import csrf
 from django.shortcuts import render_to_response
 from django.conf import settings
 
 # Uncomment the next two lines to enable the admin:
-from utils import _get_current_site, check_roles,sites,accounts
+from utils import _get_current_site, check_roles,sites,accounts,get_application_obj
 
 from django.contrib import admin
 admin.autodiscover()
@@ -43,7 +43,7 @@ except ImportError as e:
 #P.add(r'^$', views.ConstructorPage.as_view(), name="constructor",label="Конструктор страниц")
 #P.add(r'^a/((?P<year>\d{4}))$', views.ConstructorPage.as_view(), name="constructor",label="Конструктор страниц")
 
-MAX_NON_BLOB = 65536
+MAX_NON_BLOB = 15000
 
 def profile_page(req, *k, **kw):
     if req.user.is_authenticated():
@@ -87,40 +87,12 @@ def data_updaters(req, type_, cursor):
 
     # return cursor
 
+
+    
 def get_application(req, app_name):
-
-    site = _get_current_site(req)
-    app = req.storage.findOne('application', {'app_name': app_name, "site_id": site['_id'] })
-
-    if app:
-        app['is_own'] = True
-        resp = HttpResponse(json.dumps(app, default = json_util.default))
-
-        # exp = (datetime.datetime.now() + datetime.timedelta(seconds= (60 * 5)) )
-        #if 'date_changed' in app:
-        #    resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)  #exp.strftime('%a %b %d %Y %H:%M:%S GMT+1200')
-            # print resp['Last-Modified']
-        return resp
-    else:
-        # search it in global index
-        app_ix = req.storage.findOne('global_app_index', {'full_name': app_name} )
-
-        if app_ix:
-            # application name in long name is a first parameter
-            # generic.main.be-web.ru
-            # theshop.main.be-web.ru
-            # name = app_name.split('.',1)[0]
-            app = req.storage.findOne('application', {'app_name': app_ix['full_name'], 'site_id': app_ix['site_id'] })
-            app['is_own'] = False
-            resp =  HttpResponse(json.dumps(app, default = json_util.default))
-            # print app
-            #if 'date_changed' in app:
-            #    resp['Last-Modified'] = app['date_changed'].strftime(last_modified_dateformat)
-                #print resp['Last-Modified']
-            return resp
-        else:
-            raise ValueError("no such application")
-
+    app = get_application_obj(req, app_name)
+    resp = HttpResponse(json.dumps(app, default = json_util.default))
+    return resp
 
 def put_application_to_global_index(req, site, app):
     new_values = dict([(k,v) for k,v in app.items() if k in ['date_changed'] ] )
@@ -138,7 +110,7 @@ def find_application(req):
         iname = req.GET.get('iname', '')
 
         #search app over global collection
-        apps = list(req.storage.find('global_app_index', {'title': re.compile(iname) }))
+        apps = list(req.storage.find('global_app_index', {'title': re.compile(iname, flags = re.IGNORECASE) }))
     else:
         site = _get_current_site( req )
         apps = list(req.storage.find('application', {"site_id": site['_id'] }))
@@ -191,14 +163,15 @@ def adding_application(req):
 
     return HttpResponse(json.dumps({'success':True, "id": obj_id }, default = json_util.default ))
 
-def blob_storage(req, obj):
+def blob_storage(req, obj, site_id):
     if isinstance(obj, dict):
-        return dict([(k, blob_storage(req, v)) for (k,v) in obj.iteritems() ] )
+        return dict([(k, blob_storage(req, v, site_id )) for (k,v) in obj.iteritems() ] )
     elif isinstance(obj, list):
-        return [blob_storage(req, v) for v in obj ]
+        return [blob_storage(req, v, site_id ) for v in obj ]
 
     elif isinstance(obj, (str,unicode)):
         if len(obj) > MAX_NON_BLOB:
+            # print obj
             obj_type = obj.split(',')[0]
             if(obj_type[:4] == 'data'):
                 a =  obj_type.split(':')[1]
@@ -222,7 +195,9 @@ def blob_storage(req, obj):
             fh.content_type = mime_type
             fh.write(res)
             fh.close()
-            return {"blob":1, "_id":fh._id}
+            blob_obj =  {"blob":1, "file_id":fh._id, 'site_id': site_id}
+            req.storage.save('blob_object',  blob_obj)
+            return blob_obj
         else:
             return obj
     else:
@@ -239,11 +214,13 @@ def setTriggers(req, site ,datatype, event_type, object):
         site['metas'] = "\n".join(metas.values())
 
         textColors = object.get('textColors',{})
+        print textColors
         ass = {"link_color":"#id-top-cont A:link",
                "text_color":"#id-top-cont",
                "hover_color":"#id-top-cont A:hover",
                "active_color":"#id-top-cont A:active",
                "visited_color":"#id-top-cont A:visited"}
+              
         colors = "\n".join(["%s{color:%s}\n"%(ass[k], textColors[k]['rgb']) for k in textColors if textColors[k].get('rgb', False)])
         # print "colors", ass, colors, textColors
 
@@ -310,28 +287,23 @@ def data_connector(req):
             if 'is_unique' in req.POST.keys():
                 is_unique = req.POST.get('is_unique')
             else: is_unique = False
-
-
-            to_store = blob_storage(req, obj['object'] )
+            to_store = blob_storage(req, obj['object'] , site['_id'] )
             to_store['site_id'] = site['_id']
             type = obj['type']
             if ('@' in type):
                 mongo_db, app = type.split('@')
             else:
                 mongo_db = type
-
             if check_roles(req, type, 'add', site = site):
                 if is_unique:
                     res = req.storage.find(mongo_db, to_store)
                     if res.count() > 0:
                         return HttpResponse(json.dumps({"success": False, "_id": res[0]['_id']} , default = json_util.default) )
-
                 setTriggers(req, site, type, 'save', to_store)
                 if "_id" in to_store:
                     req.storage.safe_update(mongo_db, to_store)
                 else:
                     req.storage.insert(mongo_db, to_store)
-
                 return HttpResponse(json.dumps({"success": True, "_id": to_store['_id']} , default = json_util.default) )
             else:
                 raise ValueError('no permission to save')
@@ -352,6 +324,13 @@ def data_connector(req):
                     objs = req.storage.find(mongo_db, q)
                 else:
                     objs = req.storage.find(mongo_db, q)
+                
+                if 'o' in r:
+                    ordering = r['o']
+                    ordering = [ tuple(i) for i in ordering]
+                    objs.sort(ordering)
+                
+                    
                 total_amount = objs.count()
                 if 'p' in r:
                     cur_page = r['p'].get('current_page', 0)
@@ -381,9 +360,9 @@ def blob_extruder(req, blob_id):
     #raise IndexError(str(req))
     is_etag = req.META.get('HTTP_IF_NONE_MATCH', '') == f.md5
     is_last = req.META.get('HTTP_IF_MODIFIED_SINCE', '') == f.upload_date.strftime('%a %b %d %Y %H:%M:%S GMT')
-    # print is_etag , is_last
     if not any([is_etag , is_last]):
-        resp = HttpResponse( f , mimetype=mt if mt is not None else "text/plain")
+        is_invalid_mt = mt is None or mt == ''
+        resp = HttpResponse( f , mimetype=mt if not is_invalid_mt else "Application/octet-stream")
         resp['ETag'] = f.md5
         resp['Last-Modified'] = f.upload_date.strftime('%a %b %d %Y %H:%M:%S GMT') #"Tue, 16 Jul 2013 23:54:26 GMT")
         #raise IndexError("WE DO INSTALL TAG")
@@ -393,7 +372,24 @@ def blob_extruder(req, blob_id):
         r = HttpResponse()
         r.status_code = 304
         return r
-
+        
+def  blob_remover(req, blob_id):
+    gf = gridfs.GridFS(req.storage.conn, req.storage.get_collection("blobs"))
+    o = req.storage.findOne('blob_object', ObjectId(blob_id) )
+    if o is not None:
+        site_id = o.get('site_id')
+        site = _get_current_site(req)
+        if site_id == site['_id']:
+            print "new style"
+            file_id = o.get('file_id')
+            gf.delete(file_id)
+            req.storage.remove("blob_object", {"_id": file_id })
+            return HttpResponse( "ok" )
+    else:
+        print "old style"
+        gf.delete(ObjectId(blob_id)) 
+        return HttpResponse( "ok old" )
+        
 class RegisterMixture(forms.Form):
     def __init__(self, *k, **kw):
         if not hasattr(self, 'request'):
@@ -522,7 +518,7 @@ class RegistrationView( FormView ):
         email.send()
 
 
-        return redirect(reverse("registration_complete"))
+        return HttpResponseRedirect(reverse("registration_complete"))
     def form_invalid(self, form):
         return self.render_to_response(self.get_context_data(form=form))
 
@@ -741,7 +737,7 @@ def check_domain(req):
             return HttpResponse(json.dumps({'domain_confirm': True }))
         else:
             # print answer, key
-            return HttpResponse(json.dumps({'domain_confirm': False }))
+            return HttpResponse(json.s({'domain_confirm': False }))
 
     except Exception as e:
         #print e
@@ -754,6 +750,7 @@ urlpatterns = patterns("",
 
 
     url(r'^blob/(?P<blob_id>[a-zA-Z0-9].*)/', blob_extruder),
+    url(r'^del_blob/(?P<blob_id>[a-zA-Z0-9].*)/', blob_remover),
 
 
     url(r'^a/(?P<app_name>.*)/', get_application),

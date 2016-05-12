@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html5>
 <html>
 	<head>
 
@@ -7,24 +7,53 @@
 		
 		{{ site.metas|safe }}
 
-		<script  src="{{STATIC_URL}}js/jquery-1.10.2.min.js"></script>
-        <script  src="{{STATIC_URL}}js/underscore-min.js"></script>
+
+		<script src="{{STATIC_URL}}js/jquery-1.10.2.min.js"></script>
+        <script src="{{STATIC_URL}}js/underscore-min.js" > </script>
         <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/json2.js"></script>
 		<script  src="{{STATIC_URL}}js/sop/Application.js"></script>
-		<script  src="{{STATIC_URL}}js/moment.min.js"></script>
-		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/sop/displayer.js"></script>
+		<script src="{{STATIC_URL}}js/moment.min.js">
+		
+		</script>
+		{% autoescape off %}
+		
+		<script language="javascript" type="text/javascript" src="{{STATIC_URL}}/js/sop/displayer.min.js">
+		
+		
+		</script>
+		
 
-        {{ main_page.head|safe }}
+        {{ main_page.head }}
 		<script>
-		moment.lang(navigator.language);
+		moment().lang(navigator.language);
+		window.SITE_OBJECT_REPR =  '{{ site_object|escapejs }}'
+		window.PATTERNS_REPR = '{{ patterns|escapejs }}'
+		window.APP_EGGS_REPR = '{{ app_eggs|escapejs }}'
 		
 		window.STATIC = "{{ STATIC_URL }}";
         window.csrf = "{% csrf_token %}";
 		window.site_id = "{{site.id}}"
         window.get_application_url = '/_/a/';
         window.is_constructor = false;
+		
+		
         </script>
+		{% endautoescape %}
+		
 		<style>
+		@font-face {
+		    font-family: 'arialnarrow';
+			src: url('/static/fonts/arialn-webfont.eot');
+		    src: url('/static/fonts/arialn-webfont.eot?#iefix') format('embedded-opentype'),
+		         url('/static/fonts/arialn-webfont.woff') format('woff'),
+		         url('/static/fonts/arialn-webfont.ttf') format('truetype'),
+		         url('/static/fonts/arialn-webfont.svg#arialnarrow') format('svg');
+		    font-weight: normal;
+		    font-style: normal;
+
+		}
+
+
 		canvas {
 			    image-rendering: optimizeSpeed;             // Older versions of FF
 			    image-rendering: -moz-crisp-edges;          // FF 6.0+
@@ -56,7 +85,12 @@
 				margin:0;
 				overflow:auto;
 				height:100%;
+				
 
+			}
+			*{
+				text-rendering: auto;
+				
 			}
 
             {{ site.textColors|safe }}

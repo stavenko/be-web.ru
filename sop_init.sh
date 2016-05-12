@@ -1,6 +1,6 @@
 #!/bin/sh
-
-mkdir /usr/local/lib/python2.7/dist-packages/run
+RUN=/usr/local/lib/python2.7/dist-packages/run
+[-d $RUN ] || mkdir $RUN
 chown www-data:www-data /usr/local/lib/python2.7/dist-packages/run
 mysql -u root -e "create database if not exists beweb character set =\"utf8\";"
 # mysql -u root -e "create database if not exists face_project character set =\"utf8\";"
@@ -17,9 +17,13 @@ rm ./default
 mv ./sop_nginx.conf default
 
 cd /var/www/src/constructor/static/
-sudo mkdir /var/www/uploaded_files
+UPF=/var/www/uploaded_files
+LOG=/var/log/nginx/be-web/
+[ -d $UPF ] ||sudo mkdir $UPF
+[ -d $LOG ] ||sudo mkdir $LOG
 
 sudo chown www-data:www-data /var/www/uploaded_files
+sudo chown www-data:www-data $LOG
 
 sudo ln -s /usr/lib/python2.7/dist-packages/django/contrib/admin/static/admin/
 /etc/init.d/nginx restart

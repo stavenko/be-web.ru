@@ -315,34 +315,37 @@ window.Constructor._draw_css_background =(to, css_pattern) ->
 window.Constructor.redraw_background = ->
 
   #log( "BGs", @Site.backgrounds )
-  if @Site.backgrounds?
-    $.each @Site.backgrounds, (name, imgo) =>
+	if @Site.backgrounds?
+		$.each @Site.backgrounds, (name, imgo) =>
+			if name is "body"
+				C = $("body")
+			else C = @layout_cont  if name is "content"
+			if imgo.type is "pattern"
+				#console.log window.PATTERNS? , imgo.pattern of window.PATTERNS
+				if window.PATTERNS? and imgo.pattern of window.PATTERNS
+					patt = window.PATTERNS[imgo.pattern]
+				else
+					patt = DB.get_objects('generic.' + BASE_SITE , 'pattern', {'_id': {'$oid':imgo.pattern }}).objects[0]
+				if typeof patt is "undefined"
+					C.css "background-image", ""
+					return
+				if patt.type is "image"
+					pat = patt.image
+					C.css "background", "url(\"" + pat + "\") repeat"
 
-      if name is "body"
-        C = $("body")
-      else C = @layout_cont  if name is "content"
-      if imgo.type is "pattern"
-
-        patt = DB.get_objects('generic.' + BASE_SITE , 'pattern', {'_id': {'$oid':imgo.pattern }}).objects[0]
-        if typeof patt is "undefined"
-          C.css "background-image", ""
-          return
-        if patt.type is "image"
-          pat = patt.image
-          C.css "background", "url(\"" + pat + "\") repeat"
-
-        else if patt.type is "constructor"
-          @renderPattern C, patt
-        else
-          pat = patt.image
-          @_draw_css_background C, pat
-      else if imgo.type is "color"
-        c = @get_color(imgo.color)
-        console.log("BG", imgo.color)
-
-        C.css "background", hsvToRgb(c)
-      else C.css "background", ""  if imgo.type is "none"
-
+				else if patt.type is "constructor"
+					if not isCanvasSupported()
+						C.css "background", "url(\"" + patt.image + "\") repeat"
+					else
+						@renderPattern C, patt
+				else
+					pat = patt.image
+					@_draw_css_background C, pat
+			else if imgo.type is "color"
+				c = @get_color(imgo.color)
+				
+				C.css "background", hsvToRgb(c)
+			else C.css "background", ""  if imgo.type is "none"
 
 
 window.Constructor.draw_color_chooser = (onSelectColor) ->
